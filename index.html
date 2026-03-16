@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Gestione Condominiale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 3rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 300px; height: 300px;
+    border: 2px solid rgba(200,190,170,0.1);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    top: 30px; right: 80px;
+    width: 160px; height: 160px;
+    border: 1px solid rgba(200,190,170,0.08);
+    border-radius: 50%;
+  }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--border);
+    margin-bottom: 0.8rem;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 0.6rem;
+  }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub {
+    font-size: 1rem;
+    color: var(--border);
+    font-weight: 300;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  /* BETA BADGE */
+  .beta-badge {
+    display: inline-block;
+    margin-top: 1.2rem;
+    background: rgba(200,64,42,0.2);
+    border: 1px solid rgba(200,64,42,0.4);
+    color: #e8b090;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.8rem;
+    border-radius: 2px;
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* CARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  /* TOOL CARD */
+  .tool-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px var(--shadow);
+    transition: all 0.25s;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .tool-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(26,26,46,0.18);
+    border-color: var(--accent);
+  }
+  .tool-card:hover .card-arrow { transform: translateX(4px); }
+
+  .card-top {
+    background: var(--ink);
+    padding: 1.8rem 2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-top::before {
+    content: '';
+    position: absolute;
+    bottom: -30px; right: -30px;
+    width: 100px; height: 100px;
+    border: 1px solid rgba(200,190,170,0.12);
+    border-radius: 50%;
+  }
+  .card-top.gold-variant { background: #2a2010; }
+  .card-top.green-variant { background: #0f2018; }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+  }
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--paper);
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+  }
+  .card-title em { color: #e8b090; font-style: italic; }
+  .card-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--border);
+  }
+
+  .card-body {
+    padding: 1.5rem 2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+    flex: 1;
+  }
+
+  .card-features {
+    list-style: none;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .card-features li {
+    font-size: 0.8rem;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-features li::before {
+    content: '✓';
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--success);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .card-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink);
+    transition: all 0.2s;
+  }
+  .tool-card:hover .card-cta {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .card-arrow {
+    font-size: 1rem;
+    transition: transform 0.2s;
+  }
+
+  /* COMING SOON CARD */
+  .tool-card.coming-soon {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .coming-badge {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: rgba(200,190,170,0.15);
+    border: 1px solid rgba(200,190,170,0.3);
+    color: var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+  }
+
+  /* INFO STRIP */
+  .info-strip {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 180px;
+  }
+  .info-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .info-text-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .info-text-body {
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+
+  /* FOOTER */
+  .page-footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .header { padding: 2rem 1.2rem 1.8rem; }
+    .main { padding: 2rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Piattaforma Gestionale · Versione Beta</div>
+  <h1>Condo<em>Kit</em></h1>
+  <p class="header-sub">Gli strumenti digitali per l'amministratore di condominio moderno. Calcoli automatici, codici tributo preimpostati, zero errori.</p>
+  <span class="beta-badge">🧪 Versione demo gratuita — in fase di test</span>
+</div>
+
+<div class="main">
+
+  <!-- INFO STRIP -->
+  <div class="info-strip">
+    <div class="info-item">
+      <div class="info-icon">🌐</div>
+      <div>
+        <div class="info-text-title">Accessibile ovunque</div>
+        <div class="info-text-body">Funziona nel browser, nessuna installazione</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">⚖️</div>
+      <div>
+        <div class="info-text-title">Normativa italiana</div>
+        <div class="info-text-body">Tassi legali e codici F24 aggiornati</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🔒</div>
+      <div>
+        <div class="info-text-title">Nessun dato salvato</div>
+        <div class="info-text-body">I dati restano solo sul tuo dispositivo</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🆓</div>
+      <div>
+        <div class="info-text-title">Gratuito in beta</div>
+        <div class="info-text-body">Usa tutto senza registrazione</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRUMENTI DISPONIBILI -->
+  <div class="section-label">Strumenti disponibili</div>
+  <div class="cards-grid">
+
+    <!-- CALCOLATORE MORE -->
+    <a class="tool-card" href="calcolatore_more.html">
+      <div class="card-top">
+        <span class="card-icon">⏰</span>
+        <div class="card-title">More sui<br><em>Pagamenti</em></div>
+        <div class="card-subtitle">Calcolo automatico · Mora legale e contrattuale</div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">
+          Inserisci l'elenco dei condomini morosi e ottieni in un clic l'importo esatto della mora, i giorni di ritardo e il totale da richiedere.
+        </p>
+        <ul class="card-features">
+          <li>Mora legale con tassi aggiornati (2020–2025)</li>
+          <li>Mora contrattuale personalizzabile</li>
+          <li>Lista multipla di condomini</li>
+          <li>Gestione tributi associati (TARI, ecc.)</li>
+          <li>Stampa / salva PDF</li>
+        </ul>
+        <div class="card-cta">
+          <span>Apri lo strumento</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- RAVVEDIMENTO OPEROSO -->
+    <a class="tool-card" href="ravvedimento_operoso.html">
+      <div class="card-top gold-variant">
+        <span class="card-icon">🧾</span>
+        <div class="card-title">Ravvedimento<br><em>Operoso</em></div>
+        <div class="card-subtitle">Calcolo sanzioni · Codici tributo F24</div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">
+          Calcola automaticamente sanzioni e interessi per i versamenti fiscali in ritardo. Ottieni i codici tributo F24 già pronti da usare.
+        </p>
+        <ul class="card-features">
+          <li>Tutti gli scaglioni di sanzione (art. 13 D.Lgs. 472/97)</li>
+          <li>Ritenute professionisti, imprese, portiere</li>
+          <li>IMU e TARI parti comuni</li>
+          <li>Codici tributo F24 preimpostati</li>
+          <li>Stampa / salva PDF</li>
+        </ul>
+        <div class="card-cta">
+          <span>Apri lo strumento</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- PROSSIMAMENTE: COMUNICAZIONI -->
+    <div class="tool-card coming-soon">
+      <div class="card-top green-variant">
+        <span class="coming-badge">Prossimamente</span>
+        <span class="card-icon">📄</span>
+        <div class="card-title">Lettere di<br><em>Sollecito</em></div>
+        <div class="card-subtitle">Generazione automatica · PDF personalizzato</div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">
+          Genera automaticamente le lettere di sollecito per i condomini morosi, personalizzate con i dati del calcolo.
+        </p>
+        <ul class="card-features">
+          <li>Template legale preimpostato</li>
+          <li>Personalizzazione per ogni condomino</li>
+          <li>Export PDF pronto per la stampa</li>
+        </ul>
+        <div class="card-cta">
+          <span>In arrivo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROSSIMI MODULI -->
+  <div class="section-label">In sviluppo</div>
+  <div style="background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem 2rem;">
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">I prossimi moduli che stiamo costruendo, in ordine di priorità:</p>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+      <span style="background:white; border:1px solid var(--border); border-radius:3px; padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--ink);">📄 Lettere di sollecito</span>
+      <span style="background:white; border:1px solid var(--border); border-radius:3px; padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--ink);">🧮 Ripartizione spese millesimali</span>
+      <span style="background:white; border:1px solid var(--border); border-radius:3px; padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--ink);">📊 Rendiconto annuale</span>
+      <span style="background:white; border:1px solid var(--border); border-radius:3px; padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--ink);">📅 Scadenzario automatico</span>
+      <span style="background:white; border:1px solid var(--border); border-radius:3px; padding:0.4rem 0.9rem; font-size:0.78rem; color:var(--ink);">🗂️ Modello F24 compilato</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  CondoKit · Versione Beta Gratuita · Solo uso indicativo — verifica sempre con il tuo consulente
+</div>
+
+</body>
+</html>

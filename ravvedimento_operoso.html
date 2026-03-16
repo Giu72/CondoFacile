@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcolatore Ravvedimento Operoso</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2.5rem 3rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border: 2px solid rgba(200,190,170,0.15);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    top: 20px; right: 60px;
+    width: 120px; height: 120px;
+    border: 1px solid rgba(200,190,170,0.1);
+    border-radius: 50%;
+  }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--border);
+    margin-bottom: 0.6rem;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+  }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub {
+    font-size: 0.9rem;
+    color: var(--border);
+    font-weight: 300;
+    max-width: 560px;
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SETTINGS BAR */
+  .settings-bar {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: flex-end;
+  }
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 200px;
+  }
+  .field-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field-group select,
+  .field-group input[type="number"],
+  .field-group input[type="date"] {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.55rem 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+  .field-group input[type="date"] {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .field-group select:focus,
+  .field-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* INFO PILL */
+  .info-pill {
+    background: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--warning);
+    align-self: flex-end;
+    white-space: nowrap;
+  }
+
+  /* TABLE */
+  .table-wrapper {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  thead tr { background: var(--ink); color: var(--paper); }
+  thead th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  thead th:first-child { padding-left: 1.5rem; }
+  tbody tr { border-bottom: 1px solid var(--cream); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf8f4; }
+  tbody td { padding: 0.5rem 0.5rem; }
+  tbody td:first-child { padding-left: 1.5rem; }
+  tbody td:last-child { padding-right: 1rem; }
+
+  .input-cell {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0.4rem 0.6rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: var(--ink);
+    width: 100%;
+    transition: all 0.15s;
+  }
+  .input-cell:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: white;
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .input-cell::placeholder { color: #bbb; font-style: italic; }
+  input[type="date"].input-cell { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  select.input-cell { appearance: none; cursor: pointer; }
+
+  .btn-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--border); font-size: 1.1rem;
+    padding: 0.2rem 0.4rem; border-radius: 3px;
+    transition: all 0.15s; line-height: 1;
+  }
+  .btn-remove:hover { color: var(--accent); background: var(--accent-light); }
+
+  /* BUTTONS */
+  .actions-row {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 2.5rem; align-items: center;
+  }
+  .btn {
+    padding: 0.7rem 1.6rem; border-radius: 3px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+    font-weight: 500; cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.02em; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary { background: var(--ink); color: var(--paper); }
+  .btn-secondary:hover { background: #2d2d4a; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+
+  /* RESULTS */
+  .results-section { display: none; animation: fadeUp 0.4s ease; }
+  .results-section.visible { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SUMMARY CARDS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .summary-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .summary-card.red::before    { background: var(--accent); }
+  .summary-card.gold::before   { background: var(--gold); }
+  .summary-card.green::before  { background: var(--success); }
+  .summary-card.ink::before    { background: var(--ink); }
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;
+  }
+  .card-value { font-family: 'DM Serif Display', serif; font-size: 1.7rem; color: var(--ink); line-height: 1; }
+  .card-value.accent { color: var(--accent); }
+  .card-value.gold   { color: var(--gold); }
+
+  /* RESULTS TABLE */
+  .results-table-wrapper {
+    background: white; border: 1px solid var(--border);
+    border-radius: 4px; overflow-x: auto;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .result-row-ok   { background: #fafafa; }
+  .result-row-late { background: #fff8f6; }
+  .result-row-late td:first-child { border-left: 3px solid var(--accent); padding-left: calc(1.5rem - 3px); }
+
+  .badge {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 2px;
+    font-family: 'DM Mono', monospace; font-size: 0.68rem;
+    letter-spacing: 0.08em; font-weight: 500;
+  }
+  .badge-sprint  { background: var(--success-light); color: var(--success); }
+  .badge-breve   { background: #d0e8f8; color: #1a5080; }
+  .badge-medio   { background: var(--gold-light); color: var(--warning); }
+  .badge-lungo   { background: var(--accent-light); color: var(--accent); }
+  .badge-critico { background: #f0d0d0; color: #800000; }
+
+  .amount { font-family: 'DM Mono', monospace; }
+  .amount-sanzione { color: var(--accent); font-weight: 500; }
+  .amount-interessi { color: var(--gold); font-weight: 500; }
+  .amount-total { color: var(--ink); font-weight: 600; }
+
+  /* CODICI F24 BOX */
+  .f24-box {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-top: 1.5rem;
+  }
+  .f24-box-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--border);
+    margin-bottom: 1rem;
+  }
+  .f24-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+  .f24-row {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px;
+    padding: 0.75rem 1rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .f24-row-label { font-size: 0.78rem; color: var(--border); }
+  .f24-row-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem; font-weight: 500;
+    color: #e8b090;
+    letter-spacing: 0.1em;
+  }
+  .f24-row-desc { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* NOTE BOX */
+  .note-box {
+    background: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .note-box strong {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--warning);
+    display: block; margin-bottom: 0.5rem;
+  }
+
+  /* TABELLA SCAGLIONI */
+  .scaglioni-box {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+  }
+  .scaglioni-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .scaglione {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--border);
+  }
+  .scaglione.active { border-left-color: var(--accent); background: #fff8f6; }
+  .scaglione-giorni { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .scaglione-perc   { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--ink); }
+  .scaglione-nome   { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .page-footer {
+    text-align: center; padding: 2rem;
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em;
+    border-top: 1px solid var(--border); margin-top: 3rem;
+  }
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .settings-bar { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Gestione Condominiale · Modulo Fiscale</div>
+  <h1>Ravvedimento<br><em>Operoso</em></h1>
+  <p class="header-sub">Calcola automaticamente sanzioni, interessi e codici tributo F24 per i versamenti in ritardo del condominio.</p>
+</div>
+
+<div class="main">
+
+  <!-- SCAGLIONI DI SANZIONE -->
+  <div class="section-label">Scaglioni di sanzione (art. 13 D.Lgs. 472/1997)</div>
+  <div class="scaglioni-box">
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem;">La sanzione cambia automaticamente in base ai giorni di ritardo. Il sistema applica sempre lo scaglione corretto.</p>
+    <div class="scaglioni-grid">
+      <div class="scaglione">
+        <div class="scaglione-giorni">1 – 14 giorni</div>
+        <div class="scaglione-perc">0,1% <span style="font-size:0.8rem;font-family:'DM Sans'">/ giorno</span></div>
+        <div class="scaglione-nome">Ravvedimento Sprint</div>
+      </div>
+      <div class="scaglione">
+        <div class="scaglione-giorni">15 – 30 giorni</div>
+        <div class="scaglione-perc">1,50%</div>
+        <div class="scaglione-nome">Ravvedimento Breve</div>
+      </div>
+      <div class="scaglione">
+        <div class="scaglione-giorni">31 – 90 giorni</div>
+        <div class="scaglione-perc">1,67%</div>
+        <div class="scaglione-nome">Ravvedimento Medio</div>
+      </div>
+      <div class="scaglione">
+        <div class="scaglione-giorni">91 giorni – 1 anno</div>
+        <div class="scaglione-perc">3,75%</div>
+        <div class="scaglione-nome">Ravvedimento Lungo</div>
+      </div>
+      <div class="scaglione">
+        <div class="scaglione-giorni">1 – 2 anni</div>
+        <div class="scaglione-perc">4,29%</div>
+        <div class="scaglione-nome">Ravvedimento Biennale</div>
+      </div>
+      <div class="scaglione">
+        <div class="scaglione-giorni">Oltre 2 anni</div>
+        <div class="scaglione-perc">5,00%</div>
+        <div class="scaglione-nome">Ravvedimento Lunghissimo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPOSTAZIONI -->
+  <div class="section-label">Impostazioni calcolo</div>
+  <div class="settings-bar">
+    <div class="field-group">
+      <label>Anno versamento originario</label>
+      <select id="annoVers">
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>Data di regolarizzazione</label>
+      <input type="date" id="dataRegol">
+    </div>
+    <div class="info-pill" id="tassoIntInfo">Tasso legale 2025: 2,00%</div>
+  </div>
+
+  <!-- TABELLA INPUT -->
+  <div class="section-label">Versamenti da regolarizzare</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Condominio / Riferimento</th>
+          <th>Tipo Tributo</th>
+          <th>Importo originario (€)</th>
+          <th>Data scadenza originaria</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="inputBody"></tbody>
+    </table>
+  </div>
+
+  <div class="actions-row">
+    <button class="btn btn-ghost" onclick="addRow()">＋ Aggiungi versamento</button>
+    <button class="btn btn-primary" onclick="calcola()">⚡ Calcola ravvedimento</button>
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Azzera tutto</button>
+  </div>
+
+  <!-- RISULTATI -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="section-label">Riepilogo calcolo</div>
+
+    <div class="summary-grid">
+      <div class="summary-card ink">
+        <div class="card-label">Imponibile totale</div>
+        <div class="card-value" id="sumImponibile">€ 0,00</div>
+      </div>
+      <div class="summary-card red">
+        <div class="card-label">Sanzioni totali</div>
+        <div class="card-value accent" id="sumSanzioni">€ 0,00</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Interessi totali</div>
+        <div class="card-value gold" id="sumInteressi">€ 0,00</div>
+      </div>
+      <div class="summary-card green">
+        <div class="card-label">Totale da versare</div>
+        <div class="card-value" id="sumTotale">€ 0,00</div>
+      </div>
+    </div>
+
+    <!-- TABELLA RISULTATI -->
+    <div class="results-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Condominio</th>
+            <th>Tipo Tributo</th>
+            <th>Importo</th>
+            <th>Giorni Ritardo</th>
+            <th>Scaglione</th>
+            <th>Sanzione</th>
+            <th>Interessi</th>
+            <th>Totale da Versare</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- CODICI F24 -->
+    <div class="f24-box" id="f24Box">
+      <div class="f24-box-title">📋 Codici tributo per il modello F24</div>
+      <div class="f24-grid" id="f24Grid"></div>
+    </div>
+
+    <!-- NOTE LEGALI -->
+    <div class="note-box">
+      <strong>⚠️ Nota importante</strong>
+      Gli importi calcolati sono indicativi. Prima di procedere al versamento verifica sempre i dati con il tuo consulente fiscale o con il sito dell'Agenzia delle Entrate (agenziaentrate.gov.it). I tassi legali e le aliquote di sanzione possono subire modifiche normative.
+    </div>
+
+    <div style="margin-top:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="stampaPagina()">🖨️ Stampa / Salva PDF</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Calcolatore Ravvedimento Operoso · Versione 1.0 Beta · Solo uso indicativo — verifica sempre con il tuo consulente fiscale
+</div>
+
+<script>
+// ── DATI BASE ─────────────────────────────────────────────────────────
+
+const TASSI_LEGALI = { 2025:2.00, 2024:2.50, 2023:5.00, 2022:1.25, 2021:0.01, 2020:0.05 };
+
+// Tipi di tributo con codici F24
+const TRIBUTI = [
+  { id:'1040', nome:'Ritenuta professionisti (geometra, avvocato...)',  codTributo:'1040', codSanzione:'8906', codInteressi:'1991' },
+  { id:'1020', nome:'Ritenuta imprese appalto (pulizie, manutenzione)', codTributo:'1020', codSanzione:'8906', codInteressi:'1991' },
+  { id:'1001', nome:'Ritenuta stipendio portiere/dipendente',            codTributo:'1001', codSanzione:'8906', codInteressi:'1991' },
+  { id:'3918', nome:'IMU parti comuni',                                  codTributo:'3918', codSanzione:'8906', codInteressi:'1991' },
+  { id:'3923', nome:'TARI (tassa rifiuti parti comuni)',                  codTributo:'3923', codSanzione:'8906', codInteressi:'1991' },
+  { id:'altro', nome:'Altra imposta condominiale',                       codTributo:'——',   codSanzione:'8906', codInteressi:'1991' },
+];
+
+// Scaglioni ravvedimento operoso
+const SCAGLIONI = [
+  { maxGg: 14,   perc: null,  perGiorno: 0.001, nome: 'Sprint',      badgeClass: 'badge-sprint'  },
+  { maxGg: 30,   perc: 0.015, perGiorno: null,  nome: 'Breve',       badgeClass: 'badge-breve'   },
+  { maxGg: 90,   perc: 0.0167,perGiorno: null,  nome: 'Medio',       badgeClass: 'badge-medio'   },
+  { maxGg: 365,  perc: 0.0375,perGiorno: null,  nome: 'Lungo',       badgeClass: 'badge-lungo'   },
+  { maxGg: 730,  perc: 0.0429,perGiorno: null,  nome: 'Biennale',    badgeClass: 'badge-critico' },
+  { maxGg: 99999,perc: 0.05,  perGiorno: null,  nome: 'Lunghissimo', badgeClass: 'badge-critico' },
+];
+
+let righeCount = 0;
+
+// ── INIT ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Data di oggi come default per regolarizzazione
+  const oggi = new Date().toISOString().split('T')[0];
+  document.getElementById('dataRegol').value = oggi;
+  addRow(); addRow(); addRow();
+  aggiornaTassoInfo();
+  document.getElementById('annoVers').addEventListener('change', aggiornaTassoInfo);
+});
+
+function aggiornaTassoInfo() {
+  const anno = parseInt(document.getElementById('annoVers').value);
+  const tasso = TASSI_LEGALI[anno] ?? 2.00;
+  document.getElementById('tassoIntInfo').textContent =
+    `Tasso legale ${anno}: ${tasso.toLocaleString('it-IT',{minimumFractionDigits:2})}%`;
+}
+
+// ── RIGHE ─────────────────────────────────────────────────────────────
+function addRow() {
+  righeCount++;
+  const id = righeCount;
+
+  // Costruisci opzioni tributo
+  let opts = TRIBUTI.map(t =>
+    `<option value="${t.id}">${t.nome}</option>`
+  ).join('');
+
+  const tr = document.createElement('tr');
+  tr.id = `row-${id}`;
+  tr.innerHTML = `
+    <td><input class="input-cell" type="text" placeholder="Es. Via Roma 10 Sc.A" id="cond-${id}"></td>
+    <td>
+      <select class="input-cell" id="tipo-${id}">${opts}</select>
+    </td>
+    <td><input class="input-cell" type="number" placeholder="Es. 142.50" step="0.01" min="0" id="imp-${id}"></td>
+    <td><input class="input-cell" type="date" id="scad-${id}"></td>
+    <td><button class="btn-remove" onclick="removeRow(${id})">✕</button></td>
+  `;
+  document.getElementById('inputBody').appendChild(tr);
+}
+
+function removeRow(id) {
+  document.getElementById(`row-${id}`)?.remove();
+}
+
+// ── CALCOLO SCAGLIONE ─────────────────────────────────────────────────
+function getScaglione(giorni) {
+  for (const s of SCAGLIONI) {
+    if (giorni <= s.maxGg) return s;
+  }
+  return SCAGLIONI[SCAGLIONI.length - 1];
+}
+
+function calcolaSanzione(importo, giorni) {
+  const s = getScaglione(giorni);
+  if (s.perGiorno !== null) {
+    return importo * s.perGiorno * giorni;
+  }
+  return importo * s.perc;
+}
+
+// ── CALCOLA ───────────────────────────────────────────────────────────
+function calcola() {
+  const anno     = parseInt(document.getElementById('annoVers').value);
+  const dataReg  = new Date(document.getElementById('dataRegol').value);
+  const tasso    = TASSI_LEGALI[anno] ?? 2.00;
+
+  if (!document.getElementById('dataRegol').value) {
+    alert('Inserisci la data di regolarizzazione.');
+    return;
+  }
+
+  const righe = [];
+  document.querySelectorAll('#inputBody tr').forEach(tr => {
+    const id   = tr.id.replace('row-','');
+    const cond = document.getElementById(`cond-${id}`)?.value.trim();
+    const tipo = document.getElementById(`tipo-${id}`)?.value;
+    const imp  = parseFloat(document.getElementById(`imp-${id}`)?.value);
+    const scad = document.getElementById(`scad-${id}`)?.value;
+    if (!cond || !imp || !scad) return;
+    righe.push({ cond, tipo, imp, scad, id });
+  });
+
+  if (!righe.length) {
+    alert('Inserisci almeno un versamento con tutti i campi compilati.');
+    return;
+  }
+
+  const risultati = righe.map(r => {
+    const dataScad   = new Date(r.scad);
+    const ms         = dataReg - dataScad;
+    const giorni     = ms > 0 ? Math.floor(ms / 86400000) : 0;
+    const scaglione  = getScaglione(Math.max(giorni, 1));
+    const sanzione   = giorni > 0 ? calcolaSanzione(r.imp, giorni) : 0;
+    const interessi  = giorni > 0 ? r.imp * (tasso / 100) / 365 * giorni : 0;
+    const totale     = r.imp + sanzione + interessi;
+    const tributo    = TRIBUTI.find(t => t.id === r.tipo) || TRIBUTI[TRIBUTI.length - 1];
+    return { ...r, giorni, scaglione, sanzione, interessi, totale, tributo, tasso };
+  });
+
+  renderResults(risultati);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function renderResults(risultati) {
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+
+  let sumImp=0, sumSan=0, sumInt=0, sumTot=0;
+  const codiciFound = new Set();
+
+  risultati.forEach(r => {
+    sumImp += r.imp;
+    sumSan += r.sanzione;
+    sumInt += r.interessi;
+    sumTot += r.totale;
+    codiciFound.add(r.tipo);
+
+    const tr = document.createElement('tr');
+    tr.className = r.giorni > 0 ? 'result-row-late' : 'result-row-ok';
+    tr.innerHTML = `
+      <td><strong>${esc(r.cond)}</strong></td>
+      <td style="font-size:0.8rem; color:var(--muted)">${esc(r.tributo.nome)}</td>
+      <td class="amount">${fmt(r.imp)}</td>
+      <td class="amount" style="color:${r.giorni>0?'var(--accent)':'var(--success)'}; font-weight:${r.giorni>0?'600':'400'}">
+        ${r.giorni > 0 ? r.giorni + ' gg' : '—'}
+      </td>
+      <td><span class="badge ${r.scaglione.badgeClass}">${r.scaglione.nome}</span></td>
+      <td class="amount amount-sanzione">${r.sanzione > 0 ? fmt(r.sanzione) : '—'}</td>
+      <td class="amount amount-interessi">${r.interessi > 0 ? fmt(r.interessi) : '—'}</td>
+      <td class="amount amount-total">${fmt(r.totale)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('sumImponibile').textContent = fmt(sumImp);
+  document.getElementById('sumSanzioni').textContent   = fmt(sumSan);
+  document.getElementById('sumInteressi').textContent  = fmt(sumInt);
+  document.getElementById('sumTotale').textContent     = fmt(sumTot);
+
+  // Codici F24
+  renderF24(risultati, codiciFound);
+
+  const sec = document.getElementById('resultsSection');
+  sec.classList.add('visible');
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderF24(risultati, codiciFound) {
+  const grid = document.getElementById('f24Grid');
+  grid.innerHTML = '';
+
+  // Raggruppa per tipo tributo
+  const gruppi = {};
+  risultati.forEach(r => {
+    if (!gruppi[r.tipo]) gruppi[r.tipo] = { tributo: r.tributo, imp:0, san:0, int:0 };
+    gruppi[r.tipo].imp += r.imp;
+    gruppi[r.tipo].san += r.sanzione;
+    gruppi[r.tipo].int += r.interessi;
+  });
+
+  Object.values(gruppi).forEach(g => {
+    const t = g.tributo;
+    // Tributo principale
+    if (g.imp > 0) {
+      grid.innerHTML += f24Row(t.codTributo, 'Tributo principale', fmt(g.imp), t.nome);
+    }
+    // Sanzione
+    if (g.san > 0) {
+      grid.innerHTML += f24Row('8906', 'Sanzione ravvedimento', fmt(g.san), 'Sanzione ridotta art. 13 D.Lgs. 472/97');
+    }
+    // Interessi
+    if (g.int > 0) {
+      grid.innerHTML += f24Row('1991', 'Interessi ravvedimento', fmt(g.int), 'Interessi legali maturati');
+    }
+  });
+}
+
+function f24Row(codice, label, importo, desc) {
+  return `
+    <div class="f24-row">
+      <div>
+        <div class="f24-row-label">${esc(label)}</div>
+        <div class="f24-row-desc">${esc(desc)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="f24-row-code">${esc(codice)}</div>
+        <div style="font-family:'DM Mono',monospace; font-size:0.8rem; color:#e8b090; margin-top:0.2rem">${importo}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function fmt(n) {
+  return '€\u00a0' + n.toLocaleString('it-IT', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function resetAll() {
+  document.getElementById('inputBody').innerHTML = '';
+  document.getElementById('resultsSection').classList.remove('visible');
+  righeCount = 0;
+  addRow(); addRow(); addRow();
+}
+function stampaPagina() { window.print(); }
+</script>
+</body>
+</html>

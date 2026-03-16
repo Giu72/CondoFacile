@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcolatore More Condominiali</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2.5rem 3rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border: 2px solid rgba(200,190,170,0.15);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    top: 20px; right: 60px;
+    width: 120px; height: 120px;
+    border: 1px solid rgba(200,190,170,0.1);
+    border-radius: 50%;
+  }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--border);
+    margin-bottom: 0.6rem;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+  }
+  .header h1 em {
+    color: #e8b090;
+    font-style: italic;
+  }
+  .header-sub {
+    font-size: 0.9rem;
+    color: var(--border);
+    font-weight: 300;
+    max-width: 500px;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  /* SECTION TITLES */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SETTINGS BAR */
+  .settings-bar {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: flex-end;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 180px;
+  }
+  .field-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field-group select,
+  .field-group input[type="number"] {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.55rem 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .field-group select:focus,
+  .field-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .mora-contrattuale-box {
+    display: none;
+    flex: 1;
+    min-width: 180px;
+  }
+  .mora-contrattuale-box.visible { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  /* INFO PILL */
+  .tasso-info {
+    background: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--warning);
+    align-self: flex-end;
+    white-space: nowrap;
+  }
+
+  /* TABLE INPUT */
+  .table-wrapper {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  thead th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  thead th:first-child { padding-left: 1.5rem; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--cream);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf8f4; }
+
+  tbody td {
+    padding: 0.5rem 0.5rem;
+  }
+  tbody td:first-child { padding-left: 1.5rem; }
+  tbody td:last-child { padding-right: 1rem; }
+
+  .input-cell {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0.4rem 0.6rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: var(--ink);
+    width: 100%;
+    transition: all 0.15s;
+  }
+  .input-cell:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: white;
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .input-cell::placeholder { color: #bbb; font-style: italic; }
+
+  input[type="date"].input-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  /* ROW ACTIONS */
+  .btn-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--border);
+    font-size: 1.1rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .btn-remove:hover { color: var(--accent); background: var(--accent-light); }
+
+  /* BUTTONS */
+  .actions-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 0.7rem 1.6rem;
+    border-radius: 3px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-secondary:hover { background: #2d2d4a; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+
+  /* RESULTS */
+  .results-section {
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+  .results-section.visible { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SUMMARY CARDS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .summary-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .summary-card.red::before { background: var(--accent); }
+  .summary-card.gold::before { background: var(--gold); }
+  .summary-card.green::before { background: var(--success); }
+  .summary-card.ink::before { background: var(--ink); }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .card-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.7rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .card-value.accent { color: var(--accent); }
+
+  /* RESULTS TABLE */
+  .results-table-wrapper {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow-x: auto;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  .result-row-ok { background: #fafafa; }
+  .result-row-mora { background: #fff8f6; }
+  .result-row-mora td:first-child { border-left: 3px solid var(--accent); padding-left: calc(1.5rem - 3px); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .badge-ok { background: var(--success-light); color: var(--success); }
+  .badge-mora { background: var(--accent-light); color: var(--accent); }
+  .badge-warning { background: var(--warning-light); color: var(--warning); }
+
+  .amount { font-family: 'DM Mono', monospace; }
+  .amount-mora { color: var(--accent); font-weight: 500; }
+  .amount-total { color: var(--ink); font-weight: 600; }
+
+  /* TRIBUTI SECTION */
+  .tributi-note {
+    background: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .tributi-note strong {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--warning);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  /* FOOTER */
+  .page-footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+
+  /* EMPTY STATE */
+  .empty-row td {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .settings-bar { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Condominiale · Modulo Calcolo</div>
+  <h1>More sui<br><em>Pagamenti in Ritardo</em></h1>
+  <p class="header-sub">Inserisci i condomini morosi, scegli il tipo di mora e ottieni il calcolo completo in un clic.</p>
+</div>
+
+<div class="main">
+
+  <!-- IMPOSTAZIONI -->
+  <div class="section-label">Impostazioni calcolo</div>
+  <div class="settings-bar">
+    <div class="field-group">
+      <label>Tipo di mora</label>
+      <select id="tipoMora" onchange="toggleMoraContrattuale()">
+        <option value="legale">⚖️ Mora legale (tasso di legge)</option>
+        <option value="contrattuale">📋 Mora contrattuale (regolamento)</option>
+      </select>
+    </div>
+
+    <div class="mora-contrattuale-box" id="boxContrattuale">
+      <label>Tasso contrattuale annuo (%)</label>
+      <input type="number" id="tassoContrattuale" placeholder="es. 5.00" step="0.01" min="0" max="100" value="5.00">
+    </div>
+
+    <div class="field-group">
+      <label>Anno di riferimento</label>
+      <select id="annoRif" onchange="aggiornaTassoInfo()">
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+      </select>
+    </div>
+
+    <div class="tasso-info" id="tassoInfo">Tasso legale 2025: 2,00%</div>
+  </div>
+
+  <!-- TABELLA INPUT -->
+  <div class="section-label">Elenco condomini</div>
+  <div class="table-wrapper">
+    <table id="inputTable">
+      <thead>
+        <tr>
+          <th>Condomino</th>
+          <th>Condominio / Scala</th>
+          <th>Importo dovuto (€)</th>
+          <th>Scadenza</th>
+          <th>Data pagamento</th>
+          <th>Tributo assoc. (€)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="inputBody">
+        <!-- righe dinamiche -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions-row">
+    <button class="btn btn-ghost" onclick="addRow()">＋ Aggiungi condomino</button>
+    <button class="btn btn-primary" onclick="calcola()">⚡ Calcola more</button>
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Azzera tutto</button>
+  </div>
+
+  <!-- RISULTATI -->
+  <div class="results-section" id="resultsSection">
+    <div class="section-label">Riepilogo calcolo</div>
+
+    <div class="summary-grid">
+      <div class="summary-card red">
+        <div class="card-label">Totale more</div>
+        <div class="card-value accent" id="summaryMore">€ 0,00</div>
+      </div>
+      <div class="summary-card ink">
+        <div class="card-label">Quote non pagate</div>
+        <div class="card-value" id="summaryQuote">€ 0,00</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Tributi associati</div>
+        <div class="card-value" id="summaryTributi">€ 0,00</div>
+      </div>
+      <div class="summary-card green">
+        <div class="card-label">Totale da richiedere</div>
+        <div class="card-value" id="summaryTotale">€ 0,00</div>
+      </div>
+    </div>
+
+    <div class="results-table-wrapper">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Condomino</th>
+            <th>Condominio</th>
+            <th>Importo</th>
+            <th>Giorni ritardo</th>
+            <th>Tasso applicato</th>
+            <th>Mora calcolata</th>
+            <th>Tributo</th>
+            <th>Totale dovuto</th>
+            <th>Stato</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="tributi-note" id="tribuNota" style="display:none">
+      <strong>⚠️ Nota tributi associati</strong>
+      Uno o più condomini hanno tributi locali (es. TARI parti comuni) collegati alla morosità.
+      Questi importi sono inclusi nel totale da richiedere. Verifica con il tuo consulente fiscale
+      se applicare anche interessi separati sul tributo non versato, ai sensi dell'art. 13 D.Lgs. 471/1997.
+    </div>
+
+    <div style="margin-top:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="stampaPagina()">🖨️ Stampa / Salva PDF</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Calcolatore More Condominiali · Versione 1.0 Beta · Solo uso indicativo — verifica sempre con il tuo consulente
+</div>
+
+<script>
+// ── TASSI LEGALI ─────────────────────────────────────────────────────────────
+const tassiLegali = {
+  2025: 2.00,
+  2024: 2.50,
+  2023: 5.00,
+  2022: 1.25,
+  2021: 0.01,
+  2020: 0.05
+};
+
+// ── STATO ────────────────────────────────────────────────────────────────────
+let righeCount = 0;
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  addRow(); addRow(); addRow(); // 3 righe di default
+});
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────────
+function toggleMoraContrattuale() {
+  const tipo = document.getElementById('tipoMora').value;
+  const box  = document.getElementById('boxContrattuale');
+  const info = document.getElementById('tassoInfo');
+  if (tipo === 'contrattuale') {
+    box.classList.add('visible');
+    info.style.display = 'none';
+  } else {
+    box.classList.remove('visible');
+    info.style.display = '';
+  }
+}
+
+function aggiornaTassoInfo() {
+  const anno  = parseInt(document.getElementById('annoRif').value);
+  const tasso = tassiLegali[anno] ?? '?';
+  document.getElementById('tassoInfo').textContent =
+    `Tasso legale ${anno}: ${tasso.toLocaleString('it-IT', {minimumFractionDigits:2})}%`;
+}
+
+// ── AGGIUNGI RIGA ─────────────────────────────────────────────────────────────
+function addRow() {
+  righeCount++;
+  const id = righeCount;
+  const tr = document.createElement('tr');
+  tr.id = `row-${id}`;
+  tr.innerHTML = `
+    <td><input class="input-cell" type="text"   placeholder="Es. Mario Rossi"     id="nome-${id}"></td>
+    <td><input class="input-cell" type="text"   placeholder="Es. Via Roma 10 Sc.A" id="cond-${id}"></td>
+    <td><input class="input-cell" type="number" placeholder="150.00" step="0.01" min="0" id="imp-${id}"></td>
+    <td><input class="input-cell" type="date"   id="scad-${id}"></td>
+    <td><input class="input-cell" type="date"   id="pag-${id}" title="Lascia vuoto se non ancora pagato"></td>
+    <td><input class="input-cell" type="number" placeholder="0.00" step="0.01" min="0" id="trib-${id}"></td>
+    <td><button class="btn-remove" onclick="removeRow(${id})" title="Rimuovi riga">✕</button></td>
+  `;
+  document.getElementById('inputBody').appendChild(tr);
+}
+
+function removeRow(id) {
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.remove();
+}
+
+// ── CALCOLA ───────────────────────────────────────────────────────────────────
+function calcola() {
+  const tipo  = document.getElementById('tipoMora').value;
+  const anno  = parseInt(document.getElementById('annoRif').value);
+  const oggi  = new Date();
+  oggi.setHours(0,0,0,0);
+
+  let tassoAnnuo;
+  if (tipo === 'legale') {
+    tassoAnnuo = tassiLegali[anno] ?? 2.00;
+  } else {
+    tassoAnnuo = parseFloat(document.getElementById('tassoContrattuale').value) || 0;
+  }
+
+  // Raccogli righe
+  const righe = [];
+  document.querySelectorAll('#inputBody tr').forEach(tr => {
+    const id = tr.id.replace('row-', '');
+    const nome = document.getElementById(`nome-${id}`)?.value.trim();
+    const cond = document.getElementById(`cond-${id}`)?.value.trim();
+    const imp  = parseFloat(document.getElementById(`imp-${id}`)?.value);
+    const scad = document.getElementById(`scad-${id}`)?.value;
+    const pag  = document.getElementById(`pag-${id}`)?.value;
+    const trib = parseFloat(document.getElementById(`trib-${id}`)?.value) || 0;
+
+    if (!nome || !imp || !scad) return; // salta righe vuote
+
+    righe.push({ nome, cond, imp, scad, pag, trib, id });
+  });
+
+  if (righe.length === 0) {
+    alert('Inserisci almeno un condomino con nome, importo e data di scadenza.');
+    return;
+  }
+
+  // Calcola
+  const risultati = righe.map(r => {
+    const dataScad = new Date(r.scad);
+    const dataRef  = r.pag ? new Date(r.pag) : oggi;
+    const msRitardo = dataRef - dataScad;
+    const giorniRitardo = msRitardo > 0 ? Math.floor(msRitardo / 86400000) : 0;
+
+    let mora = 0;
+    if (giorniRitardo > 0) {
+      mora = r.imp * (tassoAnnuo / 100) / 365 * giorniRitardo;
+    }
+
+    const totale = r.imp + mora + r.trib;
+    const stato  = giorniRitardo <= 0 ? 'ok' : (giorniRitardo > 60 ? 'critico' : 'mora');
+
+    return { ...r, giorniRitardo, mora, totale, tassoAnnuo, stato };
+  });
+
+  renderResults(risultati);
+}
+
+// ── RENDER RISULTATI ──────────────────────────────────────────────────────────
+function renderResults(risultati) {
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+
+  let sumMore = 0, sumQuote = 0, sumTributi = 0, sumTotale = 0;
+  let hasTributi = false;
+
+  risultati.forEach(r => {
+    sumMore    += r.mora;
+    sumQuote   += r.imp;
+    sumTributi += r.trib;
+    sumTotale  += r.totale;
+    if (r.trib > 0) hasTributi = true;
+
+    const stato = r.stato === 'ok'
+      ? '<span class="badge badge-ok">Regolare</span>'
+      : r.stato === 'critico'
+        ? '<span class="badge badge-warning">Critico</span>'
+        : '<span class="badge badge-mora">In mora</span>';
+
+    const tr = document.createElement('tr');
+    tr.className = r.stato === 'ok' ? 'result-row-ok' : 'result-row-mora';
+    tr.innerHTML = `
+      <td><strong>${esc(r.nome)}</strong></td>
+      <td style="color:var(--muted); font-size:0.82rem">${esc(r.cond || '—')}</td>
+      <td class="amount">${fmt(r.imp)}</td>
+      <td class="amount" style="color:${r.giorniRitardo > 0 ? 'var(--accent)' : 'var(--success)'}">
+        ${r.giorniRitardo > 0 ? r.giorniRitardo + ' gg' : '—'}
+      </td>
+      <td class="amount" style="font-size:0.8rem; color:var(--muted)">${r.tassoAnnuo.toFixed(2)}% / anno</td>
+      <td class="amount amount-mora">${r.mora > 0 ? fmt(r.mora) : '—'}</td>
+      <td class="amount" style="color:var(--warning)">${r.trib > 0 ? fmt(r.trib) : '—'}</td>
+      <td class="amount amount-total">${fmt(r.totale)}</td>
+      <td>${stato}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('summaryMore').textContent    = fmt(sumMore);
+  document.getElementById('summaryQuote').textContent   = fmt(sumQuote);
+  document.getElementById('summaryTributi').textContent = fmt(sumTributi);
+  document.getElementById('summaryTotale').textContent  = fmt(sumTotale);
+
+  document.getElementById('tribuNota').style.display = hasTributi ? '' : 'none';
+  document.getElementById('resultsSection').classList.add('visible');
+  document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return '€\u00a0' + n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function resetAll() {
+  document.getElementById('inputBody').innerHTML = '';
+  document.getElementById('resultsSection').classList.remove('visible');
+  righeCount = 0;
+  addRow(); addRow(); addRow();
+}
+function stampaPagina() { window.print(); }
+</script>
+</body>
+</html>
