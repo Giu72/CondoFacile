@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Bilancio Preventivo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --ink:#1a1a2e; --paper:#f5f0e8; --cream:#ede8dc;
+  --accent:#c8402a; --accent-light:#e8d5d0;
+  --gold:#b8860b; --gold-light:#f0e6c0;
+  --border:#c8bfaa; --muted:#7a7060;
+  --success:#2a6640; --success-light:#d0e8d8;
+  --warning:#8b4a00; --warning-light:#fce8cc;
+  --shadow:rgba(26,26,46,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* ═══ TAB SYSTEM ═══ */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;gap:0;}
+.tab-btn{
+  font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;
+  text-transform:uppercase;padding:0.8rem 1.2rem;cursor:pointer;
+  color:var(--muted);background:none;
+  border:none;border-bottom:2px solid transparent;margin-bottom:-2px;
+  transition:color 0.15s,background 0.15s;
+}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* ═══ COMMON ═══ */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}
+.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}
+.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}
+.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}
+.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}
+.cv.go{color:var(--gold);}
+.cv.gn{color:var(--success);}
+
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.55rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.pos{color:var(--success);font-weight:500;}
+.neg{color:var(--accent);font-weight:500;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+/* documento */
+.doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-st{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-an{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;}
+.doc-bd{padding:2rem 2.5rem;}
+.doc-t{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:0.3rem;}
+.doc-su{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+.dst{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+.dvr{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f0ede6;font-size:0.85rem;}
+.dvr:last-child{border-bottom:none;}
+.dsb{display:flex;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--cream);border-radius:3px;margin:0.5rem 0;font-size:0.82rem;font-weight:600;}
+.dtb{background:var(--ink);color:var(--paper);border-radius:4px;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0;}
+.dtbl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--border);}
+.dtbv{font-family:'DM Serif Display',serif;font-size:2rem;color:#e8b090;}
+.doc-ft{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+.firma{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2.5rem;}
+
+.lettera{background:white;border:1px solid var(--border);border-radius:4px;padding:2rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1rem;font-size:0.875rem;line-height:1.7;}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+
+@media print{
+  .navbar,.tab-bar,.brow,.lnav,.page-footer{display:none!important;}
+  .main{padding:0;}body{background:white;}
+  .doc,.lettera{box-shadow:none;border:none;}
+}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.7</div>
+  <h1>Bilancio<br><em>Preventivo</em></h1>
+  <p class="header-sub">Redigi il preventivo annuale, ripartisci le quote tra i condomini e genera il documento da presentare in assemblea.</p>
+</div>
+
+<div class="main">
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn on"  id="tb-setup"     onclick="go('setup')">⚙️ 1 · Dati Generali</button>
+    <button class="tab-btn"     id="tb-voci"      onclick="go('voci')">📋 2 · Voci di Spesa</button>
+    <button class="tab-btn"     id="tb-condomini" onclick="go('condomini')">👥 3 · Condomini</button>
+    <button class="tab-btn"     id="tb-documento" onclick="go('documento')">📄 4 · Documento</button>
+    <button class="tab-btn"     id="tb-lettere"   onclick="go('lettere')">✉️ 5 · Lettere</button>
+  </div>
+
+  <!-- PANEL 1 — DATI GENERALI -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati del condominio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale</label><input type="text" id="condoCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r3">
+        <div class="fg"><label>Anno esercizio</label>
+          <select id="annoEsercizio"><option value="2026">2026</option><option value="2025" selected>2025</option><option value="2024">2024</option></select>
+        </div>
+        <div class="fg"><label>Anno precedente</label>
+          <select id="annoPrecedente"><option value="2025">2025</option><option value="2024" selected>2024</option><option value="2023">2023</option></select>
+        </div>
+        <div class="fg"><label>Data assemblea</label><input type="date" id="dataAssemblea"></div>
+      </div>
+    </div>
+    <div class="sl">Dati dello studio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Studio / Amministratore</label><input type="text" id="studioNome" placeholder="Es. Studio Amm. Bianchi"></div>
+        <div class="fg"><label>Indirizzo e contatti</label><input type="text" id="studioContatti" placeholder="Es. Via Milano 5 · Tel. 02 1234567"></div>
+      </div>
+    </div>
+    <div class="sl">Rettifiche e rate</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Fondo di riserva (€)</label><input type="number" id="fondoRiserva" placeholder="0.00" step="0.01" value="0" oninput="aggTotali()"></div>
+        <div class="fg"><label>Avanzo/Disavanzo anno prec. (€)</label><input type="number" id="avanzoPrec" placeholder="0.00" step="0.01" value="0" oninput="aggTotali()"></div>
+        <div class="fg"><label>N° rate annuali</label>
+          <select id="nRate"><option value="12">12 rate mensili</option><option value="4">4 trimestrali</option><option value="2">2 semestrali</option><option value="1">1 annuale</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>Note verbale assemblea</label><textarea id="noteAssemblea" placeholder="Es. L'assemblea approva il bilancio preventivo..."></textarea></div>
+    </div>
+    <div class="brow"><button class="btn btn-p" onclick="go('voci')">→ Vai alle voci di spesa</button></div>
+  </div>
+
+  <!-- PANEL 2 — VOCI -->
+  <div class="panel" id="p-voci">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Voci totali</div><div class="cv" id="svVoci">0</div></div>
+      <div class="sc r"><div class="cl">Totale preventivato</div><div class="cv a" id="svTotale">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">+ Fondo riserva</div><div class="cv go" id="svFondo">€ 0,00</div></div>
+      <div class="sc gn"><div class="cl">Da richiedere</div><div class="cv gn" id="svRich">€ 0,00</div></div>
+    </div>
+    <div class="sl">Voci di spesa</div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Descrizione</th><th>Categoria</th><th>Ripartizione</th>
+          <th>Importo prev. (€)</th><th>Anno prec. (€)</th><th>Δ Variazione</th><th></th>
+        </tr></thead>
+        <tbody id="vociBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addVoce()">＋ Aggiungi voce</button>
+      <button class="btn btn-g" onclick="loadDefault()">📋 Carica voci tipiche</button>
+      <button class="btn btn-p" onclick="aggTotali(); go('condomini')">→ Vai ai Condomini</button>
+      <button class="btn btn-g" onclick="document.getElementById('vociBody').innerHTML=''; vociCount=0; aggTotali()">↺ Azzera</button>
+    </div>
+    <div class="nb"><strong>💡 Suggerimento</strong>Premi "Carica voci tipiche" per inserire in un clic 10 voci standard già compilate. Potrai modificarle liberamente.</div>
+  </div>
+
+  <!-- PANEL 3 — CONDOMINI -->
+  <div class="panel" id="p-condomini">
+    <div class="sl">Anagrafica condomini e millesimi</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">La somma dei millesimi deve fare <strong>1000</strong>. Se lasci i millesimi a zero il sistema divide in quote uguali. Le colonne "Quota" e "Rata" si aggiornano in tempo reale.</p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Nome Condomino</th><th>Interno</th><th>Millesimi</th>
+          <th>Email</th><th>Quota annuale (€)</th><th>Rata (€)</th><th></th>
+        </tr></thead>
+        <tbody id="condoBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addCondo()">＋ Aggiungi condomino</button>
+      <button class="btn btn-p" onclick="calcQuote(); go('documento')">🧮 Calcola quote e vai al documento</button>
+      <button class="btn btn-g" onclick="document.getElementById('condoBody').innerHTML=''; condoCount=0;">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- PANEL 4 — DOCUMENTO -->
+  <div class="panel" id="p-documento">
+    <div id="docContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Genera il documento ufficiale</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci almeno le voci di spesa per generare il documento. Oppure carica le voci tipiche e genera subito.</p>
+        <button class="btn btn-g" onclick="go('voci')">→ Vai alle voci</button>
+        &nbsp;
+        <button class="btn btn-p" onclick="loadDefault(); aggTotali(); renderDoc()">⚡ Carica voci tipiche e genera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 5 — LETTERE -->
+  <div class="panel" id="p-lettere">
+    <div id="lettereContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">✉️</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Lettere personalizzate per ogni condomino</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci le voci (Tab 2) e i condomini (Tab 3), poi premi "Calcola quote" per generare le lettere.</p>
+        <button class="btn btn-g" onclick="go('condomini')">→ Vai ai Condomini</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">CondoKit · Bilancio Preventivo · Beta · Solo uso indicativo</div>
+
+<script>
+// ═══════════════════════════════════════
+// TAB SYSTEM — semplicissimo e garantito
+// ═══════════════════════════════════════
+const PANELS = ['setup','voci','condomini','documento','lettere'];
+
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-' + n).style.display   = (n === name) ? 'block' : 'none';
+    document.getElementById('tb-' + n).className = 'tab-btn' + (n === name ? ' on' : '');
+  });
+  if (name === 'documento') renderDoc();
+  if (name === 'lettere')   renderLettere();
+}
+
+// ═══════════════════════════════════════
+// DATI
+// ═══════════════════════════════════════
+var vociCount = 0;
+var condoCount = 0;
+var quoteCondo = [];
+
+var CATS = [
+  {id:'ordinaria',   n:'Manutenzione ordinaria'},
+  {id:'straordinaria',n:'Manutenzione straordinaria'},
+  {id:'utenza',      n:'Utenze'},
+  {id:'professionale',n:'Compensi professionisti'},
+  {id:'assicurazione',n:'Assicurazione'},
+  {id:'altro',       n:'Altro'},
+];
+var RIPS = [
+  {id:'millesimi',n:'Millesimale'},
+  {id:'uguali',   n:'Quote uguali'},
+  {id:'scala',    n:'Per scala'},
+];
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = function() {
+  // init pannelli
+  PANELS.forEach(function(n, i) {
+    document.getElementById('p-' + n).style.display = i === 0 ? 'block' : 'none';
+  });
+  // data oggi
+  var el = document.getElementById('dataAssemblea');
+  if (el) el.value = new Date().toISOString().split('T')[0];
+  // righe default
+  addVoce(); addVoce(); addVoce();
+  addCondo(); addCondo(); addCondo();
+};
+
+// ═══════════════════════════════════════
+// VOCI
+// ═══════════════════════════════════════
+function addVoce(d) {
+  d = d || {};
+  vociCount++;
+  var id = vociCount;
+  var co = CATS.map(function(c){ return '<option value="'+c.id+'"'+(d.cat===c.id?' selected':'')+'>'+c.n+'</option>'; }).join('');
+  var ro = RIPS.map(function(r){ return '<option value="'+r.id+'"'+(d.rip===r.id?' selected':'')+'>'+r.n+'</option>'; }).join('');
+  var tr = document.createElement('tr');
+  tr.id = 'v-'+id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text" id="vd-'+id+'" placeholder="Es. Pulizia scale" value="'+(d.desc||'')+'" oninput="aggTotali()"></td>'+
+    '<td><select class="ic" id="vc-'+id+'">'+co+'</select></td>'+
+    '<td><select class="ic" id="vr-'+id+'">'+ro+'</select></td>'+
+    '<td><input class="ic" type="number" id="vi-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.imp||'')+'" oninput="aggTotali()"></td>'+
+    '<td><input class="ic" type="number" id="vp-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.prec||'')+'" oninput="aggTotali()"></td>'+
+    '<td class="amt" id="vdiff-'+id+'">—</td>'+
+    '<td><button onclick="rmV('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('vociBody').appendChild(tr);
+  aggTotali();
+}
+
+function rmV(id) { var el=document.getElementById('v-'+id); if(el) el.remove(); aggTotali(); }
+
+function loadDefault() {
+  document.getElementById('vociBody').innerHTML = '';
+  vociCount = 0;
+  var def = [
+    {desc:'Pulizia scale e parti comuni',     cat:'ordinaria',    rip:'millesimi', imp:3600, prec:3400},
+    {desc:'Manutenzione ascensore',           cat:'ordinaria',    rip:'millesimi', imp:2400, prec:2200},
+    {desc:'Energia elettrica parti comuni',   cat:'utenza',       rip:'millesimi', imp:1800, prec:1650},
+    {desc:'Acqua parti comuni',               cat:'utenza',       rip:'millesimi', imp:600,  prec:580},
+    {desc:'Assicurazione fabbricato',         cat:'assicurazione',rip:'millesimi', imp:1200, prec:1100},
+    {desc:'Compenso amministratore',          cat:'professionale',rip:'uguali',    imp:2400, prec:2400},
+    {desc:'Manutenzione giardino',            cat:'ordinaria',    rip:'millesimi', imp:1200, prec:1000},
+    {desc:'Fondo manutenzione straordinaria', cat:'straordinaria',rip:'millesimi', imp:3000, prec:2500},
+    {desc:'Spese postali e cancelleria',      cat:'altro',        rip:'uguali',    imp:200,  prec:180},
+    {desc:'Revisione impianto antincendio',   cat:'ordinaria',    rip:'millesimi', imp:600,  prec:600},
+  ];
+  def.forEach(function(d){ addVoce(d); });
+}
+
+function leggiVoci() {
+  var r = [];
+  document.querySelectorAll('#vociBody tr').forEach(function(tr){
+    var id = tr.id.replace('v-','');
+    var desc = (document.getElementById('vd-'+id)||{}).value||'';
+    var cat  = (document.getElementById('vc-'+id)||{}).value||'';
+    var rip  = (document.getElementById('vr-'+id)||{}).value||'';
+    var imp  = parseFloat((document.getElementById('vi-'+id)||{}).value)||0;
+    var prec = parseFloat((document.getElementById('vp-'+id)||{}).value)||0;
+    if (desc.trim() && imp>0) r.push({id:id,desc:desc.trim(),cat:cat,rip:rip,imp:imp,prec:prec});
+  });
+  return r;
+}
+
+function aggTotali() {
+  var voci   = leggiVoci();
+  var totale = voci.reduce(function(s,v){return s+v.imp;},0);
+  var fondo  = parseFloat((document.getElementById('fondoRiserva')||{}).value)||0;
+  var avanzo = parseFloat((document.getElementById('avanzoPrec')||{}).value)||0;
+  var rich   = Math.max(0, totale + fondo - avanzo);
+  document.getElementById('svVoci').textContent  = voci.length;
+  document.getElementById('svTotale').textContent= fmt(totale);
+  document.getElementById('svFondo').textContent = fmt(fondo);
+  document.getElementById('svRich').textContent  = fmt(rich);
+  voci.forEach(function(v){
+    var el = document.getElementById('vdiff-'+v.id);
+    if (!el) return;
+    if (!v.prec) { el.textContent='—'; el.className='amt'; return; }
+    var d = v.imp - v.prec;
+    var p = ((d/v.prec)*100).toFixed(1);
+    el.textContent = (d>=0?'+':'')+fmt(d)+' ('+p+'%)';
+    el.className   = 'amt '+(d>0?'neg':'pos');
+  });
+  calcQuote(true);
+}
+
+// ═══════════════════════════════════════
+// CONDOMINI
+// ═══════════════════════════════════════
+function addCondo(d) {
+  d = d || {};
+  condoCount++;
+  var id = condoCount;
+  var tr = document.createElement('tr');
+  tr.id = 'c-'+id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Mario Rossi"  value="'+(d.nome||'')+'" oninput="calcQuote(true)"></td>'+
+    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Es. Int.1 Sc.A"   value="'+(d.interno||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="Es. 85" step="0.01" min="0" value="'+(d.mill||'')+'" oninput="calcQuote(true)"></td>'+
+    '<td><input class="ic" type="email"  id="ce-'+id+'" placeholder="mario@email.it"   value="'+(d.email||'')+'"></td>'+
+    '<td class="amt" id="cq-'+id+'" style="font-weight:600">—</td>'+
+    '<td class="amt" id="cr-'+id+'" style="color:var(--muted)">—</td>'+
+    '<td><button onclick="rmC('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('condoBody').appendChild(tr);
+}
+
+function rmC(id) { var el=document.getElementById('c-'+id); if(el) el.remove(); calcQuote(true); }
+
+function leggiCondo() {
+  var r = [];
+  document.querySelectorAll('#condoBody tr').forEach(function(tr){
+    var id    = tr.id.replace('c-','');
+    var nome  = ((document.getElementById('cn-'+id)||{}).value||'').trim();
+    var int_  = ((document.getElementById('ci-'+id)||{}).value||'').trim();
+    var mill  = parseFloat((document.getElementById('cm-'+id)||{}).value)||0;
+    var email = ((document.getElementById('ce-'+id)||{}).value||'').trim();
+    if (nome) r.push({id:id,nome:nome,interno:int_,mill:mill,email:email,quota:0,rata:0});
+  });
+  return r;
+}
+
+function calcQuote(silent) {
+  var voci  = leggiVoci();
+  var cond  = leggiCondo();
+  if (!voci.length || !cond.length) return;
+  var fondo  = parseFloat((document.getElementById('fondoRiserva')||{}).value)||0;
+  var avanzo = parseFloat((document.getElementById('avanzoPrec')||{}).value)||0;
+  var nRate  = parseInt((document.getElementById('nRate')||{}).value)||12;
+  var n      = cond.length;
+  var totM   = cond.reduce(function(s,c){return s+c.mill;},0) || n;
+  cond.forEach(function(c){
+    var q = 0;
+    voci.forEach(function(v){
+      if (v.rip==='uguali') q += v.imp/n;
+      else q += totM>0 ? v.imp*(c.mill/totM) : v.imp/n;
+    });
+    if (fondo>0)  q += totM>0 ? fondo*(c.mill/totM) : fondo/n;
+    if (avanzo>0) q -= totM>0 ? avanzo*(c.mill/totM) : avanzo/n;
+    c.quota = Math.max(0,q);
+    c.rata  = c.quota / nRate;
+    var qe = document.getElementById('cq-'+c.id);
+    var re = document.getElementById('cr-'+c.id);
+    if (qe) qe.textContent = fmt(c.quota);
+    if (re) re.textContent = fmt(c.rata);
+  });
+  quoteCondo = cond;
+  if (!silent) alert('✅ Quote calcolate per '+cond.length+' condomini.');
+}
+
+// ═══════════════════════════════════════
+// DOCUMENTO
+// ═══════════════════════════════════════
+function renderDoc() {
+  var voci = leggiVoci();
+  if (!voci.length) return; // mostra stato vuoto di default
+
+  var cond      = quoteCondo.length ? quoteCondo : leggiCondo();
+  var cNome     = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF       = (document.getElementById('condoCF')||{}).value||'';
+  var anno      = (document.getElementById('annoEsercizio')||{}).value||'2025';
+  var annoP     = (document.getElementById('annoPrecedente')||{}).value||'2024';
+  var studio    = (document.getElementById('studioNome')||{}).value||'Studio Amministrativo';
+  var studioCt  = (document.getElementById('studioContatti')||{}).value||'';
+  var dataAss   = (document.getElementById('dataAssemblea')||{}).value||'';
+  var dataAssFmt= dataAss ? new Date(dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var fondo     = parseFloat((document.getElementById('fondoRiserva')||{}).value)||0;
+  var avanzo    = parseFloat((document.getElementById('avanzoPrec')||{}).value)||0;
+  var nRate     = parseInt((document.getElementById('nRate')||{}).value)||12;
+  var noteAss   = (document.getElementById('noteAssemblea')||{}).value||'';
+  var oggi      = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var totSpese = voci.reduce(function(s,v){return s+v.imp;},0);
+  var totPrec  = voci.reduce(function(s,v){return s+v.prec;},0);
+  var totGen   = totSpese + fondo - avanzo;
+
+  // Raggruppa per categoria
+  var grp = {};
+  CATS.forEach(function(c){ grp[c.id]=[]; });
+  voci.forEach(function(v){ if(grp[v.cat]) grp[v.cat].push(v); });
+
+  var vociH = '';
+  CATS.forEach(function(cat){
+    var lista = grp[cat.id];
+    if (!lista.length) return;
+    var sub = lista.reduce(function(s,v){return s+v.imp;},0);
+    vociH += '<div class="dst">'+cat.n+'</div>';
+    lista.forEach(function(v){
+      vociH += '<div class="dvr"><span>'+esc(v.desc)+'</span><span style="font-family:\'DM Mono\',monospace;font-size:0.85rem;font-weight:500">'+fmt(v.imp)+'</span></div>';
+    });
+    vociH += '<div class="dsb"><span>Subtotale '+cat.n+'</span><span>'+fmt(sub)+'</span></div>';
+  });
+
+  var confH = totPrec>0 ? '<div class="dst">Confronto anno precedente ('+annoP+')</div>'+
+    '<div class="dvr"><span>Totale spese '+anno+'</span><span style="font-family:\'DM Mono\',monospace">'+fmt(totSpese)+'</span></div>'+
+    '<div class="dvr"><span>Totale spese '+annoP+'</span><span style="font-family:\'DM Mono\',monospace">'+fmt(totPrec)+'</span></div>'+
+    '<div class="dvr"><span><strong>Variazione</strong></span><span style="font-family:\'DM Mono\',monospace;color:'+(totSpese-totPrec>0?'var(--accent)':'var(--success)')+';">'+(totSpese-totPrec>=0?'+':'')+fmt(totSpese-totPrec)+'</span></div>' : '';
+
+  var condoH = '';
+  if (cond.length && cond[0] && cond[0].quota) {
+    condoH = '<div class="dst">Ripartizione quote condomini</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem">'+
+      '<thead><tr style="background:var(--cream)">'+
+      '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Condomino</th>'+
+      '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Interno</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Millesimi</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Quota annuale</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Rata</th>'+
+      '</tr></thead><tbody>'+
+      cond.map(function(c){return '<tr style="border-bottom:1px solid #f0ede6">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(c.nome)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(c.interno||'—')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+(c.mill||'—')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">'+fmt(c.quota)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;color:var(--muted)">'+fmt(c.rata)+'</td>'+
+        '</tr>';}).join('')+
+      '</tbody></table>';
+  }
+
+  var verbH = noteAss ? '<div class="dst">Verbale approvazione assemblea — '+dataAssFmt+'</div>'+
+    '<p style="font-size:0.85rem;line-height:1.7;margin-bottom:1.5rem">'+esc(noteAss)+'</p>'+
+    '<div style="display:flex;gap:3rem"><div class="firma">L\'Amministratore<br>'+esc(studio)+'</div><div class="firma">Il Presidente dell\'Assemblea</div></div>' : '';
+
+  document.getElementById('docContent').innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '</div>'+
+    '<div class="doc">'+
+    '<div class="doc-hs"><span class="doc-st">'+esc(studio)+'</span><span class="doc-an">Bilancio Preventivo '+anno+'</span></div>'+
+    '<div class="doc-bd">'+
+    '<div class="doc-t">Bilancio Preventivo '+anno+'</div>'+
+    '<div class="doc-su">'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</div>'+
+    vociH+
+    (fondo>0||avanzo ? '<div class="dst">Rettifiche</div>'+
+      (fondo>0?'<div class="dvr"><span>Fondo di riserva</span><span style="font-family:\'DM Mono\',monospace">'+fmt(fondo)+'</span></div>':'')+
+      (avanzo?'<div class="dvr"><span>Avanzo/Disavanzo anno precedente</span><span style="font-family:\'DM Mono\',monospace;color:'+(avanzo>0?'var(--success)':'var(--accent)')+'">'+fmt(Math.abs(avanzo))+'</span></div>':'') : '')+
+    '<div class="dtb"><div><div class="dtbl">Totale da richiedere ai condomini — Anno '+anno+'</div>'+
+    (nRate>1?'<div style="font-size:0.75rem;color:var(--border);margin-top:0.3rem">Pari a '+nRate+' rate da '+fmt(totGen/nRate)+'</div>':'')+
+    '</div><div class="dtbv">'+fmt(totGen)+'</div></div>'+
+    confH+condoH+verbH+
+    '<div class="doc-ft"><span>'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</span><span>Generato il '+oggi+'</span></div>'+
+    '</div></div>';
+}
+
+// ═══════════════════════════════════════
+// LETTERE
+// ═══════════════════════════════════════
+function renderLettere() {
+  if (!quoteCondo.length || !quoteCondo[0] || !quoteCondo[0].quota) return;
+  var html = '<div class="lnav">'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Condomino:</span>'+
+    quoteCondo.map(function(c,i){
+      return '<button class="btn btn-g btn-sm" id="lb-'+i+'" onclick="showLettera('+i+')">'+c.nome.split(' ')[0]+'</button>';
+    }).join('')+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '</div><div id="letteraEl"></div>';
+  document.getElementById('lettereContent').innerHTML = html;
+  showLettera(0);
+}
+
+function showLettera(idx) {
+  document.querySelectorAll('[id^="lb-"]').forEach(function(b,i){
+    b.className = 'btn btn-sm '+(i===idx?'btn-p':'btn-g');
+  });
+  var c       = quoteCondo[idx];
+  var cNome   = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var studio  = (document.getElementById('studioNome')||{}).value||'Studio Amministrativo';
+  var studioC = (document.getElementById('studioContatti')||{}).value||'';
+  var anno    = (document.getElementById('annoEsercizio')||{}).value||'2025';
+  var nRate   = parseInt((document.getElementById('nRate')||{}).value)||12;
+  var labels  = {12:'mensili',4:'trimestrali',2:'semestrali',1:'annuali'};
+  var nRateL  = labels[nRate]||'';
+  var dataAss = (document.getElementById('dataAssemblea')||{}).value||'';
+  var dFmt    = dataAss ? new Date(dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var oggi    = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  document.getElementById('letteraEl').innerHTML =
+    '<div class="lettera">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Mittente</div>'+
+    '<strong>'+esc(studio)+'</strong>'+(studioC?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(studioC)+'</span>':'')+
+    '<br><span style="font-size:0.78rem;color:var(--muted)">'+oggi+'</span></div>'+
+    '<div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Destinatario</div>'+
+    '<strong>'+esc(c.nome)+'</strong>'+(c.interno?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+
+    '<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(cNome)+'</span></div></div>'+
+    '<div style="background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin-bottom:1.5rem;font-weight:500">'+
+    'Oggetto: Bilancio Preventivo '+anno+' — Quote condominiali — '+esc(cNome)+'</div>'+
+    '<p>Gentile '+esc(c.nome)+',</p><br>'+
+    '<p>con la presente Le comunichiamo che l\'assemblea condominiale del <strong>'+dFmt+'</strong> ha approvato il <strong>Bilancio Preventivo '+anno+'</strong> del condominio <strong>'+esc(cNome)+'</strong>.</p><br>'+
+    '<p>La Sua quota di partecipazione alle spese'+(c.mill>0?' ('+c.mill+' millesimi)':'')+' è la seguente:</p><br>'+
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin:1rem 0">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:0.5rem"><span style="color:var(--muted)">Quota annuale totale</span><span style="font-family:\'DM Mono\',monospace;font-weight:600">'+fmt(c.quota)+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding-top:0.5rem;border-top:1px solid var(--border)"><span><strong>Rata singola ('+nRate+' rate '+nRateL+')</strong></span>'+
+    '<span style="font-family:\'DM Serif Display\',serif;font-size:1.4rem;color:var(--accent)">'+fmt(c.rata)+'</span></div></div><br>'+
+    '<p>La preghiamo di provvedere al versamento secondo le scadenze che Le verranno comunicate.</p><br>'+
+    '<p>Distinti saluti,</p>'+
+    '<div class="firma">'+esc(studio)+'</div>'+
+    '</div>';
+}
+
+// ═══════════════════════════════════════
+// EXPORT EXCEL
+// ═══════════════════════════════════════
+function expExcel() {
+  var voci = leggiVoci();
+  var cond = quoteCondo.length ? quoteCondo : leggiCondo();
+  if (!voci.length) { alert('Inserisci le voci di spesa prima di esportare.'); return; }
+  var wb   = XLSX.utils.book_new();
+  var nome = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var anno = (document.getElementById('annoEsercizio')||{}).value||'2025';
+  var ws1  = XLSX.utils.aoa_to_sheet([
+    ['BILANCIO PREVENTIVO '+anno+' — '+nome],[],
+    ['Descrizione','Categoria','Ripartizione','Importo Prev.','Anno Prec.','Variazione €','Variazione %'],
+    ].concat(voci.map(function(v){
+      return [v.desc, CATS.find(function(c){return c.id===v.cat;})||{n:v.cat}, v.rip, v.imp, v.prec,
+        v.prec?(v.imp-v.prec):0, v.prec?((v.imp-v.prec)/v.prec*100).toFixed(1)+'%':'—'];
+    })));
+  ws1['!cols']=[30,22,14,14,14,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'Preventivo');
+  if (cond.length && cond[0] && cond[0].quota) {
+    var nRate = parseInt((document.getElementById('nRate')||{}).value)||12;
+    var ws2 = XLSX.utils.aoa_to_sheet(
+      [['Condomino','Interno','Millesimi','Quota Annuale','Rata ('+nRate+'/anno)']].concat(
+        cond.map(function(c){return [c.nome,c.interno,c.mill,c.quota,c.rata];})));
+    ws2['!cols']=[24,14,10,14,14].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Quote Condomini');
+  }
+  XLSX.writeFile(wb,'CondoKit_Preventivo_'+nome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

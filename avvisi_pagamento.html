@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Avvisi di Pagamento</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* NAVBAR */
+  .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px var(--shadow); }
+  .navbar-logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); text-decoration: none; padding: 0.9rem 0; }
+  .navbar-logo em { color: var(--accent); font-style: italic; }
+  .navbar-links { display: flex; align-items: center; gap: 0.25rem; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 0.5rem 0.9rem; border-radius: 3px; transition: all 0.15s; border-bottom: 2px solid transparent; }
+  .nav-link:hover { color: var(--ink); background: var(--cream); }
+  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .nav-link.disabled { color: var(--border); pointer-events: none; }
+
+  /* HEADER */
+  .header { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem 2rem; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; border: 2px solid rgba(200,190,170,0.15); border-radius: 50%; }
+  .header::after  { content: ''; position: absolute; top: 20px; right: 60px; width: 120px; height: 120px; border: 1px solid rgba(200,190,170,0.1); border-radius: 50%; }
+  .header-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--border); margin-bottom: 0.6rem; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem; }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub { font-size: 0.9rem; color: var(--border); font-weight: 300; max-width: 520px; }
+
+  /* LAYOUT PRINCIPALE: 2 colonne */
+  .layout { display: grid; grid-template-columns: 420px 1fr; gap: 2rem; max-width: 1300px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* PANNELLO SINISTRO — FORM */
+  .form-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* SEZIONE */
+  .section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.8rem; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .form-card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; box-shadow: 0 2px 8px var(--shadow); }
+
+  .field-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-group label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .field-group input,
+  .field-group select,
+  .field-group textarea {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 3px;
+    padding: 0.55rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+    color: var(--ink); appearance: none; transition: border-color 0.2s; width: 100%;
+  }
+  .field-group textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+  .field-group input:focus, .field-group select:focus, .field-group textarea:focus { outline: none; border-color: var(--accent); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+
+  /* TIPO AVVISO SELECTOR */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0; }
+  .tipo-option { position: relative; }
+  .tipo-option input[type="radio"] { position: absolute; opacity: 0; width: 0; }
+  .tipo-label {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    padding: 0.9rem 0.5rem; border: 1px solid var(--border); border-radius: 4px;
+    cursor: pointer; transition: all 0.15s; background: var(--paper); text-align: center;
+  }
+  .tipo-label:hover { border-color: var(--accent); background: var(--accent-light); }
+  .tipo-option input:checked + .tipo-label { border-color: var(--accent); background: var(--accent-light); }
+  .tipo-icon { font-size: 1.4rem; }
+  .tipo-name { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); line-height: 1.3; }
+
+  /* CONDOMINI LIST */
+  .condo-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
+  .condo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.8rem; background: var(--paper); border: 1px solid var(--border); border-radius: 3px; transition: all 0.15s; }
+  .condo-item:hover { border-color: var(--accent); background: var(--accent-light); }
+  .condo-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+  .condo-nome { font-size: 0.875rem; font-weight: 500; flex: 1; }
+  .condo-interno { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .condo-importo { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--accent); font-weight: 500; }
+
+  .add-condo-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .add-condo-row input { flex: 1; }
+
+  /* BUTTONS */
+  .btn { padding: 0.7rem 1.4rem; border-radius: 3px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-secondary { background: var(--ink); color: var(--paper); }
+  .btn-secondary:hover { background: #2d2d4a; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #1e4d30; transform: translateY(-1px); }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; }
+
+  .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+
+  /* PANNELLO DESTRO — ANTEPRIMA */
+  .preview-panel { position: sticky; top: 80px; align-self: start; }
+  .preview-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .preview-toolbar h3 { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .preview-actions { display: flex; gap: 0.5rem; }
+
+  /* AVVISO DOCUMENTO */
+  .doc-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 20px var(--shadow); overflow: hidden; }
+  .doc-body { padding: 2.5rem 2.5rem 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; line-height: 1.6; color: #1a1a1a; min-height: 500px; }
+
+  /* Stile documento ufficiale */
+  .doc-header-strip { background: var(--ink); color: var(--paper); padding: 1rem 2.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .doc-studio-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+  .doc-tipo-badge { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; background: rgba(255,255,255,0.15); padding: 0.3rem 0.7rem; border-radius: 2px; }
+
+  .doc-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e0e0e0; }
+  .doc-mittente p, .doc-destinatario p { font-size: 0.82rem; line-height: 1.7; }
+  .doc-mittente .label, .doc-destinatario .label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #888; margin-bottom: 0.3rem; }
+  .doc-destinatario { text-align: right; }
+
+  .doc-oggetto { background: #f8f8f8; border-left: 3px solid #1a1a2e; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-weight: 500; font-size: 0.875rem; }
+
+  .doc-corpo { font-size: 0.875rem; line-height: 1.8; color: #222; margin-bottom: 1.5rem; }
+  .doc-corpo p { margin-bottom: 0.75rem; }
+
+  .doc-importo-box { background: #f5f0e8; border: 1px solid #c8bfaa; border-radius: 3px; padding: 1rem 1.5rem; margin: 1.5rem 0; display: flex; justify-content: space-between; align-items: center; }
+  .doc-importo-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #7a7060; }
+  .doc-importo-value { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: #c8402a; }
+
+  .doc-iban-box { background: #1a1a2e; color: #f5f0e8; padding: 0.75rem 1rem; border-radius: 3px; margin: 1rem 0; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; }
+  .doc-iban-code { font-family: 'DM Mono', monospace; font-size: 0.85rem; letter-spacing: 0.05em; color: #e8b090; }
+
+  .doc-footer-doc { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; }
+  .doc-firma { margin-top: 2rem; }
+  .doc-firma p { font-size: 0.82rem; }
+  .doc-firma .firma-line { border-top: 1px solid #aaa; width: 200px; margin-top: 2rem; padding-top: 0.4rem; font-size: 0.75rem; color: #888; }
+
+  /* EMAIL PREVIEW */
+  .email-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 20px var(--shadow); display: none; }
+  .email-header { background: #f0f0f0; padding: 1rem 1.5rem; border-bottom: 1px solid #ddd; }
+  .email-field { font-size: 0.82rem; color: #444; margin-bottom: 0.3rem; }
+  .email-field span { font-weight: 600; color: #111; }
+  .email-body { padding: 1.5rem; font-size: 0.875rem; line-height: 1.7; color: #222; }
+  .email-body p { margin-bottom: 0.75rem; }
+  .email-importo { background: #f5f0e8; border: 1px solid #c8bfaa; border-radius: 3px; padding: 0.75rem 1rem; margin: 1rem 0; text-align: center; }
+  .email-importo strong { font-size: 1.3rem; color: #c8402a; display: block; }
+
+  /* TABS ANTEPRIMA */
+  .preview-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .preview-tab { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.6rem 1rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; transition: all 0.15s; }
+  .preview-tab:hover { color: var(--ink); }
+  .preview-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state p { font-size: 0.875rem; }
+
+  /* NOTE */
+  .note-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 1rem 1.5rem; font-size: 0.82rem; line-height: 1.6; }
+  .note-box strong { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warning); display: block; margin-bottom: 0.4rem; }
+
+  .page-footer { text-align: center; padding: 2rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); margin-top: 1rem; }
+
+  /* PRINT */
+  @media print {
+    .navbar, .form-panel, .preview-toolbar, .preview-tabs, .btn-row, .page-footer { display: none !important; }
+    .layout { grid-template-columns: 1fr; padding: 0; }
+    .doc-wrapper { box-shadow: none; border: none; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="navbar-links">
+    <a class="nav-link" href="index.html">🏠 Home</a>
+    
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Gestione Condominiale · Modulo Comunicazioni</div>
+  <h1>Avvisi di<br><em>Pagamento</em></h1>
+  <p class="header-sub">Genera avvisi ufficiali per rate, solleciti e convocazioni. Pronti per la stampa o l'invio via email in pochi secondi.</p>
+</div>
+
+<div class="layout">
+
+  <!-- ══════════════════════════════════════
+       PANNELLO SINISTRO — CONFIGURAZIONE
+  ══════════════════════════════════════ -->
+  <div class="form-panel">
+
+    <!-- 1. TIPO AVVISO -->
+    <div>
+      <div class="section-label">1 · Tipo di avviso</div>
+      <div class="tipo-grid">
+        <div class="tipo-option">
+          <input type="radio" name="tipoAvviso" id="t1" value="ordinaria" checked onchange="aggiorna()">
+          <label class="tipo-label" for="t1">
+            <span class="tipo-icon">📅</span>
+            <span class="tipo-name">Rata<br>Ordinaria</span>
+          </label>
+        </div>
+        <div class="tipo-option">
+          <input type="radio" name="tipoAvviso" id="t2" value="straordinaria" onchange="aggiorna()">
+          <label class="tipo-label" for="t2">
+            <span class="tipo-icon">🔧</span>
+            <span class="tipo-name">Rata<br>Straordinaria</span>
+          </label>
+        </div>
+        <div class="tipo-option">
+          <input type="radio" name="tipoAvviso" id="t3" value="sollecito" onchange="aggiorna()">
+          <label class="tipo-label" for="t3">
+            <span class="tipo-icon">⚠️</span>
+            <span class="tipo-name">Sollecito<br>Morosità</span>
+          </label>
+        </div>
+        <div class="tipo-option">
+          <input type="radio" name="tipoAvviso" id="t4" value="assemblea" onchange="aggiorna()">
+          <label class="tipo-label" for="t4">
+            <span class="tipo-icon">🏛️</span>
+            <span class="tipo-name">Convocazione<br>Assemblea</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. DATI STUDIO -->
+    <div>
+      <div class="section-label">2 · Dati dello studio</div>
+      <div class="form-card">
+        <div class="field-group">
+          <label>Nome Studio / Amministratore</label>
+          <input type="text" id="studioNome" placeholder="Es. Studio Amm. Bianchi" oninput="aggiorna()">
+        </div>
+        <div class="row-2">
+          <div class="field-group">
+            <label>Indirizzo</label>
+            <input type="text" id="studioIndirizzo" placeholder="Es. Via Milano 5" oninput="aggiorna()">
+          </div>
+          <div class="field-group">
+            <label>Telefono</label>
+            <input type="text" id="studioTel" placeholder="Es. 02 1234567" oninput="aggiorna()">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Email studio</label>
+          <input type="email" id="studioEmail" placeholder="Es. info@studiobianchi.it" oninput="aggiorna()">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. DATI CONDOMINIO -->
+    <div>
+      <div class="section-label">3 · Dati del condominio</div>
+      <div class="form-card">
+        <div class="field-group">
+          <label>Nome / Indirizzo condominio</label>
+          <input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10" oninput="aggiorna()">
+        </div>
+        <div class="row-2">
+          <div class="field-group">
+            <label>Codice fiscale condominio</label>
+            <input type="text" id="condoCF" placeholder="Es. 80012340582" oninput="aggiorna()">
+          </div>
+          <div class="field-group">
+            <label>IBAN condominio</label>
+            <input type="text" id="condoIBAN" placeholder="Es. IT60 X012 3456 7800..." oninput="aggiorna()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DATI PAGAMENTO -->
+    <div>
+      <div class="section-label">4 · Importo e scadenza</div>
+      <div class="form-card">
+        <div class="row-3">
+          <div class="field-group">
+            <label>Importo (€)</label>
+            <input type="number" id="importo" placeholder="150.00" step="0.01" min="0" oninput="aggiorna()">
+          </div>
+          <div class="field-group">
+            <label>Scadenza</label>
+            <input type="date" id="scadenza" oninput="aggiorna()">
+          </div>
+          <div class="field-group">
+            <label>Periodo</label>
+            <input type="text" id="periodo" placeholder="Es. Gennaio 2025" oninput="aggiorna()">
+          </div>
+        </div>
+        <div class="field-group" id="moraBox" style="display:none">
+          <label>Di cui mora (€)</label>
+          <input type="number" id="mora" placeholder="0.00" step="0.01" min="0" oninput="aggiorna()">
+        </div>
+        <div class="field-group">
+          <label>Causale / Oggetto</label>
+          <input type="text" id="causale" placeholder="Es. Quota condominiale ordinaria" oninput="aggiorna()">
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. CONDOMINI DESTINATARI -->
+    <div>
+      <div class="section-label">5 · Destinatari</div>
+      <div class="form-card">
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:0.75rem;">Seleziona i condomini a cui inviare questo avviso. Puoi generare un documento separato per ciascuno.</p>
+        <div class="condo-list" id="condoList">
+          <!-- popolato da JS -->
+        </div>
+        <div class="add-condo-row">
+          <input type="text" id="nuovoNome" placeholder="Nome condomino" style="flex:2">
+          <input type="text" id="nuovoInterno" placeholder="Int." style="flex:1">
+          <input type="number" id="nuovoImporto" placeholder="€" step="0.01" style="flex:1">
+          <button class="btn btn-ghost btn-sm" onclick="aggiungiCondomino()">＋</button>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="selezionaTutti()">✓ Tutti</button>
+          <button class="btn btn-ghost btn-sm" onclick="deselezionaTutti()">✕ Nessuno</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTE AGGIUNTIVE -->
+    <div>
+      <div class="section-label">6 · Note aggiuntive (opzionale)</div>
+      <div class="form-card">
+        <div class="field-group">
+          <textarea id="noteExtra" placeholder="Es. Si ricorda che il pagamento può essere effettuato anche presso lo sportello bancario..." oninput="aggiorna()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>⚖️ Riferimento normativo</strong>
+      Gli avvisi includono automaticamente il riferimento all'art. 63 disp. att. c.c. per i solleciti di morosità, e all'art. 1135 c.c. per le convocazioni assembleari.
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generaAvvisi()">📄 Genera Avvisi</button>
+      <button class="btn btn-ghost" onclick="resetForm()">↺ Azzera</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANNELLO DESTRO — ANTEPRIMA
+  ══════════════════════════════════════ -->
+  <div class="preview-panel">
+    <div class="preview-toolbar">
+      <h3>Anteprima documento</h3>
+      <div class="preview-actions">
+        <button class="btn btn-ghost btn-sm" onclick="stampaPDF()">🖨️ Stampa / PDF</button>
+        <button class="btn btn-success btn-sm" onclick="copiaEmail()">📧 Copia testo email</button>
+      </div>
+    </div>
+
+    <div class="preview-tabs">
+      <button class="preview-tab active" onclick="switchPreview('doc')">📄 Documento</button>
+      <button class="preview-tab" onclick="switchPreview('email')">📧 Email</button>
+    </div>
+
+    <!-- DOCUMENTO -->
+    <div id="previewDoc">
+      <div class="doc-wrapper" id="docStampa">
+        <div class="doc-header-strip">
+          <span class="doc-studio-name" id="prevStudio">Studio Amministrativo</span>
+          <span class="doc-tipo-badge" id="prevTipoBadge">Avviso di Pagamento</span>
+        </div>
+        <div class="doc-body" id="docBodyContent">
+          <div class="empty-state">
+            <div class="emoji">📝</div>
+            <p>Compila il modulo a sinistra per vedere l'anteprima del documento.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMAIL -->
+    <div id="previewEmail" style="display:none">
+      <div class="email-wrapper" id="emailWrapper">
+        <div class="email-header">
+          <div class="email-field">A: <span id="emailA">—</span></div>
+          <div class="email-field">Oggetto: <span id="emailOggetto">—</span></div>
+          <div class="email-field">Da: <span id="emailDa">—</span></div>
+        </div>
+        <div class="email-body" id="emailBodyContent">
+          <div class="empty-state"><p>Compila il modulo per vedere l'anteprima email.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigazione condomini -->
+    <div id="navCondomini" style="display:none; margin-top:1rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <span style="font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;">Condomino:</span>
+      <div id="navBtns" style="display:flex; gap:0.4rem; flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  CondoKit · Avvisi di Pagamento · Versione 1.0 Beta · Verificare sempre i dati prima dell'invio
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATO
+// ══════════════════════════════════════════════════════════════
+let condominiList = [
+  { nome: 'Mario Rossi',    interno: 'Int.1 Sc.A', importo: 150, email: '' },
+  { nome: 'Laura Bianchi',  interno: 'Int.2 Sc.A', importo: 150, email: '' },
+  { nome: 'Giuseppe Verdi', interno: 'Int.3 Sc.B', importo: 180, email: '' },
+];
+let condoCorrente = 0;
+let avvisiGenerati = [];
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const oggi = new Date().toISOString().split('T')[0];
+  document.getElementById('scadenza').value = oggi;
+  renderCondoList();
+  aggiorna();
+});
+
+// ══════════════════════════════════════════════════════════════
+// LISTA CONDOMINI
+// ══════════════════════════════════════════════════════════════
+function renderCondoList() {
+  const el = document.getElementById('condoList');
+  el.innerHTML = '';
+  condominiList.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'condo-item';
+    div.innerHTML = `
+      <input type="checkbox" id="chk-${i}" checked onchange="aggiorna()">
+      <label for="chk-${i}" style="flex:1; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+        <span>
+          <span class="condo-nome">${esc(c.nome)}</span>
+          <span class="condo-interno"> · ${esc(c.interno)}</span>
+        </span>
+        <span class="condo-importo">${c.importo > 0 ? fmt(c.importo) : ''}</span>
+      </label>
+      <button onclick="rimuoviCondomino(${i})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem;" title="Rimuovi">✕</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function aggiungiCondomino() {
+  const nome    = document.getElementById('nuovoNome').value.trim();
+  const interno = document.getElementById('nuovoInterno').value.trim();
+  const importo = parseFloat(document.getElementById('nuovoImporto').value) || 0;
+  if (!nome) { alert('Inserisci almeno il nome del condomino.'); return; }
+  condominiList.push({ nome, interno, importo, email: '' });
+  document.getElementById('nuovoNome').value = '';
+  document.getElementById('nuovoInterno').value = '';
+  document.getElementById('nuovoImporto').value = '';
+  renderCondoList();
+  aggiorna();
+}
+
+function rimuoviCondomino(i) {
+  condominiList.splice(i, 1);
+  renderCondoList();
+  aggiorna();
+}
+
+function selezionaTutti()   { document.querySelectorAll('#condoList input[type=checkbox]').forEach(c=>c.checked=true);  aggiorna(); }
+function deselezionaTutti() { document.querySelectorAll('#condoList input[type=checkbox]').forEach(c=>c.checked=false); aggiorna(); }
+
+function getSelezionati() {
+  return condominiList.filter((_, i) => {
+    const chk = document.getElementById(`chk-${i}`);
+    return chk && chk.checked;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// DATI FORM
+// ══════════════════════════════════════════════════════════════
+function getDati() {
+  return {
+    tipo:       document.querySelector('input[name="tipoAvviso"]:checked')?.value || 'ordinaria',
+    studio:     document.getElementById('studioNome').value.trim()      || 'Studio Amministrativo',
+    studioInd:  document.getElementById('studioIndirizzo').value.trim() || '',
+    studioTel:  document.getElementById('studioTel').value.trim()       || '',
+    studioEmail:document.getElementById('studioEmail').value.trim()     || '',
+    condo:      document.getElementById('condoNome').value.trim()       || 'Condominio',
+    condoCF:    document.getElementById('condoCF').value.trim()         || '',
+    iban:       document.getElementById('condoIBAN').value.trim()       || '',
+    importo:    parseFloat(document.getElementById('importo').value)    || 0,
+    mora:       parseFloat(document.getElementById('mora').value)       || 0,
+    scadenza:   document.getElementById('scadenza').value               || '',
+    periodo:    document.getElementById('periodo').value.trim()         || '',
+    causale:    document.getElementById('causale').value.trim()         || '',
+    note:       document.getElementById('noteExtra').value.trim()       || '',
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+// TESTI PER TIPO
+// ══════════════════════════════════════════════════════════════
+const TIPI = {
+  ordinaria:    { badge: 'Avviso Rata Ordinaria',    emoji: '📅' },
+  straordinaria:{ badge: 'Avviso Rata Straordinaria', emoji: '🔧' },
+  sollecito:    { badge: 'Sollecito di Pagamento',   emoji: '⚠️' },
+  assemblea:    { badge: 'Convocazione Assemblea',   emoji: '🏛️' },
+};
+
+function getOggetto(d) {
+  const map = {
+    ordinaria:    `Avviso di pagamento quota ordinaria${d.periodo ? ' — ' + d.periodo : ''}`,
+    straordinaria:`Avviso di pagamento quota straordinaria${d.causale ? ' — ' + d.causale : ''}`,
+    sollecito:    `Sollecito di pagamento — Morosità${d.periodo ? ' periodo ' + d.periodo : ''}`,
+    assemblea:    `Convocazione Assemblea Condominiale${d.periodo ? ' — ' + d.periodo : ''}`,
+  };
+  return map[d.tipo] || 'Avviso di pagamento';
+}
+
+function getCorpo(d, destinatario) {
+  const scadFmt = d.scadenza ? new Date(d.scadenza).toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'}) : '——';
+  const nome = destinatario?.nome || 'Gentile Condomino';
+
+  if (d.tipo === 'ordinaria') return `
+    <p>Gentile ${nome},</p>
+    <p>con la presente Le comunichiamo che è in scadenza la <strong>quota condominiale ordinaria</strong>${d.periodo ? ' relativa al periodo <strong>' + d.periodo + '</strong>' : ''} per il condominio <strong>${esc(d.condo)}</strong>.</p>
+    <p>La preghiamo di provvedere al versamento entro e non oltre il <strong>${scadFmt}</strong> utilizzando le coordinate bancarie riportate di seguito.</p>
+    ${d.note ? `<p>${esc(d.note)}</p>` : ''}
+    <p>Ai sensi dell'art. 63 disp. att. c.c., in caso di mancato pagamento entro i termini previsti potranno essere applicati gli interessi di mora di legge.</p>
+  `;
+
+  if (d.tipo === 'straordinaria') return `
+    <p>Gentile ${nome},</p>
+    <p>Le comunichiamo che l'assemblea condominiale ha deliberato un intervento straordinario${d.causale ? ': <strong>' + esc(d.causale) + '</strong>' : ''}, a carico del condominio <strong>${esc(d.condo)}</strong>.</p>
+    <p>La Sua quota di partecipazione alle spese straordinarie è indicata di seguito. La preghiamo di effettuare il versamento entro il <strong>${scadFmt}</strong>.</p>
+    ${d.note ? `<p>${esc(d.note)}</p>` : ''}
+  `;
+
+  if (d.tipo === 'sollecito') return `
+    <p>Gentile ${nome},</p>
+    <p>nonostante i precedenti avvisi inviati, risulta ancora <strong>non regolarizzata</strong> la Sua posizione debitoria nei confronti del condominio <strong>${esc(d.condo)}</strong>${d.periodo ? ' per il periodo <strong>' + d.periodo + '</strong>' : ''}.</p>
+    <p>La invitiamo pertanto a provvedere con urgenza al pagamento di quanto dovuto, inclusa la mora maturata, entro e non oltre il <strong>${scadFmt}</strong>.</p>
+    <p>Ai sensi dell'<strong>art. 63 disp. att. c.c.</strong>, in caso di ulteriore inadempimento l'Amministratore è tenuto ad agire per la riscossione forzosa delle somme dovute, con possibilità di emissione di decreto ingiuntivo anche in assenza di delibera assembleare.</p>
+    ${d.note ? `<p>${esc(d.note)}</p>` : ''}
+    <p>Qualora avesse già provveduto al pagamento, La invitiamo a inviare copia della quietanza al seguente indirizzo: <strong>${esc(d.studioEmail) || '——'}</strong>.</p>
+  `;
+
+  if (d.tipo === 'assemblea') return `
+    <p>Gentile ${nome},</p>
+    <p>La invitiamo a partecipare all'<strong>Assemblea Condominiale</strong>${d.periodo ? ' convocata per il <strong>' + d.periodo + '</strong>' : ''} relativa al condominio <strong>${esc(d.condo)}</strong>.</p>
+    <p>In tale sede verrà trattata, tra gli altri punti all'ordine del giorno, la <strong>situazione dei pagamenti</strong> e l'approvazione del rendiconto${d.causale ? ': <strong>' + esc(d.causale) + '</strong>' : ''}.</p>
+    <p>La preghiamo di voler provvedere alla regolarizzazione della Sua posizione entro il <strong>${scadFmt}</strong>, al fine di presentarsi in assemblea in regola con i pagamenti.</p>
+    <p>Ai sensi dell'<strong>art. 1135 c.c.</strong>, i condomini morosi possono essere privati del diritto di voto nelle delibere assembleari relative alle spese per cui sono inadempienti.</p>
+    ${d.note ? `<p>${esc(d.note)}</p>` : ''}
+  `;
+
+  return '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// GENERA DOCUMENTO HTML
+// ══════════════════════════════════════════════════════════════
+function generaDocHTML(d, destinatario) {
+  const scadFmt = d.scadenza ? new Date(d.scadenza).toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'}) : '——';
+  const oggi    = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'});
+  const imp     = destinatario?.importo > 0 ? destinatario.importo : d.importo;
+  const oggetto = getOggetto(d);
+  const corpo   = getCorpo(d, destinatario);
+  const tipoBadge = TIPI[d.tipo]?.badge || 'Avviso';
+
+  return `
+    <div class="doc-meta">
+      <div class="doc-mittente">
+        <div class="label">Mittente</div>
+        <p><strong>${esc(d.studio)}</strong></p>
+        ${d.studioInd ? `<p>${esc(d.studioInd)}</p>` : ''}
+        ${d.studioTel ? `<p>Tel: ${esc(d.studioTel)}</p>` : ''}
+        ${d.studioEmail ? `<p>${esc(d.studioEmail)}</p>` : ''}
+        <p style="margin-top:0.5rem; font-size:0.78rem; color:#888">${oggi}</p>
+      </div>
+      <div class="doc-destinatario">
+        <div class="label">Destinatario</div>
+        <p><strong>${esc(destinatario?.nome || 'Condomino')}</strong></p>
+        ${destinatario?.interno ? `<p>${esc(destinatario.interno)}</p>` : ''}
+        <p>${esc(d.condo)}</p>
+        ${d.condoCF ? `<p style="font-size:0.75rem; color:#888">C.F. ${esc(d.condoCF)}</p>` : ''}
+      </div>
+    </div>
+
+    <div class="doc-oggetto">Oggetto: ${esc(oggetto)}</div>
+
+    <div class="doc-corpo">${corpo}</div>
+
+    ${imp > 0 ? `
+    <div class="doc-importo-box">
+      <div>
+        <div class="doc-importo-label">Importo da versare</div>
+        ${d.mora > 0 && d.tipo === 'sollecito' ? `<div style="font-size:0.75rem; color:#888; margin-top:0.3rem">di cui mora: ${fmt(d.mora)}</div>` : ''}
+      </div>
+      <div class="doc-importo-value">${fmt(imp)}</div>
+    </div>
+    ` : ''}
+
+    ${d.iban ? `
+    <div class="doc-iban-box">
+      <span style="font-size:0.75rem; opacity:0.7">IBAN per il pagamento</span>
+      <span class="doc-iban-code">${esc(d.iban)}</span>
+    </div>
+    ` : ''}
+
+    <div class="doc-firma">
+      <p>Distinti saluti,</p>
+      <div class="firma-line">${esc(d.studio)}</div>
+    </div>
+
+    <div class="doc-footer-doc">
+      <span>${esc(d.condo)}${d.condoCF ? ' · C.F. ' + d.condoCF : ''}</span>
+      <span>Documento generato il ${oggi}</span>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+// GENERA EMAIL HTML
+// ══════════════════════════════════════════════════════════════
+function generaEmailHTML(d, destinatario) {
+  const scadFmt = d.scadenza ? new Date(d.scadenza).toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'}) : '——';
+  const imp = destinatario?.importo > 0 ? destinatario.importo : d.importo;
+  const corpo = getCorpo(d, destinatario);
+  return `
+    <p>Gentile ${esc(destinatario?.nome || 'Condomino')},</p>
+    ${corpo.replace(/<p>Gentile[^<]*<\/p>/, '')}
+    ${imp > 0 ? `
+    <div class="email-importo">
+      <span style="font-size:0.75rem; color:#888; display:block; margin-bottom:0.3rem">Importo da versare entro il ${scadFmt}</span>
+      <strong>${fmt(imp)}</strong>
+    </div>` : ''}
+    ${d.iban ? `<p><strong>IBAN:</strong> ${esc(d.iban)}</p>` : ''}
+    <p>Per qualsiasi informazione non esiti a contattarci.</p>
+    <p>Cordiali saluti,<br><strong>${esc(d.studio)}</strong>${d.studioTel ? '<br>' + esc(d.studioTel) : ''}${d.studioEmail ? '<br>' + esc(d.studioEmail) : ''}</p>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGGIORNA ANTEPRIMA IN TEMPO REALE
+// ══════════════════════════════════════════════════════════════
+function aggiorna() {
+  const d = getDati();
+  const sel = getSelezionati();
+  const dest = sel.length > 0 ? sel[condoCorrente >= sel.length ? 0 : condoCorrente] : null;
+
+  // Mostra campo mora solo per solleciti
+  document.getElementById('moraBox').style.display = d.tipo === 'sollecito' ? '' : 'none';
+
+  // Header strip
+  document.getElementById('prevStudio').textContent   = d.studio;
+  document.getElementById('prevTipoBadge').textContent = TIPI[d.tipo]?.badge || '';
+
+  if (sel.length === 0) {
+    document.getElementById('docBodyContent').innerHTML = '<div class="empty-state"><div class="emoji">👥</div><p>Seleziona almeno un condomino dalla lista.</p></div>';
+    return;
+  }
+
+  // Documento
+  document.getElementById('docBodyContent').innerHTML = generaDocHTML(d, dest);
+
+  // Email
+  document.getElementById('emailA').textContent       = dest?.email || dest?.nome || '—';
+  document.getElementById('emailOggetto').textContent = getOggetto(d);
+  document.getElementById('emailDa').textContent      = d.studioEmail || d.studio || '—';
+  document.getElementById('emailBodyContent').innerHTML = generaEmailHTML(d, dest);
+  document.querySelector('.email-wrapper').style.display = '';
+
+  // Navigazione condomini
+  aggiornaNavCondomini(sel);
+}
+
+function aggiornaNavCondomini(sel) {
+  const nav  = document.getElementById('navCondomini');
+  const btns = document.getElementById('navBtns');
+  if (sel.length <= 1) { nav.style.display = 'none'; return; }
+  nav.style.display = 'flex';
+  btns.innerHTML = '';
+  sel.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = `btn btn-ghost btn-sm ${i === condoCorrente ? 'btn-primary' : ''}`;
+    btn.style.fontSize = '0.7rem';
+    btn.textContent = c.nome.split(' ')[0];
+    btn.onclick = () => { condoCorrente = i; aggiorna(); };
+    btns.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// GENERA TUTTI GLI AVVISI
+// ══════════════════════════════════════════════════════════════
+function generaAvvisi() {
+  const sel = getSelezionati();
+  if (sel.length === 0) { alert('Seleziona almeno un condomino.'); return; }
+  const d = getDati();
+  if (!d.importo && sel.every(c => !c.importo)) { alert('Inserisci almeno un importo.'); return; }
+  condoCorrente = 0;
+  aggiorna();
+  alert(`✅ ${sel.length} avvisi generati!\n\nUsa i pulsanti in alto a destra per stampare o copiare il testo email.\nNaviga tra i condomini usando i bottoni sotto l'anteprima.`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SWITCH PREVIEW TAB
+// ══════════════════════════════════════════════════════════════
+function switchPreview(tipo) {
+  document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('previewDoc').style.display   = tipo === 'doc'   ? '' : 'none';
+  document.getElementById('previewEmail').style.display = tipo === 'email' ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// AZIONI
+// ══════════════════════════════════════════════════════════════
+function stampaPDF() { window.print(); }
+
+function copiaEmail() {
+  const d    = getDati();
+  const sel  = getSelezionati();
+  const dest = sel.length > 0 ? sel[condoCorrente] : null;
+  const testo = `Oggetto: ${getOggetto(d)}\n\n` +
+    document.getElementById('emailBodyContent').innerText;
+  navigator.clipboard.writeText(testo)
+    .then(() => alert('✅ Testo email copiato negli appunti!\nIncollalo direttamente nel tuo client di posta.'))
+    .catch(() => alert('Non è stato possibile copiare automaticamente. Seleziona il testo manualmente.'));
+}
+
+function resetForm() {
+  if (!confirm('Azzerare tutti i dati?')) return;
+  ['studioNome','studioIndirizzo','studioTel','studioEmail','condoNome','condoCF','condoIBAN','importo','mora','periodo','causale','noteExtra'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('t1').checked = true;
+  document.getElementById('scadenza').value = new Date().toISOString().split('T')[0];
+  aggiorna();
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function fmt(n) { return '€\u00a0' + Number(n).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

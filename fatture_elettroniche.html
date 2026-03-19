@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Fatture Elettroniche</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* NAVBAR */
+  .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px var(--shadow); }
+  .navbar-logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); text-decoration: none; padding: 0.9rem 0; }
+  .navbar-logo em { color: var(--accent); font-style: italic; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 0.5rem 0.9rem; border-radius: 3px; transition: all 0.15s; }
+  .nav-link:hover { color: var(--ink); background: var(--cream); }
+
+  /* HEADER */
+  .header { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem 2rem; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; border: 2px solid rgba(200,190,170,0.15); border-radius: 50%; }
+  .header::after  { content: ''; position: absolute; top: 20px; right: 60px; width: 120px; height: 120px; border: 1px solid rgba(200,190,170,0.1); border-radius: 50%; }
+  .header-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--border); margin-bottom: 0.6rem; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem; }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub { font-size: 0.9rem; color: var(--border); font-weight: 300; max-width: 520px; }
+
+  /* MAIN */
+  .main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--border); }
+  .tab { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.75rem 1.5rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: var(--ink); background: var(--cream); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab-panel { display: none; animation: fadeUp 0.3s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* SECTION LABEL */
+  .section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* CARDS */
+  .card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 1.5rem; }
+
+  /* FIELD */
+  .field-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-group label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .field-group input, .field-group select, .field-group textarea { background: var(--paper); border: 1px solid var(--border); border-radius: 3px; padding: 0.55rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: var(--ink); appearance: none; transition: border-color 0.2s; width: 100%; }
+  .field-group input:focus, .field-group select:focus { outline: none; border-color: var(--accent); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 4px; padding: 3rem 2rem;
+    text-align: center; cursor: pointer; transition: all 0.2s; background: var(--cream);
+    margin-bottom: 1.5rem;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input { display: none; }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .upload-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 0.4rem; }
+  .upload-sub { font-size: 0.8rem; color: var(--muted); }
+  .upload-formats { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--border); margin-top: 0.5rem; letter-spacing: 0.1em; }
+
+  /* RISULTATO XML */
+  .xml-result { background: var(--success-light); border: 1px solid var(--success); border-radius: 4px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; display: none; }
+  .xml-result-title { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--success); margin-bottom: 0.75rem; }
+
+  /* RITENUTA BOX */
+  .ritenuta-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 1.25rem 1.5rem; margin-top: 1.5rem; display: none; }
+  .ritenuta-title { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--warning); margin-bottom: 0.75rem; }
+  .ritenuta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; }
+  .ritenuta-item { background: white; border: 1px solid var(--border); border-radius: 3px; padding: 0.75rem 1rem; }
+  .ritenuta-item-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+  .ritenuta-item-value { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); }
+  .ritenuta-item-value.accent { color: var(--accent); }
+  .ritenuta-item-value.gold   { color: var(--gold); }
+  .ritenuta-codice { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--warning); background: rgba(184,134,11,0.1); padding: 0.2rem 0.5rem; border-radius: 2px; }
+
+  /* BUTTONS */
+  .btn { padding: 0.7rem 1.4rem; border-radius: 3px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-secondary { background: var(--ink); color: var(--paper); }
+  .btn-secondary:hover { background: #2d2d4a; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #1e4d30; transform: translateY(-1px); }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; }
+  .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .summary-card { background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.1rem 1.4rem; position: relative; overflow: hidden; }
+  .summary-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .summary-card.red::before   { background: var(--accent); }
+  .summary-card.gold::before  { background: var(--gold); }
+  .summary-card.green::before { background: var(--success); }
+  .summary-card.ink::before   { background: var(--ink); }
+  .summary-card.blue::before  { background: #2a5080; }
+  .card-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .card-value { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--ink); line-height: 1; }
+  .card-value.accent { color: var(--accent); }
+  .card-value.gold   { color: var(--gold); }
+  .card-value.green  { color: var(--success); }
+
+  /* TABLE */
+  .table-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead tr { background: var(--ink); color: var(--paper); }
+  thead th { padding: 0.8rem 1rem; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; white-space: nowrap; }
+  thead th:first-child { padding-left: 1.5rem; }
+  tbody tr { border-bottom: 1px solid var(--cream); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf8f4; }
+  tbody td { padding: 0.6rem 1rem; vertical-align: middle; }
+  tbody td:first-child { padding-left: 1.5rem; }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; font-weight: 500; white-space: nowrap; }
+  .badge-pagata   { background: var(--success-light); color: var(--success); }
+  .badge-attesa   { background: var(--gold-light);    color: var(--warning); }
+  .badge-scaduta  { background: var(--accent-light);  color: var(--accent); }
+  .badge-prof     { background: #d0e0f0; color: #1a4060; }
+  .badge-impresa  { background: var(--gold-light);    color: var(--warning); }
+  .badge-fornitore{ background: var(--cream);          color: var(--muted); }
+
+  .amount { font-family: 'DM Mono', monospace; }
+  .amount-neg { color: var(--accent); font-weight: 500; }
+
+  /* NOTE */
+  .note-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 1.1rem 1.5rem; font-size: 0.82rem; line-height: 1.6; margin-top: 1.5rem; }
+  .note-box strong { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warning); display: block; margin-bottom: 0.4rem; }
+
+  /* FILTRI */
+  .filtri-bar { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: flex-end; }
+  .filtri-bar .field-group { margin-bottom: 0; min-width: 140px; }
+
+  .page-footer { text-align: center; padding: 2rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); margin-top: 2rem; }
+
+  /* STATO PAGAMENTO toggle */
+  .stato-toggle { display: flex; gap: 0.4rem; }
+  .stato-btn { padding: 0.3rem 0.7rem; border-radius: 2px; border: 1px solid var(--border); font-size: 0.72rem; cursor: pointer; background: var(--paper); color: var(--muted); transition: all 0.15s; font-family: 'DM Mono', monospace; }
+  .stato-btn.pagata   { background: var(--success-light); border-color: var(--success);   color: var(--success); }
+  .stato-btn.attesa   { background: var(--gold-light);    border-color: var(--gold);      color: var(--warning); }
+  .stato-btn.scaduta  { background: var(--accent-light);  border-color: var(--accent);    color: var(--accent); }
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .row-2, .row-3, .row-4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="navbar-links">
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.5</div>
+  <h1>Fatture<br><em>Elettroniche</em></h1>
+  <p class="header-sub">Carica file XML o inserisci manualmente le fatture passive. Il sistema calcola automaticamente ritenute, F24 e stato pagamento.</p>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('carica')">📥 1 · Carica Fattura</button>
+    <button class="tab" onclick="switchTab('manuale')">✏️ 2 · Inserimento Manuale</button>
+    <button class="tab" onclick="switchTab('archivio')">🗄️ 3 · Archivio Fatture</button>
+    <button class="tab" onclick="switchTab('ritenute')">🧾 4 · Ritenute da Versare</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 1 — CARICA XML
+  ══════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-carica">
+
+    <div class="section-label">Carica file fattura elettronica</div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+      <input type="file" id="fileInput" accept=".xml,.pdf,.p7m" onchange="caricaFile(event)">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Trascina qui il file o clicca per selezionarlo</div>
+      <div class="upload-sub">Supporta file XML (fattura elettronica), PDF e P7M</div>
+      <div class="upload-formats">FORMATI ACCETTATI: .XML · .PDF · .P7M</div>
+    </div>
+
+    <!-- RISULTATO LETTURA XML -->
+    <div class="xml-result" id="xmlResult">
+      <div class="xml-result-title">✅ Dati letti dal file — verifica e conferma</div>
+      <div class="row-3" id="xmlCampi"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="confermaDaXml()">✓ Conferma e registra</button>
+        <button class="btn btn-ghost" onclick="resetXml()">↺ Carica altro file</button>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>💡 Come funziona il caricamento XML</strong>
+      Il sistema legge automaticamente i dati principali dalla fattura elettronica in formato XML (SDI): fornitore, codice fiscale, partita IVA, importo, IVA, data, numero fattura e tipo prestazione. Per i file PDF il sistema non può leggere i dati automaticamente — usa la tab "Inserimento Manuale".
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 2 — INSERIMENTO MANUALE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-manuale">
+
+    <div class="section-label">Dati fattura</div>
+    <div class="card">
+      <div class="row-3">
+        <div class="field-group">
+          <label>Numero Fattura</label>
+          <input type="text" id="mNumero" placeholder="Es. FT/2025/001">
+        </div>
+        <div class="field-group">
+          <label>Data Fattura</label>
+          <input type="date" id="mData">
+        </div>
+        <div class="field-group">
+          <label>Data Scadenza Pagamento</label>
+          <input type="date" id="mScadenza">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field-group">
+          <label>Fornitore / Emittente</label>
+          <input type="text" id="mFornitore" placeholder="Es. Studio Tecnico Bianchi" oninput="aggiornaRitenuta()">
+        </div>
+        <div class="field-group">
+          <label>Codice Fiscale / P.IVA</label>
+          <input type="text" id="mCF" placeholder="Es. 12345678901">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Condominio di riferimento</label>
+        <input type="text" id="mCondo" placeholder="Es. Condominio Via Roma 10">
+      </div>
+      <div class="field-group">
+        <label>Descrizione prestazione</label>
+        <input type="text" id="mDescrizione" placeholder="Es. Progettazione lavori scala A">
+      </div>
+    </div>
+
+    <div class="section-label">Importi e tipo fornitore</div>
+    <div class="card">
+      <div class="row-4">
+        <div class="field-group">
+          <label>Imponibile (€)</label>
+          <input type="number" id="mImponibile" placeholder="1000.00" step="0.01" min="0" oninput="calcolaManuale()">
+        </div>
+        <div class="field-group">
+          <label>IVA (%)</label>
+          <select id="mIva" onchange="calcolaManuale()">
+            <option value="22">22%</option>
+            <option value="10">10%</option>
+            <option value="4">4%</option>
+            <option value="0">Esente / 0%</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>IVA (€)</label>
+          <input type="number" id="mIvaEuro" placeholder="220.00" step="0.01" readonly style="background:var(--cream)">
+        </div>
+        <div class="field-group">
+          <label>Totale fattura (€)</label>
+          <input type="number" id="mTotale" placeholder="1220.00" step="0.01" readonly style="background:var(--cream)">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Tipo fornitore (determina la ritenuta)</label>
+        <select id="mTipoFornitore" onchange="calcolaManuale()">
+          <option value="professionista">👤 Professionista (geometra, avvocato, ingegnere...) → Ritenuta 20%</option>
+          <option value="impresa">🏢 Impresa appalto (pulizie, manutenzione, edilizia...) → Ritenuta 4%</option>
+          <option value="fornitore">🏪 Fornitore senza ritenuta (luce, gas, acqua, materiali...)</option>
+        </select>
+      </div>
+
+      <!-- RITENUTA CALCOLATA -->
+      <div class="ritenuta-box" id="ritenuteManuale">
+        <div class="ritenuta-title">🧾 Ritenuta d'acconto calcolata automaticamente</div>
+        <div class="ritenuta-grid">
+          <div class="ritenuta-item">
+            <div class="ritenuta-item-label">Imponibile ritenuta</div>
+            <div class="ritenuta-item-value" id="rImponibile">€ 0,00</div>
+          </div>
+          <div class="ritenuta-item">
+            <div class="ritenuta-item-label">Aliquota ritenuta</div>
+            <div class="ritenuta-item-value gold" id="rAliquota">—</div>
+          </div>
+          <div class="ritenuta-item">
+            <div class="ritenuta-item-label">Ritenuta da versare</div>
+            <div class="ritenuta-item-value accent" id="rImporto">€ 0,00</div>
+          </div>
+          <div class="ritenuta-item">
+            <div class="ritenuta-item-label">Netto da pagare al fornitore</div>
+            <div class="ritenuta-item-value" id="rNetto">€ 0,00</div>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+          <span style="font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--muted)">Codice tributo F24:</span>
+          <span class="ritenuta-codice" id="rCodice">—</span>
+          <span style="font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--muted)">Sanzione:</span>
+          <span class="ritenuta-codice">8906</span>
+          <span style="font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--muted)">Interessi:</span>
+          <span class="ritenuta-codice">1991</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Stato pagamento</div>
+    <div class="card">
+      <div class="row-2">
+        <div class="field-group">
+          <label>Stato</label>
+          <select id="mStato">
+            <option value="attesa">⏳ In attesa di pagamento</option>
+            <option value="pagata">✅ Pagata</option>
+            <option value="scaduta">⚠️ Scaduta non pagata</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Data pagamento effettivo</label>
+          <input type="date" id="mDataPag">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Note</label>
+        <input type="text" id="mNote" placeholder="Es. Pagato con bonifico SEPA del...">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="registraFattura()">💾 Registra fattura</button>
+      <button class="btn btn-ghost" onclick="resetManuale()">↺ Azzera</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 3 — ARCHIVIO
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-archivio">
+
+    <!-- TOTALI -->
+    <div class="summary-grid" id="summaryArchivio">
+      <div class="summary-card ink">
+        <div class="card-label">Fatture totali</div>
+        <div class="card-value" id="sTot">0</div>
+      </div>
+      <div class="summary-card red">
+        <div class="card-label">Totale imponibile</div>
+        <div class="card-value accent" id="sImponibile">€ 0,00</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Ritenute da versare</div>
+        <div class="card-value gold" id="sRitenute">€ 0,00</div>
+      </div>
+      <div class="summary-card green">
+        <div class="card-label">Fatture pagate</div>
+        <div class="card-value green" id="sPagate">0</div>
+      </div>
+      <div class="summary-card blue">
+        <div class="card-label">In attesa / scadute</div>
+        <div class="card-value" id="sAttesa" style="color:#2a5080">0</div>
+      </div>
+    </div>
+
+    <!-- FILTRI -->
+    <div class="filtri-bar">
+      <div class="field-group">
+        <label>Filtra per stato</label>
+        <select id="filtroStato" onchange="renderArchivio()">
+          <option value="tutte">Tutte</option>
+          <option value="attesa">In attesa</option>
+          <option value="pagata">Pagate</option>
+          <option value="scaduta">Scadute</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Filtra per tipo</label>
+        <select id="filtroTipo" onchange="renderArchivio()">
+          <option value="tutti">Tutti i fornitori</option>
+          <option value="professionista">Professionisti</option>
+          <option value="impresa">Imprese</option>
+          <option value="fornitore">Fornitori</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Cerca fornitore</label>
+        <input type="text" id="filtroFornitore" placeholder="Nome fornitore..." oninput="renderArchivio()">
+      </div>
+      <button class="btn btn-success btn-sm" onclick="esportaExcel()" style="align-self:flex-end">📊 Esporta Excel</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>N° Fattura</th>
+            <th>Data</th>
+            <th>Fornitore</th>
+            <th>Condominio</th>
+            <th>Tipo</th>
+            <th>Imponibile</th>
+            <th>IVA</th>
+            <th>Ritenuta</th>
+            <th>Netto da pagare</th>
+            <th>Scadenza</th>
+            <th>Stato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="archivioBody">
+          <tr><td colspan="12" style="text-align:center; padding:2rem; color:var(--muted); font-style:italic">Nessuna fattura registrata. Vai alla tab "Carica Fattura" o "Inserimento Manuale".</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 4 — RITENUTE DA VERSARE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-ritenute">
+
+    <div class="section-label">Riepilogo ritenute da versare tramite F24</div>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem; line-height:1.6">
+      Qui trovi il riepilogo di tutte le ritenute calcolate sulle fatture registrate, raggruppate per tipo e codice tributo. Usa questi importi per compilare il modello F24.
+    </p>
+
+    <div id="ritenuteContent">
+      <div style="text-align:center; padding:3rem; color:var(--muted); font-style:italic">
+        Registra le fatture per vedere il riepilogo delle ritenute da versare.
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>⚠️ Scadenza versamento ritenute</strong>
+      Le ritenute devono essere versate entro il <strong>16 del mese successivo</strong> a quello in cui è stato effettuato il pagamento al fornitore. Usa il modulo Ravvedimento Operoso se hai pagamenti in ritardo.
+    </div>
+
+  </div>
+
+</div>
+
+<div class="page-footer">
+  CondoKit · Fatture Elettroniche · Versione 1.0 Beta · Solo uso indicativo — verifica sempre con il tuo consulente
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATO
+// ══════════════════════════════════════════════════════════════
+let fatture = [];
+let fattureCount = 0;
+
+const RITENUTE_CONFIG = {
+  professionista: { aliquota: 0.20, codice: '1040', label: '20% — Professionisti' },
+  impresa:        { aliquota: 0.04, codice: '1020', label: '4% — Imprese appalto' },
+  fornitore:      { aliquota: 0,    codice: null,   label: 'Nessuna ritenuta' },
+};
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const oggi = new Date().toISOString().split('T')[0];
+  document.getElementById('mData').value = oggi;
+  // Aggiungi 30 giorni come scadenza default
+  const scad = new Date(); scad.setDate(scad.getDate() + 30);
+  document.getElementById('mScadenza').value = scad.toISOString().split('T')[0];
+});
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  const idx = ['carica','manuale','archivio','ritenute'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (name === 'archivio') { renderArchivio(); aggiornaSummary(); }
+  if (name === 'ritenute') renderRitenute();
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPLOAD XML
+// ══════════════════════════════════════════════════════════════
+function dragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+function dragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) leggiFile(file);
+}
+function caricaFile(e) {
+  const file = e.target.files[0];
+  if (file) leggiFile(file);
+}
+
+function leggiFile(file) {
+  if (file.name.endsWith('.xml')) {
+    const reader = new FileReader();
+    reader.onload = (e) => parseXML(e.target.result, file.name);
+    reader.readAsText(e, 'ISO-8859-1');
+    // Fix: use FileReader directly
+    const fr = new FileReader();
+    fr.onload = (ev) => parseXML(ev.target.result, file.name);
+    fr.readAsText(file, 'ISO-8859-1');
+  } else {
+    alert('File PDF o P7M rilevato.\nI dati non possono essere letti automaticamente dal PDF.\nUsa la tab "Inserimento Manuale" per registrare questa fattura.');
+  }
+}
+
+function parseXML(contenuto, nomeFile) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(contenuto, 'text/xml');
+    const get = (tag) => doc.getElementsByTagName(tag)[0]?.textContent?.trim() || '';
+
+    const dati = {
+      numero:      get('Numero') || get('NumeroFattura'),
+      data:        get('Data') || get('DataFattura'),
+      fornitore:   get('Denominazione') || (get('Nome') + ' ' + get('Cognome')).trim(),
+      cf:          get('CodiceFiscale'),
+      piva:        get('IdCodice'),
+      imponibile:  parseFloat(get('ImponibileImporto') || get('Imponibile')) || 0,
+      iva:         parseFloat(get('Imposta')) || 0,
+      totale:      parseFloat(get('ImportoTotaleDocumento')) || 0,
+      descrizione: get('Descrizione'),
+    };
+
+    // Calcola totale se mancante
+    if (!dati.totale && dati.imponibile) dati.totale = dati.imponibile + dati.iva;
+
+    // Mostra risultato
+    const box = document.getElementById('xmlResult');
+    const campi = document.getElementById('xmlCampi');
+    box.style.display = '';
+    campi.innerHTML = `
+      <div class="field-group"><label>Numero Fattura</label><input class="xml-input" id="xi-numero" value="${esc(dati.numero)}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+      <div class="field-group"><label>Data</label><input class="xml-input" id="xi-data" value="${esc(dati.data)}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+      <div class="field-group"><label>Fornitore</label><input class="xml-input" id="xi-fornitore" value="${esc(dati.fornitore)}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+      <div class="field-group"><label>C.F. / P.IVA</label><input class="xml-input" id="xi-cf" value="${esc(dati.cf || dati.piva)}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+      <div class="field-group"><label>Imponibile (€)</label><input class="xml-input" id="xi-imponibile" type="number" value="${dati.imponibile}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+      <div class="field-group"><label>IVA (€)</label><input class="xml-input" id="xi-iva" type="number" value="${dati.iva}" style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.5rem;font-family:inherit;font-size:0.875rem;width:100%"></div>
+    `;
+
+    // Salva in window per uso successivo
+    window._xmlDati = dati;
+
+  } catch(err) {
+    alert('Errore nella lettura del file XML. Verifica che sia una fattura elettronica in formato SDI valido.\n\nUsa "Inserimento Manuale" per registrarla a mano.');
+    console.error(err);
+  }
+}
+
+function confermaDaXml() {
+  const numero     = document.getElementById('xi-numero')?.value.trim()    || '';
+  const data       = document.getElementById('xi-data')?.value.trim()      || '';
+  const fornitore  = document.getElementById('xi-fornitore')?.value.trim() || '';
+  const cf         = document.getElementById('xi-cf')?.value.trim()        || '';
+  const imponibile = parseFloat(document.getElementById('xi-imponibile')?.value) || 0;
+  const ivaEuro    = parseFloat(document.getElementById('xi-iva')?.value)        || 0;
+
+  // Vai alla tab manuale e precompila
+  switchTab('manuale');
+  document.getElementById('mNumero').value      = numero;
+  document.getElementById('mData').value        = data;
+  document.getElementById('mFornitore').value   = fornitore;
+  document.getElementById('mCF').value          = cf;
+  document.getElementById('mImponibile').value  = imponibile;
+  document.getElementById('mIvaEuro').value     = ivaEuro;
+  document.getElementById('mTotale').value      = (imponibile + ivaEuro).toFixed(2);
+  calcolaManuale();
+  resetXml();
+  alert('✅ Dati importati! Seleziona il tipo di fornitore per calcolare la ritenuta, poi premi "Registra fattura".');
+}
+
+function resetXml() {
+  document.getElementById('xmlResult').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// CALCOLO MANUALE
+// ══════════════════════════════════════════════════════════════
+function calcolaManuale() {
+  const imp   = parseFloat(document.getElementById('mImponibile').value) || 0;
+  const ivaP  = parseFloat(document.getElementById('mIva').value) || 0;
+  const tipo  = document.getElementById('mTipoFornitore').value;
+  const cfg   = RITENUTE_CONFIG[tipo];
+
+  const ivaEuro = imp * (ivaP / 100);
+  const totale  = imp + ivaEuro;
+  const ritenuta = imp * cfg.aliquota;
+  const netto    = totale - ritenuta;
+
+  document.getElementById('mIvaEuro').value  = ivaEuro.toFixed(2);
+  document.getElementById('mTotale').value   = totale.toFixed(2);
+
+  const box = document.getElementById('ritenuteManuale');
+  if (cfg.aliquota > 0) {
+    box.style.display = '';
+    document.getElementById('rImponibile').textContent = fmt(imp);
+    document.getElementById('rAliquota').textContent   = cfg.label;
+    document.getElementById('rImporto').textContent    = fmt(ritenuta);
+    document.getElementById('rNetto').textContent      = fmt(netto);
+    document.getElementById('rCodice').textContent     = cfg.codice;
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// REGISTRA FATTURA
+// ══════════════════════════════════════════════════════════════
+function registraFattura() {
+  const imp   = parseFloat(document.getElementById('mImponibile').value) || 0;
+  const ivaP  = parseFloat(document.getElementById('mIva').value) || 0;
+  const tipo  = document.getElementById('mTipoFornitore').value;
+  const cfg   = RITENUTE_CONFIG[tipo];
+
+  if (!document.getElementById('mFornitore').value.trim()) { alert('Inserisci il nome del fornitore.'); return; }
+  if (!imp) { alert('Inserisci l\'imponibile.'); return; }
+
+  const ivaEuro  = imp * (ivaP / 100);
+  const ritenuta = imp * cfg.aliquota;
+  const netto    = (imp + ivaEuro) - ritenuta;
+
+  fattureCount++;
+  const fattura = {
+    id:          fattureCount,
+    numero:      document.getElementById('mNumero').value.trim()      || `FT-${fattureCount}`,
+    data:        document.getElementById('mData').value,
+    scadenza:    document.getElementById('mScadenza').value,
+    fornitore:   document.getElementById('mFornitore').value.trim(),
+    cf:          document.getElementById('mCF').value.trim(),
+    condo:       document.getElementById('mCondo').value.trim(),
+    descrizione: document.getElementById('mDescrizione').value.trim(),
+    tipo,
+    imponibile:  imp,
+    ivaPerc:     ivaP,
+    ivaEuro,
+    totale:      imp + ivaEuro,
+    ritenuta,
+    netto,
+    codiceTributo: cfg.codice,
+    stato:       document.getElementById('mStato').value,
+    dataPag:     document.getElementById('mDataPag').value,
+    note:        document.getElementById('mNote').value.trim(),
+  };
+
+  fatture.push(fattura);
+  alert(`✅ Fattura ${fattura.numero} registrata correttamente!\n${ritenuta > 0 ? `Ritenuta calcolata: ${fmt(ritenuta)} (cod. ${cfg.codice})` : 'Nessuna ritenuta applicata.'}`);
+  resetManuale();
+  switchTab('archivio');
+}
+
+function resetManuale() {
+  ['mNumero','mFornitore','mCF','mCondo','mDescrizione','mNote','mDataPag'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['mImponibile'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('ritenuteManuale').style.display = 'none';
+  const oggi = new Date().toISOString().split('T')[0];
+  document.getElementById('mData').value = oggi;
+  const scad = new Date(); scad.setDate(scad.getDate()+30);
+  document.getElementById('mScadenza').value = scad.toISOString().split('T')[0];
+  calcolaManuale();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ARCHIVIO
+// ══════════════════════════════════════════════════════════════
+function renderArchivio() {
+  const filtroStato    = document.getElementById('filtroStato').value;
+  const filtroTipo     = document.getElementById('filtroTipo').value;
+  const filtroFornitore= document.getElementById('filtroFornitore').value.toLowerCase();
+  const tbody = document.getElementById('archivioBody');
+
+  const filtrate = fatture.filter(f =>
+    (filtroStato === 'tutte'  || f.stato === filtroStato) &&
+    (filtroTipo  === 'tutti'  || f.tipo  === filtroTipo)  &&
+    (!filtroFornitore || f.fornitore.toLowerCase().includes(filtroFornitore))
+  );
+
+  if (!filtrate.length) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:2rem;color:var(--muted);font-style:italic">${fatture.length ? 'Nessuna fattura corrisponde ai filtri.' : 'Nessuna fattura registrata.'}</td></tr>`;
+    aggiornaSummary();
+    return;
+  }
+
+  tbody.innerHTML = filtrate.map(f => {
+    const badgeTipo  = f.tipo === 'professionista' ? 'badge-prof' : f.tipo === 'impresa' ? 'badge-impresa' : 'badge-fornitore';
+    const tipoLabel  = f.tipo === 'professionista' ? 'Professionista' : f.tipo === 'impresa' ? 'Impresa' : 'Fornitore';
+    const badgeStato = f.stato === 'pagata' ? 'badge-pagata' : f.stato === 'scaduta' ? 'badge-scaduta' : 'badge-attesa';
+    const statoLabel = f.stato === 'pagata' ? '✅ Pagata' : f.stato === 'scaduta' ? '⚠️ Scaduta' : '⏳ Attesa';
+    return `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:0.78rem">${esc(f.numero)}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.75rem;white-space:nowrap">${f.data ? new Date(f.data).toLocaleDateString('it-IT') : '—'}</td>
+        <td><strong>${esc(f.fornitore)}</strong>${f.condo ? `<br><span style="font-size:0.72rem;color:var(--muted)">${esc(f.condo)}</span>` : ''}</td>
+        <td style="font-size:0.75rem;color:var(--muted)">${esc(f.condo||'—')}</td>
+        <td><span class="badge ${badgeTipo}">${tipoLabel}</span></td>
+        <td class="amount">${fmt(f.imponibile)}</td>
+        <td class="amount" style="color:var(--muted)">${fmt(f.ivaEuro)}</td>
+        <td class="amount ${f.ritenuta>0?'amount-neg':''}">${f.ritenuta>0?fmt(f.ritenuta):'—'}</td>
+        <td class="amount" style="font-weight:600">${fmt(f.netto)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.72rem;white-space:nowrap">${f.scadenza ? new Date(f.scadenza).toLocaleDateString('it-IT') : '—'}</td>
+        <td><span class="badge ${badgeStato}">${statoLabel}</span></td>
+        <td>
+          <button onclick="toggleStato(${f.id})" class="btn btn-ghost btn-sm" title="Cambia stato">↻</button>
+          <button onclick="eliminaFattura(${f.id})" class="btn btn-ghost btn-sm" title="Elimina" style="color:var(--accent)">✕</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  aggiornaSummary();
+}
+
+function aggiornaSummary() {
+  const tot     = fatture.length;
+  const imp     = fatture.reduce((s,f)=>s+f.imponibile,0);
+  const rit     = fatture.reduce((s,f)=>s+f.ritenuta,0);
+  const pagate  = fatture.filter(f=>f.stato==='pagata').length;
+  const attesa  = fatture.filter(f=>f.stato!=='pagata').length;
+  document.getElementById('sTot').textContent       = tot;
+  document.getElementById('sImponibile').textContent= fmt(imp);
+  document.getElementById('sRitenute').textContent  = fmt(rit);
+  document.getElementById('sPagate').textContent    = pagate;
+  document.getElementById('sAttesa').textContent    = attesa;
+}
+
+function toggleStato(id) {
+  const f = fatture.find(x=>x.id===id);
+  if (!f) return;
+  const stati = ['attesa','pagata','scaduta'];
+  const idx = stati.indexOf(f.stato);
+  f.stato = stati[(idx+1) % stati.length];
+  renderArchivio();
+}
+
+function eliminaFattura(id) {
+  if (!confirm('Eliminare questa fattura dall\'archivio?')) return;
+  fatture = fatture.filter(f=>f.id!==id);
+  renderArchivio();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RITENUTE DA VERSARE
+// ══════════════════════════════════════════════════════════════
+function renderRitenute() {
+  const cont = document.getElementById('ritenuteContent');
+  const conRitenuta = fatture.filter(f => f.ritenuta > 0);
+
+  if (!conRitenuta.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-style:italic">Nessuna ritenuta calcolata. Registra fatture di professionisti o imprese.</div>';
+    return;
+  }
+
+  // Raggruppa per tipo
+  const gruppi = {};
+  conRitenuta.forEach(f => {
+    if (!gruppi[f.tipo]) gruppi[f.tipo] = { fatture:[], totRitenuta:0, totImponibile:0 };
+    gruppi[f.tipo].fatture.push(f);
+    gruppi[f.tipo].totRitenuta   += f.ritenuta;
+    gruppi[f.tipo].totImponibile += f.imponibile;
+  });
+
+  let html = '';
+  Object.entries(gruppi).forEach(([tipo, g]) => {
+    const cfg = RITENUTE_CONFIG[tipo];
+    html += `
+      <div class="card" style="margin-bottom:1.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Tipo fornitore</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.1rem">${tipo === 'professionista' ? '👤 Professionisti' : '🏢 Imprese appalto'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.3rem">Codice tributo F24</div>
+            <span class="ritenuta-codice" style="font-size:1rem">${cfg.codice}</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;margin-bottom:1rem">
+          <div class="ritenuta-item"><div class="ritenuta-item-label">Fatture</div><div class="ritenuta-item-value">${g.fatture.length}</div></div>
+          <div class="ritenuta-item"><div class="ritenuta-item-label">Imponibile totale</div><div class="ritenuta-item-value">${fmt(g.totImponibile)}</div></div>
+          <div class="ritenuta-item"><div class="ritenuta-item-label">Aliquota ritenuta</div><div class="ritenuta-item-value gold">${(cfg.aliquota*100).toFixed(0)}%</div></div>
+          <div class="ritenuta-item"><div class="ritenuta-item-label">Totale da versare</div><div class="ritenuta-item-value accent">${fmt(g.totRitenuta)}</div></div>
+        </div>
+        <table style="width:100%;font-size:0.78rem;border-collapse:collapse">
+          <thead><tr style="background:var(--cream)">
+            <th style="padding:0.5rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em">Fornitore</th>
+            <th style="padding:0.5rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em">N° Fattura</th>
+            <th style="padding:0.5rem;text-align:right;font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em">Imponibile</th>
+            <th style="padding:0.5rem;text-align:right;font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em">Ritenuta</th>
+          </tr></thead>
+          <tbody>
+            ${g.fatture.map(f=>`
+              <tr style="border-bottom:1px solid var(--cream)">
+                <td style="padding:0.5rem">${esc(f.fornitore)}</td>
+                <td style="padding:0.5rem;font-family:'DM Mono',monospace;font-size:0.72rem">${esc(f.numero)}</td>
+                <td style="padding:0.5rem;font-family:'DM Mono',monospace;text-align:right">${fmt(f.imponibile)}</td>
+                <td style="padding:0.5rem;font-family:'DM Mono',monospace;text-align:right;color:var(--accent);font-weight:500">${fmt(f.ritenuta)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+
+  const totGlobale = conRitenuta.reduce((s,f)=>s+f.ritenuta,0);
+  html += `
+    <div style="background:var(--ink);color:var(--paper);border-radius:4px;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:'DM Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--border)">Totale ritenute da versare tramite F24</span>
+      <span style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:#e8b090">${fmt(totGlobale)}</span>
+    </div>
+  `;
+  cont.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT EXCEL
+// ══════════════════════════════════════════════════════════════
+function esportaExcel() {
+  if (!fatture.length) { alert('Nessuna fattura da esportare.'); return; }
+  const wb = XLSX.utils.book_new();
+  const rows = [
+    ['N° Fattura','Data','Fornitore','C.F./P.IVA','Condominio','Tipo','Imponibile','IVA %','IVA €','Totale','Ritenuta','Netto da pagare','Cod. Tributo','Scadenza','Stato','Data Pagamento','Note'],
+    ...fatture.map(f=>[
+      f.numero, f.data, f.fornitore, f.cf, f.condo,
+      f.tipo === 'professionista' ? 'Professionista' : f.tipo === 'impresa' ? 'Impresa' : 'Fornitore',
+      f.imponibile, f.ivaPerc, f.ivaEuro, f.totale, f.ritenuta, f.netto,
+      f.codiceTributo||'—', f.scadenza, f.stato, f.dataPag, f.note
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [12,10,24,14,20,14,12,8,10,12,12,14,10,10,10,12,20].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Fatture');
+
+  // Foglio ritenute
+  const conRit = fatture.filter(f=>f.ritenuta>0);
+  if (conRit.length) {
+    const ws2 = XLSX.utils.aoa_to_sheet([
+      ['Fornitore','Tipo','N° Fattura','Imponibile','Aliquota %','Ritenuta','Cod. Tributo F24'],
+      ...conRit.map(f=>[f.fornitore, f.tipo, f.numero, f.imponibile, (RITENUTE_CONFIG[f.tipo].aliquota*100).toFixed(0)+'%', f.ritenuta, f.codiceTributo])
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Ritenute F24');
+  }
+  XLSX.writeFile(wb, `CondoKit_Fatture_${new Date().getFullYear()}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function fmt(n) { return '€\u00a0' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function aggiornaRitenuta() { calcolaManuale(); }
+</script>
+</body>
+</html>

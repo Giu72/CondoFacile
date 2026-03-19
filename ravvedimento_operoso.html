@@ -393,14 +393,67 @@
     border-top: 1px solid var(--border); margin-top: 3rem;
   }
 
+  /* NAVBAR */
+  .navbar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px var(--shadow);
+  }
+  .navbar-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 0.9rem 0;
+  }
+  .navbar-logo em { color: var(--accent); font-style: italic; }
+  .navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .nav-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 3px;
+    transition: all 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-link:hover { color: var(--ink); background: var(--cream); }
+  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .nav-link.disabled { color: var(--border); pointer-events: none; cursor: default; }
+
   @media (max-width: 700px) {
     .header { padding: 1.5rem 1.2rem; }
     .main { padding: 1.5rem 1rem 3rem; }
     .settings-bar { padding: 1rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
   }
 </style>
 </head>
 <body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="navbar-links">
+    <a class="nav-link" href="index.html">🏠 Home</a>
+    
+  </div>
+</nav>
 
 <!-- HEADER -->
 <div class="header">

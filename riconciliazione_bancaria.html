@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Riconciliazione Bancaria</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a2e; --paper: #f5f0e8; --cream: #ede8dc;
+    --accent: #c8402a; --accent-light: #e8d5d0;
+    --gold: #b8860b; --gold-light: #f0e6c0;
+    --border: #c8bfaa; --muted: #7a7060;
+    --success: #2a6640; --success-light: #d0e8d8;
+    --warning: #8b4a00; --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* NAVBAR */
+  .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px var(--shadow); }
+  .navbar-logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); text-decoration: none; padding: 0.9rem 0; }
+  .navbar-logo em { color: var(--accent); font-style: italic; }
+  .nav-link { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 0.5rem 0.9rem; border-radius: 3px; transition: all 0.15s; }
+  .nav-link:hover { color: var(--ink); background: var(--cream); }
+
+  /* HEADER */
+  .header { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem 2rem; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; border: 2px solid rgba(200,190,170,0.15); border-radius: 50%; }
+  .header::after  { content: ''; position: absolute; top: 20px; right: 60px; width: 120px; height: 120px; border: 1px solid rgba(200,190,170,0.1); border-radius: 50%; }
+  .header-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--border); margin-bottom: 0.6rem; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem; }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub { font-size: 0.9rem; color: var(--border); font-weight: 300; max-width: 520px; }
+
+  /* MAIN */
+  .main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* TABS */
+  .tabs { display: flex; margin-bottom: 2rem; border-bottom: 2px solid var(--border); }
+  .tab { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.75rem 1.5rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: var(--ink); background: var(--cream); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab-panel { display: none; animation: fadeUp 0.3s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* SECTION LABEL */
+  .section-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* CARD */
+  .card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 1.5rem; }
+
+  /* FIELDS */
+  .field-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-group label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .field-group input, .field-group select { background: var(--paper); border: 1px solid var(--border); border-radius: 3px; padding: 0.55rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: var(--ink); appearance: none; transition: border-color 0.2s; width: 100%; }
+  .field-group input:focus, .field-group select:focus { outline: none; border-color: var(--accent); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+
+  /* UPLOAD */
+  .upload-zone { border: 2px dashed var(--border); border-radius: 4px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--cream); margin-bottom: 1.5rem; }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input { display: none; }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .upload-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 0.4rem; }
+  .upload-sub { font-size: 0.8rem; color: var(--muted); }
+  .upload-formats { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--border); margin-top: 0.5rem; letter-spacing: 0.1em; }
+
+  /* BUTTONS */
+  .btn { padding: 0.7rem 1.4rem; border-radius: 3px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+  .btn-primary  { background: var(--accent);   color: white; }
+  .btn-primary:hover  { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-secondary{ background: var(--ink);     color: var(--paper); }
+  .btn-secondary:hover{ background: #2d2d4a; transform: translateY(-1px); }
+  .btn-ghost    { background: transparent;    color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover    { background: var(--cream); color: var(--ink); }
+  .btn-success  { background: var(--success); color: white; }
+  .btn-success:hover  { background: #1e4d30; transform: translateY(-1px); }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+  .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .summary-card { background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.1rem 1.4rem; position: relative; overflow: hidden; }
+  .summary-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .summary-card.red::before    { background: var(--accent); }
+  .summary-card.gold::before   { background: var(--gold); }
+  .summary-card.green::before  { background: var(--success); }
+  .summary-card.ink::before    { background: var(--ink); }
+  .summary-card.blue::before   { background: #2a5080; }
+  .card-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .card-value { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--ink); line-height: 1; }
+  .card-value.accent { color: var(--accent); }
+  .card-value.gold   { color: var(--gold); }
+  .card-value.green  { color: var(--success); }
+  .card-value.blue   { color: #2a5080; }
+
+  /* TABLES */
+  .table-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead tr { background: var(--ink); color: var(--paper); }
+  thead th { padding: 0.8rem 1rem; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; white-space: nowrap; }
+  thead th:first-child { padding-left: 1.5rem; }
+  tbody tr { border-bottom: 1px solid var(--cream); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf8f4; }
+  tbody td { padding: 0.6rem 1rem; vertical-align: middle; }
+  tbody td:first-child { padding-left: 1.5rem; }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 0.62rem; font-weight: 500; white-space: nowrap; }
+  .badge-match    { background: var(--success-light); color: var(--success); }
+  .badge-anomalia { background: var(--accent-light);  color: var(--accent); }
+  .badge-parziale { background: var(--gold-light);    color: var(--warning); }
+  .badge-entrata  { background: #d0e8f0; color: #1a4060; }
+  .badge-uscita   { background: var(--accent-light);  color: var(--accent); }
+
+  /* RIGHE RICONCILIAZIONE */
+  .row-matched  { background: #f4faf6 !important; }
+  .row-anomalia { background: #fff8f6 !important; border-left: 3px solid var(--accent); }
+  .row-anomalia td:first-child { padding-left: calc(1.5rem - 3px); }
+
+  .amount { font-family: 'DM Mono', monospace; text-align: right; }
+  .amount-pos { color: var(--success); font-weight: 500; }
+  .amount-neg { color: var(--accent);  font-weight: 500; }
+
+  /* LAYOUT 2 COLONNE PER RICONCILIAZIONE */
+  .recon-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 900px) { .recon-layout { grid-template-columns: 1fr; } }
+  .recon-col-title { font-family: 'DM Serif Display', serif; font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+
+  /* MATCH LINE */
+  .match-line { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 3px; background: var(--success-light); border: 1px solid var(--success); margin-bottom: 0.4rem; font-size: 0.78rem; }
+  .match-line .match-icon { color: var(--success); font-size: 0.9rem; }
+  .anomalia-line { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 3px; background: var(--accent-light); border: 1px solid var(--accent); margin-bottom: 0.4rem; font-size: 0.78rem; }
+  .anomalia-line .anomalia-icon { color: var(--accent); }
+
+  /* NOTE */
+  .note-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 1.1rem 1.5rem; font-size: 0.82rem; line-height: 1.6; margin-top: 1.5rem; }
+  .note-box strong { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warning); display: block; margin-bottom: 0.4rem; }
+
+  /* SALDO BOX */
+  .saldo-box { background: var(--ink); color: var(--paper); border-radius: 4px; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+  .saldo-item { text-align: center; }
+  .saldo-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--border); margin-bottom: 0.4rem; }
+  .saldo-value { font-family: 'DM Serif Display', serif; font-size: 1.6rem; }
+  .saldo-value.positive { color: #90d8a8; }
+  .saldo-value.negative { color: #f0a090; }
+  .saldo-value.neutral  { color: #e8b090; }
+  .saldo-separator { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
+
+  /* CONDOMINIO SELECTOR */
+  .condo-selector { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 2rem; background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.2rem 1.5rem; }
+
+  .page-footer { text-align: center; padding: 2rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="navbar-links">
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.6</div>
+  <h1>Riconciliazione<br><em>Bancaria</em></h1>
+  <p class="header-sub">Confronta i movimenti dell'estratto conto bancario con le spese registrate. Individua anomalie e genera il report di saldo riconciliato.</p>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('estratto')">🏦 1 · Estratto Conto</button>
+    <button class="tab" onclick="switchTab('spese')">📋 2 · Spese Registrate</button>
+    <button class="tab" onclick="switchTab('riconcilia')">🔄 3 · Riconciliazione</button>
+    <button class="tab" onclick="switchTab('report')">📊 4 · Report Finale</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 1 — ESTRATTO CONTO
+  ══════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-estratto">
+
+    <!-- Selettore condominio -->
+    <div class="condo-selector">
+      <div class="field-group" style="margin:0; flex:1; min-width:200px">
+        <label>Condominio</label>
+        <input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10">
+      </div>
+      <div class="field-group" style="margin:0; flex:1; min-width:160px">
+        <label>IBAN conto</label>
+        <input type="text" id="condoIBAN" placeholder="IT60 X012...">
+      </div>
+      <div class="field-group" style="margin:0; min-width:130px">
+        <label>Periodo — Da</label>
+        <input type="date" id="periodoDA">
+      </div>
+      <div class="field-group" style="margin:0; min-width:130px">
+        <label>Periodo — A</label>
+        <input type="date" id="periodoA">
+      </div>
+      <div class="field-group" style="margin:0; min-width:130px">
+        <label>Saldo iniziale (€)</label>
+        <input type="number" id="saldoIniziale" placeholder="0.00" step="0.01" oninput="aggiornaSaldi()">
+      </div>
+    </div>
+
+    <!-- Upload CSV -->
+    <div class="section-label">Carica estratto conto (CSV/Excel)</div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileEC').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropEC(event)">
+      <input type="file" id="fileEC" accept=".csv,.xlsx,.xls" onchange="caricaEC(event)">
+      <div class="upload-icon">🏦</div>
+      <div class="upload-title">Trascina il file dell'estratto conto</div>
+      <div class="upload-sub">Il sistema legge automaticamente data, descrizione e importo da CSV o Excel</div>
+      <div class="upload-formats">FORMATI: .CSV · .XLSX · .XLS</div>
+    </div>
+
+    <!-- Inserimento manuale -->
+    <div class="section-label">Oppure inserisci i movimenti manualmente</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrizione movimento</th>
+            <th>Tipo</th>
+            <th>Importo (€)</th>
+            <th>Riferimento banca</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ecBody"></tbody>
+      </table>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="addMovimento()">＋ Aggiungi movimento</button>
+      <button class="btn btn-primary" onclick="switchTab('spese')">→ Vai alle Spese</button>
+      <button class="btn btn-ghost" onclick="resetEC()">↺ Azzera</button>
+    </div>
+
+    <!-- Totali estratto -->
+    <div class="summary-grid" style="margin-top:1.5rem">
+      <div class="summary-card ink">
+        <div class="card-label">Movimenti totali</div>
+        <div class="card-value" id="ecTotMov">0</div>
+      </div>
+      <div class="summary-card green">
+        <div class="card-label">Totale entrate</div>
+        <div class="card-value green" id="ecEntrate">€ 0,00</div>
+      </div>
+      <div class="summary-card red">
+        <div class="card-label">Totale uscite</div>
+        <div class="card-value accent" id="ecUscite">€ 0,00</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Saldo finale banca</div>
+        <div class="card-value gold" id="ecSaldo">€ 0,00</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 2 — SPESE REGISTRATE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-spese">
+
+    <div class="section-label">Movimenti contabili del condominio</div>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem; line-height:1.6">
+      Inserisci qui le spese e le entrate registrate nella contabilità del condominio. Questi dati verranno confrontati con i movimenti bancari nella fase di riconciliazione.
+    </p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrizione</th>
+            <th>Categoria</th>
+            <th>Tipo</th>
+            <th>Importo (€)</th>
+            <th>N° Doc.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="speseBody"></tbody>
+      </table>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="addSpesa()">＋ Aggiungi voce contabile</button>
+      <button class="btn btn-primary" onclick="eseguiRiconciliazione(); switchTab('riconcilia')">🔄 Esegui Riconciliazione</button>
+      <button class="btn btn-ghost" onclick="resetSpese()">↺ Azzera</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 3 — RICONCILIAZIONE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-riconcilia">
+
+    <div id="riconcilazioneContent">
+      <div style="text-align:center; padding:3rem; color:var(--muted); font-style:italic">
+        Inserisci i movimenti bancari e le spese, poi premi "Esegui Riconciliazione".
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 4 — REPORT FINALE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-report">
+
+    <div id="reportContent">
+      <div style="text-align:center; padding:3rem; color:var(--muted); font-style:italic">
+        Completa la riconciliazione per generare il report finale.
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="page-footer">
+  CondoKit · Riconciliazione Bancaria · Versione 1.0 Beta · Solo uso indicativo
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATO
+// ══════════════════════════════════════════════════════════════
+let movimentiEC   = []; // estratto conto banca
+let vociContabili = []; // spese registrate
+let risultatoRic  = []; // risultato riconciliazione
+let ecCount = 0, speseCount = 0;
+
+const CATEGORIE_SPESA = ['Manutenzione ordinaria','Manutenzione straordinaria','Utenze','Compensi professionisti','Quote condomini','Altro'];
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const oggi = new Date();
+  const primoMese = new Date(oggi.getFullYear(), oggi.getMonth(), 1).toISOString().split('T')[0];
+  const ultimoMese = new Date(oggi.getFullYear(), oggi.getMonth()+1, 0).toISOString().split('T')[0];
+  document.getElementById('periodoDA').value = primoMese;
+  document.getElementById('periodoA').value  = ultimoMese;
+  // Righe default
+  addMovimento(); addMovimento(); addMovimento();
+  addSpesa();     addSpesa();     addSpesa();
+});
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  const idx = ['estratto','spese','riconcilia','report'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (name === 'report') renderReport();
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 1 — ESTRATTO CONTO
+// ══════════════════════════════════════════════════════════════
+function addMovimento() {
+  ecCount++;
+  const id = ecCount;
+  const oggi = new Date().toISOString().split('T')[0];
+  const tr = document.createElement('tr');
+  tr.id = `ec-${id}`;
+  tr.innerHTML = `
+    <td><input class="ic" type="date" id="ecData-${id}" value="${oggi}" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+    <td><input class="ic" type="text" id="ecDesc-${id}" placeholder="Es. Bonifico Studio Bianchi" style="${stileInput('flex:1')}"></td>
+    <td>
+      <select class="ic" id="ecTipo-${id}" style="${stileInput()}" oninput="aggiornaSaldi()">
+        <option value="uscita">⬇️ Uscita</option>
+        <option value="entrata">⬆️ Entrata</option>
+      </select>
+    </td>
+    <td><input class="ic" type="number" id="ecImp-${id}" placeholder="0.00" step="0.01" min="0" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+    <td><input class="ic" type="text" id="ecRif-${id}" placeholder="Es. RIF-2025-001" style="${stileInput()}"></td>
+    <td><button onclick="removeEC(${id})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem;border-radius:3px;transition:all 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--border)'">✕</button></td>
+  `;
+  document.getElementById('ecBody').appendChild(tr);
+}
+
+function removeEC(id) { document.getElementById(`ec-${id}`)?.remove(); aggiornaSaldi(); }
+function resetEC()    { document.getElementById('ecBody').innerHTML=''; ecCount=0; addMovimento(); addMovimento(); addMovimento(); aggiornaSaldi(); }
+
+function leggiEC() {
+  const righe = [];
+  document.querySelectorAll('#ecBody tr').forEach(tr => {
+    const id   = tr.id.replace('ec-','');
+    const data = document.getElementById(`ecData-${id}`)?.value;
+    const desc = document.getElementById(`ecDesc-${id}`)?.value.trim();
+    const tipo = document.getElementById(`ecTipo-${id}`)?.value;
+    const imp  = parseFloat(document.getElementById(`ecImp-${id}`)?.value) || 0;
+    const rif  = document.getElementById(`ecRif-${id}`)?.value.trim();
+    if (!desc || !imp) return;
+    righe.push({ id, data, desc, tipo, imp, rif, riconciliato: false });
+  });
+  return righe;
+}
+
+function aggiornaSaldi() {
+  const ec       = leggiEC();
+  const saldoIniz = parseFloat(document.getElementById('saldoIniziale').value) || 0;
+  const entrate  = ec.filter(m=>m.tipo==='entrata').reduce((s,m)=>s+m.imp,0);
+  const uscite   = ec.filter(m=>m.tipo==='uscita').reduce((s,m)=>s+m.imp,0);
+  const saldoFin = saldoIniz + entrate - uscite;
+  document.getElementById('ecTotMov').textContent = ec.length;
+  document.getElementById('ecEntrate').textContent = fmt(entrate);
+  document.getElementById('ecUscite').textContent  = fmt(uscite);
+  document.getElementById('ecSaldo').textContent   = fmt(saldoFin);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPLOAD CSV/EXCEL
+// ══════════════════════════════════════════════════════════════
+function dragOver(e)  { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+function dragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
+function dropEC(e)    { e.preventDefault(); document.getElementById('uploadZone').classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) leggiFileEC(f); }
+function caricaEC(e)  { const f=e.target.files[0]; if(f) leggiFileEC(f); }
+
+function leggiFileEC(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb   = XLSX.read(e.target.result, {type:'array'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+      // Svuota e ricarica
+      document.getElementById('ecBody').innerHTML = '';
+      ecCount = 0;
+
+      // Salta header (riga 0) e leggi le righe
+      let importati = 0;
+      rows.slice(1).forEach(row => {
+        if (!row || row.every(c=>!c)) return;
+        // Cerca le colonne: data, descrizione, dare/avere oppure importo+tipo
+        const data   = row[0] ? String(row[0]).trim() : '';
+        const desc   = row[1] ? String(row[1]).trim() : '';
+        const impRaw = parseFloat(row[2] || row[3] || 0);
+        const tipo   = impRaw >= 0 ? 'entrata' : 'uscita';
+        const imp    = Math.abs(impRaw);
+        if (!desc || !imp) return;
+        ecCount++;
+        const id = ecCount;
+        const tr = document.createElement('tr');
+        tr.id = `ec-${id}`;
+        tr.innerHTML = `
+          <td><input class="ic" type="date" id="ecData-${id}" value="${parseDate(data)}" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+          <td><input class="ic" type="text"  id="ecDesc-${id}" value="${esc(desc)}" style="${stileInput()}"></td>
+          <td><select class="ic" id="ecTipo-${id}" style="${stileInput()}" oninput="aggiornaSaldi()">
+            <option value="uscita" ${tipo==='uscita'?'selected':''}>⬇️ Uscita</option>
+            <option value="entrata" ${tipo==='entrata'?'selected':''}>⬆️ Entrata</option>
+          </select></td>
+          <td><input class="ic" type="number" id="ecImp-${id}" value="${imp.toFixed(2)}" step="0.01" min="0" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+          <td><input class="ic" type="text" id="ecRif-${id}" value="" style="${stileInput()}"></td>
+          <td><button onclick="removeEC(${id})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem;border-radius:3px">✕</button></td>
+        `;
+        document.getElementById('ecBody').appendChild(tr);
+        importati++;
+      });
+      aggiornaSaldi();
+      alert(`✅ Importati ${importati} movimenti dal file.\nVerifica i dati e procedi alla tab "Spese Registrate".`);
+    } catch(err) {
+      alert('Errore nella lettura del file. Verifica che sia un CSV o Excel valido con colonne: Data, Descrizione, Importo.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseDate(s) {
+  if (!s) return new Date().toISOString().split('T')[0];
+  // Prova formato italiano DD/MM/YYYY
+  const m = s.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+  if (m) {
+    const y = m[3].length===2 ? '20'+m[3] : m[3];
+    return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+  return new Date().toISOString().split('T')[0];
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 2 — SPESE REGISTRATE
+// ══════════════════════════════════════════════════════════════
+function addSpesa() {
+  speseCount++;
+  const id = speseCount;
+  const oggi = new Date().toISOString().split('T')[0];
+  const catOpts = CATEGORIE_SPESA.map(c=>`<option>${c}</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.id = `sp-${id}`;
+  tr.innerHTML = `
+    <td><input class="ic" type="date" id="spData-${id}" value="${oggi}" style="${stileInput()}"></td>
+    <td><input class="ic" type="text" id="spDesc-${id}" placeholder="Es. Fattura pulizie scala A" style="${stileInput()}"></td>
+    <td><select class="ic" id="spCat-${id}" style="${stileInput()}">${catOpts}</select></td>
+    <td><select class="ic" id="spTipo-${id}" style="${stileInput()}">
+      <option value="uscita">⬇️ Uscita</option>
+      <option value="entrata">⬆️ Entrata</option>
+    </select></td>
+    <td><input class="ic" type="number" id="spImp-${id}" placeholder="0.00" step="0.01" min="0" style="${stileInput()}"></td>
+    <td><input class="ic" type="text" id="spDoc-${id}" placeholder="Es. FT/2025/001" style="${stileInput()}"></td>
+    <td><button onclick="removeSp(${id})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem;border-radius:3px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--border)'">✕</button></td>
+  `;
+  document.getElementById('speseBody').appendChild(tr);
+}
+
+function removeSp(id)  { document.getElementById(`sp-${id}`)?.remove(); }
+function resetSpese()  { document.getElementById('speseBody').innerHTML=''; speseCount=0; addSpesa(); addSpesa(); addSpesa(); }
+
+function leggiSpese() {
+  const righe = [];
+  document.querySelectorAll('#speseBody tr').forEach(tr => {
+    const id   = tr.id.replace('sp-','');
+    const data = document.getElementById(`spData-${id}`)?.value;
+    const desc = document.getElementById(`spDesc-${id}`)?.value.trim();
+    const cat  = document.getElementById(`spCat-${id}`)?.value;
+    const tipo = document.getElementById(`spTipo-${id}`)?.value;
+    const imp  = parseFloat(document.getElementById(`spImp-${id}`)?.value) || 0;
+    const doc  = document.getElementById(`spDoc-${id}`)?.value.trim();
+    if (!desc || !imp) return;
+    righe.push({ id, data, desc, cat, tipo, imp, doc, riconciliato: false, ecMatch: null });
+  });
+  return righe;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RICONCILIAZIONE AUTOMATICA
+// ══════════════════════════════════════════════════════════════
+function eseguiRiconciliazione() {
+  const ec    = leggiEC();
+  const spese = leggiSpese();
+
+  if (!ec.length || !spese.length) {
+    document.getElementById('riconcilazioneContent').innerHTML =
+      '<div style="text-align:center;padding:2rem;color:var(--accent)">⚠️ Inserisci almeno un movimento bancario e una voce contabile.</div>';
+    return;
+  }
+
+  // Algoritmo di matching: confronta importo + tipo + prossimità data
+  const ecCopy    = ec.map(m=>({...m, matched:false}));
+  const speseCopy = spese.map(s=>({...s, matched:false, ecMatch:null}));
+
+  speseCopy.forEach(spesa => {
+    // Cerca il movimento bancario con stesso importo e tipo più vicino per data
+    let bestMatch = null, bestDiff = Infinity;
+    ecCopy.forEach(mov => {
+      if (mov.matched) return;
+      if (mov.tipo !== spesa.tipo) return;
+      if (Math.abs(mov.imp - spesa.imp) > 0.01) return; // importo uguale (tolleranza 1 cent)
+      const diff = Math.abs(new Date(mov.data) - new Date(spesa.data)) / 86400000; // giorni
+      if (diff < bestDiff && diff <= 5) { // entro 5 giorni
+        bestDiff  = diff;
+        bestMatch = mov;
+      }
+    });
+    if (bestMatch) {
+      spesa.matched  = true;
+      spesa.ecMatch  = bestMatch;
+      bestMatch.matched = true;
+    }
+  });
+
+  risultatoRic = { ec: ecCopy, spese: speseCopy };
+  renderRiconciliazione(ecCopy, speseCopy);
+}
+
+function renderRiconciliazione(ec, spese) {
+  const matched   = spese.filter(s=>s.matched).length;
+  const anomSpese = spese.filter(s=>!s.matched).length;
+  const anomEC    = ec.filter(m=>!m.matched).length;
+  const totSpese  = spese.reduce((s,x)=>s+(x.tipo==='uscita'?x.imp:0),0);
+  const totEC     = ec.reduce((s,x)=>s+(x.tipo==='uscita'?x.imp:0),0);
+  const diff      = totEC - totSpese;
+
+  let html = `
+    <div class="summary-grid">
+      <div class="summary-card green">
+        <div class="card-label">Voci riconciliate</div>
+        <div class="card-value green">${matched}</div>
+      </div>
+      <div class="summary-card red">
+        <div class="card-label">Anomalie spese</div>
+        <div class="card-value accent">${anomSpese}</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Movimenti non abbinati</div>
+        <div class="card-value gold">${anomEC}</div>
+      </div>
+      <div class="summary-card ink">
+        <div class="card-label">Differenza uscite</div>
+        <div class="card-value ${Math.abs(diff)<0.01?'green':'accent'}">${fmt(diff)}</div>
+      </div>
+    </div>
+
+    <div class="recon-layout">
+      <!-- COLONNA SINISTRA: Movimenti abbinati -->
+      <div>
+        <div class="recon-col-title">✅ Movimenti riconciliati (${matched})</div>
+        ${spese.filter(s=>s.matched).map(s=>`
+          <div class="match-line">
+            <span class="match-icon">✓</span>
+            <div style="flex:1">
+              <div style="font-weight:500;font-size:0.8rem">${esc(s.desc)}</div>
+              <div style="font-size:0.72rem;color:var(--muted)">${s.data} · ${esc(s.ecMatch?.desc||'')} · Δ${Math.round(Math.abs(new Date(s.data)-new Date(s.ecMatch?.data||s.data))/86400000)}gg</div>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.8rem;font-weight:500;color:var(--success)">${fmt(s.imp)}</span>
+          </div>
+        `).join('') || '<p style="font-size:0.8rem;color:var(--muted);font-style:italic;padding:0.5rem">Nessuna voce riconciliata</p>'}
+      </div>
+
+      <!-- COLONNA DESTRA: Anomalie -->
+      <div>
+        <div class="recon-col-title">⚠️ Anomalie da verificare (${anomSpese + anomEC})</div>
+        ${spese.filter(s=>!s.matched).map(s=>`
+          <div class="anomalia-line">
+            <span class="anomalia-icon">📋</span>
+            <div style="flex:1">
+              <div style="font-weight:500;font-size:0.8rem">${esc(s.desc)}</div>
+              <div style="font-size:0.72rem;color:var(--muted)">Spesa contabile non trovata in banca · ${s.data}</div>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.8rem;font-weight:500;color:var(--accent)">${fmt(s.imp)}</span>
+          </div>
+        `).join('')}
+        ${ec.filter(m=>!m.matched).map(m=>`
+          <div class="anomalia-line">
+            <span class="anomalia-icon">🏦</span>
+            <div style="flex:1">
+              <div style="font-weight:500;font-size:0.8rem">${esc(m.desc)}</div>
+              <div style="font-size:0.72rem;color:var(--muted)">Movimento bancario senza corrispondenza contabile · ${m.data}</div>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.8rem;font-weight:500;color:var(--accent)">${fmt(m.imp)}</span>
+          </div>
+        `).join('')}
+        ${anomSpese+anomEC===0?'<p style="font-size:0.8rem;color:var(--success);font-style:italic;padding:0.5rem">✅ Nessuna anomalia rilevata!</p>':''}
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="renderReport(); switchTab('report')">📊 Genera Report Finale</button>
+      <button class="btn btn-ghost" onclick="eseguiRiconciliazione()">↺ Riesegui</button>
+    </div>
+  `;
+
+  document.getElementById('riconcilazioneContent').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// REPORT FINALE
+// ══════════════════════════════════════════════════════════════
+function renderReport() {
+  if (!risultatoRic.ec) {
+    document.getElementById('reportContent').innerHTML =
+      '<div style="text-align:center;padding:3rem;color:var(--muted);font-style:italic">Completa prima la riconciliazione.</div>';
+    return;
+  }
+
+  const { ec, spese } = risultatoRic;
+  const saldoIniz  = parseFloat(document.getElementById('saldoIniziale').value) || 0;
+  const entrate    = ec.filter(m=>m.tipo==='entrata').reduce((s,m)=>s+m.imp,0);
+  const uscite     = ec.filter(m=>m.tipo==='uscita').reduce((s,m)=>s+m.imp,0);
+  const saldoFin   = saldoIniz + entrate - uscite;
+  const matched    = spese.filter(s=>s.matched).length;
+  const totVoci    = spese.length;
+  const anomalie   = spese.filter(s=>!s.matched).length + ec.filter(m=>!m.matched).length;
+  const condo      = document.getElementById('condoNome').value || 'Condominio';
+  const iban       = document.getElementById('condoIBAN').value || '—';
+  const oggi       = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  let html = `
+    <div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Report riconciliazione</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.1rem">${esc(condo)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted)">IBAN: ${esc(iban)} · Generato il ${oggi}</div>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Stampa</button>
+        <button class="btn btn-success btn-sm" onclick="esportaReportExcel()">📊 Excel</button>
+      </div>
+    </div>
+
+    <!-- SALDO BOX -->
+    <div class="saldo-box">
+      <div class="saldo-item">
+        <div class="saldo-label">Saldo iniziale</div>
+        <div class="saldo-value neutral">${fmt(saldoIniz)}</div>
+      </div>
+      <div class="saldo-separator"></div>
+      <div class="saldo-item">
+        <div class="saldo-label">+ Entrate</div>
+        <div class="saldo-value positive">${fmt(entrate)}</div>
+      </div>
+      <div class="saldo-separator"></div>
+      <div class="saldo-item">
+        <div class="saldo-label">− Uscite</div>
+        <div class="saldo-value negative">${fmt(uscite)}</div>
+      </div>
+      <div class="saldo-separator"></div>
+      <div class="saldo-item">
+        <div class="saldo-label">Saldo finale banca</div>
+        <div class="saldo-value ${saldoFin>=0?'positive':'negative'}">${fmt(saldoFin)}</div>
+      </div>
+      <div class="saldo-separator"></div>
+      <div class="saldo-item">
+        <div class="saldo-label">Voci riconciliate</div>
+        <div class="saldo-value neutral">${matched} / ${totVoci}</div>
+      </div>
+      <div class="saldo-separator"></div>
+      <div class="saldo-item">
+        <div class="saldo-label">Anomalie</div>
+        <div class="saldo-value ${anomalie>0?'negative':'positive'}">${anomalie}</div>
+      </div>
+    </div>
+
+    <!-- DETTAGLIO MOVIMENTI -->
+    <div class="section-label">Dettaglio movimenti bancari</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>Data</th><th>Descrizione banca</th><th>Tipo</th><th>Importo</th><th>Corrispondenza contabile</th><th>Stato</th>
+        </tr></thead>
+        <tbody>
+          ${ec.map(m=>`
+            <tr class="${m.matched?'row-matched':'row-anomalia'}">
+              <td style="font-family:'DM Mono',monospace;font-size:0.75rem;white-space:nowrap">${m.data?new Date(m.data).toLocaleDateString('it-IT'):'—'}</td>
+              <td><strong>${esc(m.desc)}</strong></td>
+              <td><span class="badge ${m.tipo==='entrata'?'badge-entrata':'badge-uscita'}">${m.tipo==='entrata'?'⬆️ Entrata':'⬇️ Uscita'}</span></td>
+              <td class="amount ${m.tipo==='entrata'?'amount-pos':'amount-neg'}">${fmt(m.imp)}</td>
+              <td style="font-size:0.78rem;color:var(--muted)">${m.matched?'✓ '+esc(spese.find(s=>s.ecMatch===m)?.desc||'—'):'—'}</td>
+              <td><span class="badge ${m.matched?'badge-match':'badge-anomalia'}">${m.matched?'Riconciliato':'Anomalia'}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    ${anomalie>0?`
+    <div class="note-box">
+      <strong>⚠️ ${anomalie} anomali${anomalie===1?'a':'e'} da verificare</strong>
+      Ci sono movimenti bancari o voci contabili senza corrispondenza. Verifica manualmente se si tratta di pagamenti non ancora registrati, errori di importo o movimenti bancari estranei al condominio.
+    </div>`:'<div class="note-box" style="background:var(--success-light);border-color:var(--success)"><strong style="color:var(--success)">✅ Riconciliazione completata senza anomalie</strong>Tutti i movimenti bancari corrispondono alle voci contabili registrate.</div>'}
+  `;
+
+  document.getElementById('reportContent').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT EXCEL REPORT
+// ══════════════════════════════════════════════════════════════
+function esportaReportExcel() {
+  if (!risultatoRic.ec) { alert('Completa prima la riconciliazione.'); return; }
+  const { ec, spese } = risultatoRic;
+  const wb   = XLSX.utils.book_new();
+  const condo = document.getElementById('condoNome').value || 'Condominio';
+
+  // Foglio 1: Movimenti bancari
+  const ws1 = XLSX.utils.aoa_to_sheet([
+    ['RICONCILIAZIONE BANCARIA — ' + condo],
+    [],
+    ['Data','Descrizione Banca','Tipo','Importo','Corrispondenza Contabile','Stato'],
+    ...ec.map(m=>[
+      m.data, m.desc, m.tipo, m.tipo==='uscita'?-m.imp:m.imp,
+      m.matched ? spese.find(s=>s.ecMatch===m)?.desc||'' : 'ANOMALIA',
+      m.matched ? 'Riconciliato' : 'Da verificare'
+    ])
+  ]);
+  ws1['!cols'] = [12,30,10,12,30,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Movimenti Banca');
+
+  // Foglio 2: Voci contabili
+  const ws2 = XLSX.utils.aoa_to_sheet([
+    ['Data','Descrizione','Categoria','Tipo','Importo','N° Doc','Stato'],
+    ...spese.map(s=>[s.data,s.desc,s.cat,s.tipo,s.tipo==='uscita'?-s.imp:s.imp,s.doc,s.matched?'Riconciliata':'Anomalia'])
+  ]);
+  ws2['!cols'] = [12,30,20,10,12,14,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Voci Contabili');
+
+  XLSX.writeFile(wb, `CondoKit_Riconciliazione_${condo.replace(/\s/g,'_')}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function stileInput(extra='') { return `background:transparent;border:1px solid transparent;border-radius:3px;padding:0.4rem 0.6rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;${extra}`; }
+function fmt(n)  { return '€\u00a0' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

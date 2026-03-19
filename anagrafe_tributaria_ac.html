@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Anagrafe Tributaria Quadro AC</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}.cv.gn{color:var(--success);}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-prop{background:#d0e8f0;color:#1a4060;}
+.b-inq{background:var(--gold-light);color:var(--warning);}
+.b-loc{background:var(--success-light);color:var(--success);}
+
+/* RIEPILOGO AC */
+.ac-block{background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 2px 12px var(--shadow);}
+.ac-header{background:var(--ink);color:var(--paper);padding:0.9rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.ac-header-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;}
+.ac-header-badge{font-family:'DM Mono',monospace;font-size:0.62rem;background:rgba(255,255,255,0.12);padding:0.25rem 0.6rem;border-radius:2px;}
+.ac-body{padding:1.25rem 1.5rem;}
+.ac-row{display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--cream);font-size:0.85rem;}
+.ac-row:last-child{border-bottom:none;}
+.ac-label{color:var(--muted);font-size:0.82rem;}
+.ac-value{font-weight:500;}
+.ac-value.mono{font-family:'DM Mono',monospace;}
+
+/* TRACCIATO */
+.tracciato{background:#1a1a2e;color:#e8e0d0;border-radius:4px;padding:1.25rem 1.5rem;font-family:'DM Mono',monospace;font-size:0.72rem;line-height:1.8;overflow-x:auto;margin-bottom:1.5rem;white-space:pre;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Fiscale · Modulo 1.11</div>
+  <h1>Anagrafe Tributaria<br><em>Quadro AC</em></h1>
+  <p class="header-sub">Gestisci i dati per la comunicazione annuale all'Anagrafe Tributaria: dati del condominio, proprietari, inquilini, contratti di locazione e spese attribuite per unità.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"     onclick="go('setup')">⚙️ 1 · Dati Condominio</button>
+    <button class="tab-btn"   id="tb-unita"      onclick="go('unita')">🏠 2 · Unità Immobiliari</button>
+    <button class="tab-btn"   id="tb-contratti"  onclick="go('contratti')">📝 3 · Contratti Locazione</button>
+    <button class="tab-btn"   id="tb-spese"      onclick="go('spese')">🧮 4 · Spese Attribuite</button>
+    <button class="tab-btn"   id="tb-riepilogo"  onclick="go('riepilogo')">📋 5 · Riepilogo AC</button>
+    <button class="tab-btn"   id="tb-tracciato"  onclick="go('tracciato')">💾 6 · Tracciato / Export</button>
+  </div>
+
+  <!-- ══ TAB 1 — DATI CONDOMINIO ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati identificativi del condominio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Denominazione Condominio</label><input type="text" id="cNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale Condominio</label><input type="text" id="cCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>Indirizzo completo</label><input type="text" id="cIndirizzo" placeholder="Es. Via Roma 10"></div>
+        <div class="fg"><label>Comune</label><input type="text" id="cComune" placeholder="Es. Milano"></div>
+      </div>
+      <div class="r4">
+        <div class="fg"><label>CAP</label><input type="text" id="cCAP" placeholder="Es. 20121" maxlength="5"></div>
+        <div class="fg"><label>Provincia</label><input type="text" id="cProvincia" placeholder="Es. MI" maxlength="2"></div>
+        <div class="fg"><label>Anno di riferimento</label>
+          <select id="annoRif">
+            <option value="2025">2025</option><option value="2024" selected>2024</option>
+            <option value="2023">2023</option><option value="2022">2022</option>
+          </select>
+        </div>
+        <div class="fg"><label>Scadenza dichiarazione</label><input type="date" id="scadAC"></div>
+      </div>
+    </div>
+
+    <div class="sl">Dati dell'amministratore</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Cognome e Nome</label><input type="text" id="adminNome" placeholder="Es. Bianchi Marco"></div>
+        <div class="fg"><label>Codice Fiscale Amministratore</label><input type="text" id="adminCF" placeholder="Es. BNCMRC70A01H501Z"></div>
+      </div>
+      <div class="r3">
+        <div class="fg"><label>Indirizzo studio</label><input type="text" id="adminIndirizzo" placeholder="Es. Via Milano 5"></div>
+        <div class="fg"><label>Comune studio</label><input type="text" id="adminComune" placeholder="Es. Milano"></div>
+        <div class="fg"><label>Telefono / Email</label><input type="text" id="adminContatti" placeholder="Es. 02 1234567"></div>
+      </div>
+    </div>
+
+    <div class="nb">
+      <strong>📅 Cos'è la comunicazione Quadro AC</strong>
+      L'amministratore di condominio è obbligato a comunicare annualmente all'Agenzia delle Entrate i dati catastali del condominio, i dati di proprietari e inquilini, i contratti di locazione stipulati e le spese condominiali. La comunicazione va trasmessa telematicamente entro il <strong>28 febbraio</strong> dell'anno successivo tramite il modello 730 (Quadro AC) o il modello Unico. I dati vengono utilizzati dall'AdE per i controlli fiscali incrociati.
+    </div>
+    <div class="brow"><button class="btn btn-p" onclick="go('unita')">→ Inserisci le unità immobiliari</button></div>
+  </div>
+
+  <!-- ══ TAB 2 — UNITÀ IMMOBILIARI ══ -->
+  <div class="panel" id="p-unita">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Unità totali</div><div class="cv" id="suTot">0</div></div>
+      <div class="sc r"><div class="cl">Proprietari</div><div class="cv a" id="suProp">0</div></div>
+      <div class="sc g"><div class="cl">Inquilini</div><div class="cv go" id="suInq">0</div></div>
+      <div class="sc gn"><div class="cl">Millesimi totali</div><div class="cv gn" id="suMill">0</div></div>
+    </div>
+
+    <div class="sl">Unità immobiliari e soggetti</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Per ogni unità immobiliare inserisci i dati catastali, il proprietario e l'eventuale inquilino. Il ruolo determina l'obbligo di comunicazione all'AdE.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Interno / Scala</th><th>Categoria catastale</th><th>Sub</th>
+          <th>Proprietario — CF</th><th>Proprietario — Cognome Nome</th>
+          <th>Ruolo</th><th>Inquilino — CF</th><th>Inquilino — Cognome Nome</th>
+          <th>Millesimi</th><th></th>
+        </tr></thead>
+        <tbody id="unitaBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addUnita()">＋ Aggiungi unità</button>
+      <button class="btn btn-g" onclick="loadDefaultUnita()">📋 Carica esempi</button>
+      <button class="btn btn-p" onclick="aggUnita(); go('contratti')">→ Vai ai Contratti</button>
+      <button class="btn btn-g" onclick="document.getElementById('unitaBody').innerHTML='';unitaCount=0;aggUnita();">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — CONTRATTI LOCAZIONE ══ -->
+  <div class="panel" id="p-contratti">
+    <div class="sl">Contratti di locazione in essere</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Inserisci i contratti di locazione relativi alle unità del condominio. Questi dati vanno comunicati all'Anagrafe Tributaria.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Unità / Interno</th><th>Locatore (CF)</th><th>Locatore (Cognome Nome)</th>
+          <th>Conduttore (CF)</th><th>Conduttore (Cognome Nome)</th>
+          <th>Data inizio</th><th>Data fine</th><th>Canone annuo (€)</th>
+          <th>Tipo contratto</th><th>Cod. registrazione</th><th></th>
+        </tr></thead>
+        <tbody id="contrBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addContr()">＋ Aggiungi contratto</button>
+      <button class="btn btn-g" onclick="loadDefaultContr()">📋 Carica esempi</button>
+      <button class="btn btn-p" onclick="go('spese')">→ Vai alle Spese</button>
+      <button class="btn btn-g" onclick="document.getElementById('contrBody').innerHTML='';contrCount=0;">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — SPESE ATTRIBUITE ══ -->
+  <div class="panel" id="p-spese">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Voci di spesa</div><div class="cv" id="ssVoci">0</div></div>
+      <div class="sc r"><div class="cl">Totale spese</div><div class="cv a" id="ssTot">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">Detraibili IRPEF</div><div class="cv go" id="ssDetIRPEF">€ 0,00</div></div>
+      <div class="sc gn"><div class="cl">Detraibili bonus</div><div class="cv gn" id="ssDetBonus">€ 0,00</div></div>
+    </div>
+
+    <div class="sl">Spese condominiali per tipologia</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Inserisci le spese condominiali dell'anno suddivise per tipologia fiscale. Le spese detraibili vanno comunicare per consentire ai condomini di inserirle nella dichiarazione dei redditi.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Descrizione spesa</th><th>Tipologia fiscale</th><th>Fornitore</th>
+          <th>Importo totale (€)</th><th>Detraibile IRPEF (%)</th><th>Importo detraibile (€)</th>
+          <th>Codice detrazione</th><th></th>
+        </tr></thead>
+        <tbody id="speseBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addSpesa()">＋ Aggiungi spesa</button>
+      <button class="btn btn-g" onclick="loadDefaultSpese()">📋 Carica spese tipiche</button>
+      <button class="btn btn-p" onclick="aggSpese(); go('riepilogo')">→ Vai al Riepilogo AC</button>
+      <button class="btn btn-g" onclick="document.getElementById('speseBody').innerHTML='';speseCount=0;aggSpese();">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — RIEPILOGO ══ -->
+  <div class="panel" id="p-riepilogo">
+    <div id="riepilogoContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i dati nelle tab precedenti per generare il riepilogo Quadro AC.</p>
+        <button class="btn btn-g" onclick="go('unita')">→ Vai alle Unità</button>
+        &nbsp;
+        <button class="btn btn-p" onclick="loadDefaultUnita();loadDefaultContr();loadDefaultSpese();aggUnita();aggSpese();renderRiepilogo()">⚡ Carica dati esempio e genera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 6 — TRACCIATO / EXPORT ══ -->
+  <div class="panel" id="p-tracciato">
+    <div id="tracciatoContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">💾</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera prima il riepilogo (Tab 5) per ottenere il tracciato dati e l'export Excel.</p>
+        <button class="btn btn-g" onclick="go('riepilogo')">→ Vai al Riepilogo</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Anagrafe Tributaria Quadro AC · Beta · Solo uso indicativo — trasmissione a cura del professionista abilitato</div>
+
+<script>
+var PANELS=['setup','unita','contratti','spese','riepilogo','tracciato'];
+var unitaCount=0,contrCount=0,speseCount=0;
+
+var CAT_CATASTALI=['A/2 - Abitazione civile','A/3 - Abitazione economica','A/4 - Abitazione popolare','B/1 - Collegi','C/1 - Negozi','C/6 - Box/Garage','C/7 - Tettoie'];
+var TIPI_CONTR=['4+4 Libero','3+2 Concordato','Transitorio','Uso foresteria','Studenti universitari'];
+var TIPOLOGIE_SPESA=[
+  {id:'ordinaria',    n:'Manutenzione ordinaria',         detIRPEF:0,   codDet:'',    bonus:false},
+  {id:'straordinaria',n:'Manutenzione straordinaria',     detIRPEF:50,  codDet:'E17', bonus:true},
+  {id:'risparmio',    n:'Risparmio energetico (Ecobonus)',detIRPEF:50,  codDet:'E61', bonus:true},
+  {id:'sisma',        n:'Miglioramento antisismico',      detIRPEF:70,  codDet:'E62', bonus:true},
+  {id:'utenza',       n:'Utenze (luce, gas, acqua)',       detIRPEF:0,   codDet:'',    bonus:false},
+  {id:'assicurazione',n:'Assicurazione fabbricato',       detIRPEF:0,   codDet:'',    bonus:false},
+  {id:'professionale',n:'Compensi professionisti',        detIRPEF:0,   codDet:'',    bonus:false},
+  {id:'altro',        n:'Altro',                          detIRPEF:0,   codDet:'',    bonus:false},
+];
+
+// ══ TAB ══
+function go(name){
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n===name?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n===name?' on':'');
+  });
+  if(name==='riepilogo') renderRiepilogo();
+  if(name==='tracciato') renderTracciato();
+}
+
+window.onload=function(){
+  PANELS.forEach(function(n,i){
+    document.getElementById('p-'+n).style.display=i===0?'block':'none';
+  });
+  var sc=document.getElementById('scadAC');
+  if(sc) sc.value=(new Date().getFullYear()+1)+'-02-28';
+  addUnita(); addUnita(); addUnita();
+  addContr();
+  addSpesa(); addSpesa();
+};
+
+// ══ UNITÀ ══
+function addUnita(d){
+  d=d||{};
+  unitaCount++;
+  var id=unitaCount;
+  var catOpts=CAT_CATASTALI.map(function(c){return '<option'+(d.cat===c?' selected':'')+'>'+c+'</option>';}).join('');
+  var tr=document.createElement('tr');
+  tr.id='u-'+id;
+  tr.innerHTML=
+    '<td><input class="ic" type="text" id="uint-'+id+'" placeholder="Es. Int.1 Sc.A" value="'+(d.interno||'')+'"></td>'+
+    '<td><select class="ic" id="ucat-'+id+'">'+catOpts+'</select></td>'+
+    '<td><input class="ic" type="text" id="usub-'+id+'" placeholder="Es. 12" value="'+(d.sub||'')+'" style="max-width:60px"></td>'+
+    '<td><input class="ic" type="text" id="upcf-'+id+'" placeholder="CF proprietario" value="'+(d.propCF||'')+'"></td>'+
+    '<td><input class="ic" type="text" id="upn-'+id+'"  placeholder="Rossi Mario"     value="'+(d.propNome||'')+'"></td>'+
+    '<td><select class="ic" id="uruolo-'+id+'">'+
+      '<option value="proprietario"'+(d.ruolo==='proprietario'?' selected':'')+'>Proprietario</option>'+
+      '<option value="usufruttuario"'+(d.ruolo==='usufruttuario'?' selected':'')+'>Usufruttuario</option>'+
+      '<option value="nudo_proprietario"'+(d.ruolo==='nudo_proprietario'?' selected':'')+'>Nudo proprietario</option>'+
+    '</select></td>'+
+    '<td><input class="ic" type="text" id="uicf-'+id+'" placeholder="CF inquilino"    value="'+(d.inqCF||'')+'"></td>'+
+    '<td><input class="ic" type="text" id="uin-'+id+'"  placeholder="Bianchi Lucia"   value="'+(d.inqNome||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="umill-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'" oninput="aggUnita()"></td>'+
+    '<td><button onclick="rmU('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('unitaBody').appendChild(tr);
+  aggUnita();
+}
+
+function rmU(id){var el=document.getElementById('u-'+id);if(el)el.remove();aggUnita();}
+
+function loadDefaultUnita(){
+  document.getElementById('unitaBody').innerHTML='';unitaCount=0;
+  var def=[
+    {interno:'Int.1 Sc.A',cat:'A/2 - Abitazione civile',sub:'1', propCF:'RSSMAR70A01H501Z',propNome:'Rossi Mario',     ruolo:'proprietario',inqCF:'',              inqNome:'',              mill:95},
+    {interno:'Int.2 Sc.A',cat:'A/2 - Abitazione civile',sub:'2', propCF:'VRDGIU65M10H501X',propNome:'Verdi Giuseppe',  ruolo:'proprietario',inqCF:'BNCMRC80B02H501Y',inqNome:'Bianchi Marco', mill:88},
+    {interno:'Int.3 Sc.A',cat:'A/3 - Abitazione economica',sub:'3',propCF:'NRIANN75C41H501W',propNome:'Neri Anna',     ruolo:'proprietario',inqCF:'',              inqNome:'',              mill:72},
+    {interno:'Int.4 Sc.B',cat:'A/2 - Abitazione civile',sub:'4', propCF:'BNCLRA90D42H501V',propNome:'Bianchi Laura',  ruolo:'proprietario',inqCF:'VRDFNC88E03H501U',inqNome:'Verdi Franco',  mill:105},
+    {interno:'Box 1',     cat:'C/6 - Box/Garage',       sub:'5', propCF:'RSSMAR70A01H501Z',propNome:'Rossi Mario',     ruolo:'proprietario',inqCF:'',              inqNome:'',              mill:30},
+  ];
+  def.forEach(function(d){addUnita(d);});
+}
+
+function leggiUnita(){
+  var r=[];
+  document.querySelectorAll('#unitaBody tr').forEach(function(tr){
+    var id=tr.id.replace('u-','');
+    var interno=((document.getElementById('uint-'+id)||{}).value||'').trim();
+    var cat=(document.getElementById('ucat-'+id)||{}).value||'';
+    var sub=((document.getElementById('usub-'+id)||{}).value||'').trim();
+    var propCF=((document.getElementById('upcf-'+id)||{}).value||'').trim();
+    var propNome=((document.getElementById('upn-'+id)||{}).value||'').trim();
+    var ruolo=(document.getElementById('uruolo-'+id)||{}).value||'proprietario';
+    var inqCF=((document.getElementById('uicf-'+id)||{}).value||'').trim();
+    var inqNome=((document.getElementById('uin-'+id)||{}).value||'').trim();
+    var mill=parseFloat((document.getElementById('umill-'+id)||{}).value)||0;
+    if(interno||propNome) r.push({id:id,interno:interno,cat:cat,sub:sub,propCF:propCF,propNome:propNome,ruolo:ruolo,inqCF:inqCF,inqNome:inqNome,mill:mill});
+  });
+  return r;
+}
+
+function aggUnita(){
+  var u=leggiUnita();
+  var nInq=u.filter(function(x){return x.inqCF||x.inqNome;}).length;
+  var totMill=u.reduce(function(s,x){return s+x.mill;},0);
+  document.getElementById('suTot').textContent=u.length;
+  document.getElementById('suProp').textContent=u.length;
+  document.getElementById('suInq').textContent=nInq;
+  document.getElementById('suMill').textContent=totMill.toFixed(2);
+}
+
+// ══ CONTRATTI ══
+function addContr(d){
+  d=d||{};
+  contrCount++;
+  var id=contrCount;
+  var tipoOpts=TIPI_CONTR.map(function(t){return '<option'+(d.tipo===t?' selected':'')+'>'+t+'</option>';}).join('');
+  var oggi=new Date().toISOString().split('T')[0];
+  var tr=document.createElement('tr');
+  tr.id='ct-'+id;
+  tr.innerHTML=
+    '<td><input class="ic" type="text"   id="ctui-'+id+'" placeholder="Es. Int.2 Sc.A"          value="'+(d.unita||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="ctlcf-'+id+'" placeholder="CF locatore"             value="'+(d.locCF||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="ctln-'+id+'"  placeholder="Verdi Giuseppe"          value="'+(d.locNome||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="ctccf-'+id+'" placeholder="CF conduttore"           value="'+(d.condCF||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="ctcn-'+id+'"  placeholder="Bianchi Marco"           value="'+(d.condNome||'')+'"></td>'+
+    '<td><input class="ic" type="date"   id="ctda-'+id+'"  value="'+(d.dataInizio||'')+'"></td>'+
+    '<td><input class="ic" type="date"   id="cta-'+id+'"   value="'+(d.dataFine||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="ctcan-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.canone||'')+'"></td>'+
+    '<td><select class="ic" id="cttipo-'+id+'">'+tipoOpts+'</select></td>'+
+    '<td><input class="ic" type="text"   id="ctreg-'+id+'" placeholder="Es. MI-2024-12345"       value="'+(d.regCod||'')+'"></td>'+
+    '<td><button onclick="rmCt('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('contrBody').appendChild(tr);
+}
+
+function rmCt(id){var el=document.getElementById('ct-'+id);if(el)el.remove();}
+
+function loadDefaultContr(){
+  document.getElementById('contrBody').innerHTML='';contrCount=0;
+  addContr({
+    unita:'Int.2 Sc.A',locCF:'VRDGIU65M10H501X',locNome:'Verdi Giuseppe',
+    condCF:'BNCMRC80B02H501Y',condNome:'Bianchi Marco',
+    dataInizio:'2022-09-01',dataFine:'2026-08-31',canone:9600,
+    tipo:'4+4 Libero',regCod:'MI-2022-45678'
+  });
+  addContr({
+    unita:'Int.4 Sc.B',locCF:'BNCLRA90D42H501V',locNome:'Bianchi Laura',
+    condCF:'VRDFNC88E03H501U',condNome:'Verdi Franco',
+    dataInizio:'2023-03-01',dataFine:'2026-02-28',canone:7200,
+    tipo:'3+2 Concordato',regCod:'MI-2023-12345'
+  });
+}
+
+function leggiContratti(){
+  var r=[];
+  document.querySelectorAll('#contrBody tr').forEach(function(tr){
+    var id=tr.id.replace('ct-','');
+    var unita=((document.getElementById('ctui-'+id)||{}).value||'').trim();
+    var locCF=((document.getElementById('ctlcf-'+id)||{}).value||'').trim();
+    var locNome=((document.getElementById('ctln-'+id)||{}).value||'').trim();
+    var condCF=((document.getElementById('ctccf-'+id)||{}).value||'').trim();
+    var condNome=((document.getElementById('ctcn-'+id)||{}).value||'').trim();
+    var dataInizio=(document.getElementById('ctda-'+id)||{}).value||'';
+    var dataFine=(document.getElementById('cta-'+id)||{}).value||'';
+    var canone=parseFloat((document.getElementById('ctcan-'+id)||{}).value)||0;
+    var tipo=(document.getElementById('cttipo-'+id)||{}).value||'';
+    var regCod=((document.getElementById('ctreg-'+id)||{}).value||'').trim();
+    if(unita||locNome) r.push({id:id,unita:unita,locCF:locCF,locNome:locNome,condCF:condCF,condNome:condNome,dataInizio:dataInizio,dataFine:dataFine,canone:canone,tipo:tipo,regCod:regCod});
+  });
+  return r;
+}
+
+// ══ SPESE ══
+function addSpesa(d){
+  d=d||{};
+  speseCount++;
+  var id=speseCount;
+  var tipOpts=TIPOLOGIE_SPESA.map(function(t){return '<option value="'+t.id+'"'+(d.tip===t.id?' selected':'')+'>'+t.n+'</option>';}).join('');
+  var tr=document.createElement('tr');
+  tr.id='ss-'+id;
+  tr.innerHTML=
+    '<td><input class="ic" type="text"   id="ssd-'+id+'"  placeholder="Es. Rifacimento facciata" value="'+(d.desc||'')+'"></td>'+
+    '<td><select class="ic" id="sst-'+id+'" onchange="calcDetraz('+id+')">'+tipOpts+'</select></td>'+
+    '<td><input class="ic" type="text"   id="ssf-'+id+'"  placeholder="Es. Rossi Restauri srl"  value="'+(d.forn||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="ssi-'+id+'"  placeholder="0.00" step="0.01" min="0" value="'+(d.imp||'')+'" oninput="calcDetraz('+id+');aggSpese()"></td>'+
+    '<td class="amt" id="ssp-'+id+'" style="color:var(--muted);font-size:0.78rem">—</td>'+
+    '<td class="amt" id="ssdet-'+id+'" style="color:var(--gold);font-weight:600">—</td>'+
+    '<td class="amt" id="sscod-'+id+'" style="font-family:\'DM Mono\',monospace;font-size:0.78rem;color:var(--warning)">—</td>'+
+    '<td><button onclick="rmSs('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('speseBody').appendChild(tr);
+  if(d.imp) calcDetraz(id);
+  aggSpese();
+}
+
+function rmSs(id){var el=document.getElementById('ss-'+id);if(el)el.remove();aggSpese();}
+
+function loadDefaultSpese(){
+  document.getElementById('speseBody').innerHTML='';speseCount=0;
+  var def=[
+    {desc:'Rifacimento facciata',          tip:'straordinaria', forn:'Rossi Restauri srl', imp:45000},
+    {desc:'Sostituzione caldaia centraliz.',tip:'risparmio',     forn:'Impianti Bianchi',  imp:18000},
+    {desc:'Pulizia scale e parti comuni',  tip:'ordinaria',      forn:'CleanPro srl',      imp:3600},
+    {desc:'Energia elettrica parti comuni',tip:'utenza',          forn:'Enel Energia',      imp:1800},
+    {desc:'Assicurazione fabbricato',      tip:'assicurazione',  forn:'UnipolSAI',          imp:1200},
+    {desc:'Compenso amministratore',       tip:'professionale',  forn:'Studio Amm. Bianchi',imp:2400},
+  ];
+  def.forEach(function(d){addSpesa(d);});
+}
+
+function calcDetraz(id){
+  var imp=parseFloat((document.getElementById('ssi-'+id)||{}).value)||0;
+  var tipId=(document.getElementById('sst-'+id)||{}).value||'ordinaria';
+  var tip=TIPOLOGIE_SPESA.find(function(t){return t.id===tipId;})||TIPOLOGIE_SPESA[0];
+  var det=imp*(tip.detIRPEF/100);
+  var pe=document.getElementById('ssp-'+id);
+  var de=document.getElementById('ssdet-'+id);
+  var ce=document.getElementById('sscod-'+id);
+  if(pe) pe.textContent=tip.detIRPEF>0?tip.detIRPEF+'%':'—';
+  if(de) de.textContent=det>0?fmt(det):'—';
+  if(ce) ce.textContent=tip.codDet||'—';
+}
+
+function leggiSpese(){
+  var r=[];
+  document.querySelectorAll('#speseBody tr').forEach(function(tr){
+    var id=tr.id.replace('ss-','');
+    var desc=((document.getElementById('ssd-'+id)||{}).value||'').trim();
+    var tipId=(document.getElementById('sst-'+id)||{}).value||'ordinaria';
+    var forn=((document.getElementById('ssf-'+id)||{}).value||'').trim();
+    var imp=parseFloat((document.getElementById('ssi-'+id)||{}).value)||0;
+    if(!desc||!imp) return;
+    var tip=TIPOLOGIE_SPESA.find(function(t){return t.id===tipId;})||TIPOLOGIE_SPESA[0];
+    var det=imp*(tip.detIRPEF/100);
+    r.push({id:id,desc:desc,tipId:tipId,tipNome:tip.n,forn:forn,imp:imp,detPerc:tip.detIRPEF,det:det,codDet:tip.codDet,bonus:tip.bonus});
+  });
+  return r;
+}
+
+function aggSpese(){
+  var sp=leggiSpese();
+  var tot=sp.reduce(function(s,v){return s+v.imp;},0);
+  var detIRPEF=sp.reduce(function(s,v){return s+v.det;},0);
+  var detBonus=sp.filter(function(v){return v.bonus;}).reduce(function(s,v){return s+v.imp;},0);
+  document.getElementById('ssVoci').textContent=sp.length;
+  document.getElementById('ssTot').textContent=fmt(tot);
+  document.getElementById('ssDetIRPEF').textContent=fmt(detIRPEF);
+  document.getElementById('ssDetBonus').textContent=fmt(detBonus);
+  sp.forEach(function(v){ calcDetraz(v.id); });
+}
+
+// ══ RIEPILOGO ══
+function renderRiepilogo(){
+  var unita=leggiUnita();
+  var contr=leggiContratti();
+  var spese=leggiSpese();
+  if(!unita.length&&!spese.length) return;
+
+  var cNome=(document.getElementById('cNome')||{}).value||'Condominio';
+  var cCF=(document.getElementById('cCF')||{}).value||'';
+  var cInd=(document.getElementById('cIndirizzo')||{}).value||'';
+  var cCom=(document.getElementById('cComune')||{}).value||'';
+  var cCAP=(document.getElementById('cCAP')||{}).value||'';
+  var cProv=(document.getElementById('cProvincia')||{}).value||'';
+  var anno=(document.getElementById('annoRif')||{}).value||'2024';
+  var adminNome=(document.getElementById('adminNome')||{}).value||'';
+  var adminCF=(document.getElementById('adminCF')||{}).value||'';
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var totSpese=spese.reduce(function(s,v){return s+v.imp;},0);
+  var totDet=spese.reduce(function(s,v){return s+v.det;},0);
+  var speseBonus=spese.filter(function(v){return v.bonus;});
+
+  // Calcola quota spese per unità (millesimale)
+  var totMill=unita.reduce(function(s,u){return s+u.mill;},0)||unita.length;
+  var unitaConQuote=unita.map(function(u){
+    var quotaSpese=totMill>0?totSpese*(u.mill/totMill):totSpese/unita.length;
+    var quotaDet=totMill>0?totDet*(u.mill/totMill):totDet/unita.length;
+    return Object.assign({},u,{quotaSpese:quotaSpese,quotaDet:quotaDet});
+  });
+
+  var html=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel CAF/Commercialista</button>'+
+    '<button class="btn btn-p btn-sm" onclick="go(\'tracciato\')">💾 Tracciato AdE</button>'+
+    '</div>'+
+
+    // BLOCCO CONDOMINIO
+    '<div class="ac-block">'+
+    '<div class="ac-header"><span class="ac-header-title">Dati Condominio — Sostituto d\'imposta</span><span class="ac-header-badge">Anno '+anno+'</span></div>'+
+    '<div class="ac-body">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">'+
+    acField('Denominazione',cNome)+acField('Codice Fiscale',cCF,true)+
+    acField('Indirizzo',cInd+', '+cCOM(cCAP,cCom,cProv))+
+    acField('Amministratore',adminNome)+acField('C.F. Amministratore',adminCF,true)+
+    acField('Data comunicazione',oggi)+
+    '</div></div></div>'+
+
+    // UNITÀ IMMOBILIARI
+    '<div class="ac-block">'+
+    '<div class="ac-header"><span class="ac-header-title">Sezione I — Unità immobiliari e soggetti ('+unita.length+')</span></div>'+
+    '<div class="ac-body">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.8rem">'+
+    '<thead><tr style="background:var(--cream)">'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Interno</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Cat. Catast.</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Proprietario</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">C.F.</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Inquilino</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Mill.</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Quota spese</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Di cui detr.</th>'+
+    '</tr></thead><tbody>'+
+    unitaConQuote.map(function(u){
+      return '<tr style="border-bottom:1px solid var(--cream)">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(u.interno)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.75rem;color:var(--muted)">'+esc(u.cat.split(' - ')[0])+'</td>'+
+        '<td style="padding:0.5rem">'+esc(u.propNome)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(u.propCF)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(u.inqNome||'—')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+u.mill+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">'+fmt(u.quotaSpese)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;color:var(--gold)">'+fmt(u.quotaDet)+'</td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div></div>'+
+
+    // CONTRATTI
+    (contr.length?
+    '<div class="ac-block">'+
+    '<div class="ac-header"><span class="ac-header-title">Sezione II — Contratti di locazione ('+contr.length+')</span></div>'+
+    '<div class="ac-body">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.8rem">'+
+    '<thead><tr style="background:var(--cream)">'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Unità</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Locatore</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Conduttore</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Periodo</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Canone annuo</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Tipo</th>'+
+    '</tr></thead><tbody>'+
+    contr.map(function(c){
+      return '<tr style="border-bottom:1px solid var(--cream)">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(c.unita)+'</td>'+
+        '<td style="padding:0.5rem">'+esc(c.locNome)+'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">'+esc(c.locCF)+'</span></td>'+
+        '<td style="padding:0.5rem">'+esc(c.condNome)+'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">'+esc(c.condCF)+'</span></td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(c.dataInizio)+' / '+esc(c.dataFine)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">'+fmt(c.canone)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(c.tipo)+'</td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div></div>' : '')+
+
+    // SPESE
+    (spese.length?
+    '<div class="ac-block">'+
+    '<div class="ac-header"><span class="ac-header-title">Sezione III — Spese condominiali e detrazioni</span></div>'+
+    '<div class="ac-body">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.8rem">'+
+    '<thead><tr style="background:var(--cream)">'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Descrizione</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Tipologia</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Importo</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">% Det.</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Quota detr.</th>'+
+    '<th style="padding:0.5rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">Cod. AdE</th>'+
+    '</tr></thead><tbody>'+
+    spese.map(function(v){
+      return '<tr style="border-bottom:1px solid var(--cream)">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(v.desc)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(v.tipNome)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+fmt(v.imp)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;color:var(--muted)">'+
+          (v.detPerc>0?v.detPerc+'%':'—')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;color:var(--gold);font-weight:600">'+
+          (v.det>0?fmt(v.det):'—')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:center;color:var(--warning)">'+
+          esc(v.codDet||'—')+'</td>'+
+        '</tr>';
+    }).join('')+
+    '<tr style="background:var(--ink);color:var(--paper)">'+
+    '<td style="padding:0.6rem 0.5rem;font-family:\'DM Mono\',monospace;font-weight:700" colspan="2">TOTALE</td>'+
+    '<td style="padding:0.6rem 0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:700">'+fmt(totSpese)+'</td>'+
+    '<td></td>'+
+    '<td style="padding:0.6rem 0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:700;color:#e8b090">'+fmt(totDet)+'</td>'+
+    '<td></td></tr>'+
+    '</tbody></table></div></div>' : '')+
+
+    '<div class="nb"><strong>⚠️ Nota trasmissione</strong>'+
+    'Questi dati devono essere trasmessi telematicamente all\'Agenzia delle Entrate tramite i canali ufficiali (Entratel/Fisconline) a cura di un professionista abilitato. Il termine ordinario è il <strong>28 febbraio</strong> dell\'anno successivo a quello di riferimento.'+
+    '</div>';
+
+  document.getElementById('riepilogoContent').innerHTML=html;
+}
+
+function cCOM(cap,com,prov){ return [cap,com,prov].filter(Boolean).join(' '); }
+
+// ══ TRACCIATO ══
+function renderTracciato(){
+  var unita=leggiUnita();
+  var contr=leggiContratti();
+  var spese=leggiSpese();
+
+  var cNome=(document.getElementById('cNome')||{}).value||'CONDOMINIO';
+  var cCF=(document.getElementById('cCF')||{}).value||'00000000000';
+  var anno=(document.getElementById('annoRif')||{}).value||'2024';
+  var adminCF=(document.getElementById('adminCF')||{}).value||'';
+
+  // Genera tracciato testuale semplificato (formato descrittivo per il commercialista)
+  var righe=[];
+  righe.push('╔══════════════════════════════════════════════════════════════╗');
+  righe.push('║   TRACCIATO DATI QUADRO AC — Anno '+anno+'                       ║');
+  righe.push('╚══════════════════════════════════════════════════════════════╝');
+  righe.push('');
+  righe.push('SOSTITUTO D\'IMPOSTA');
+  righe.push('  CF Condominio : '+cCF);
+  righe.push('  Denominazione : '+cNome);
+  righe.push('  CF Amministr. : '+(adminCF||'N/D'));
+  righe.push('  Anno imposta  : '+anno);
+  righe.push('');
+  righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  righe.push('SEZIONE I — DATI SOGGETTI');
+  righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  unita.forEach(function(u,i){
+    righe.push('');
+    righe.push('  Sogg. '+(i+1).toString().padStart(3,'0')+' │ Unità: '+u.interno);
+    righe.push('         │ Proprietario: '+u.propNome+' │ CF: '+u.propCF);
+    righe.push('         │ Cat.catastale: '+u.cat.split(' - ')[0]+' │ Sub: '+u.sub);
+    righe.push('         │ Ruolo: '+u.ruolo+(u.inqNome?' │ Inquilino: '+u.inqNome+' (CF: '+u.inqCF+')':''));
+    righe.push('         │ Millesimi: '+u.mill);
+  });
+  righe.push('');
+  if(contr.length){
+    righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    righe.push('SEZIONE II — CONTRATTI DI LOCAZIONE');
+    righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    contr.forEach(function(c,i){
+      righe.push('');
+      righe.push('  Contr. '+(i+1).toString().padStart(3,'0')+'│ Unità: '+c.unita+' │ Tipo: '+c.tipo);
+      righe.push('          │ Locatore: '+c.locNome+' (CF: '+c.locCF+')');
+      righe.push('          │ Conduttore: '+c.condNome+' (CF: '+c.condCF+')');
+      righe.push('          │ Periodo: '+c.dataInizio+' → '+c.dataFine);
+      righe.push('          │ Canone annuo: '+fmt(c.canone)+' │ Reg.: '+c.regCod);
+    });
+    righe.push('');
+  }
+  if(spese.length){
+    righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    righe.push('SEZIONE III — SPESE E DETRAZIONI');
+    righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    spese.forEach(function(v){
+      righe.push('  '+v.desc.padEnd(35)+' │ '+fmt(v.imp).padStart(12)+(v.det>0?' │ Detr. '+v.detPerc+'%: '+fmt(v.det).padStart(12)+' │ Cod: '+v.codDet:''));
+    });
+    var totS=spese.reduce(function(s,v){return s+v.imp;},0);
+    var totD=spese.reduce(function(s,v){return s+v.det;},0);
+    righe.push('  '+'TOTALE SPESE'.padEnd(35)+' │ '+fmt(totS).padStart(12));
+    righe.push('  '+'TOTALE DETRAIBILE'.padEnd(35)+' │ '+fmt(totD).padStart(12));
+  }
+  righe.push('');
+  righe.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  righe.push('Generato da CondoKit il '+new Date().toLocaleDateString('it-IT'));
+  righe.push('ATTENZIONE: trasmissione telematica a cura del professionista abilitato');
+
+  var tracciato=righe.join('\n');
+
+  document.getElementById('tracciatoContent').innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '<button class="btn btn-p btn-sm" onclick="copiaTesto()">📋 Copia testo</button>'+
+    '</div>'+
+    '<div class="nb" style="margin-bottom:1rem"><strong>💡 Come usare questo tracciato</strong>'+
+    'Il tracciato qui sotto riassume tutti i dati nel formato leggibile. Copialo e consegnalo al tuo commercialista o CAF che si occuperà della trasmissione telematica tramite Entratel. '+
+    'L\'export Excel contiene gli stessi dati in formato tabellare per una gestione più agevole.</div>'+
+    '<div class="tracciato" id="tracciatoTesto">'+esc(tracciato)+'</div>';
+
+  window._tracciato=tracciato;
+}
+
+function copiaTesto(){
+  if(window._tracciato){
+    navigator.clipboard.writeText(window._tracciato)
+      .then(function(){alert('✅ Tracciato copiato negli appunti!');})
+      .catch(function(){alert('Seleziona il testo manualmente e copia con Ctrl+C.');});
+  }
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  var unita=leggiUnita();
+  var contr=leggiContratti();
+  var spese=leggiSpese();
+  var cNome=(document.getElementById('cNome')||{}).value||'Condominio';
+  var anno=(document.getElementById('annoRif')||{}).value||'2024';
+
+  var wb=XLSX.utils.book_new();
+
+  if(unita.length){
+    var ws1=XLSX.utils.aoa_to_sheet(
+      [['QUADRO AC '+anno+' — '+cNome+' — Unità immobiliari'],[]].concat(
+      [['Interno','Categoria catastale','Sub','CF Proprietario','Proprietario','Ruolo','CF Inquilino','Inquilino','Millesimi']]).concat(
+      unita.map(function(u){return [u.interno,u.cat,u.sub,u.propCF,u.propNome,u.ruolo,u.inqCF,u.inqNome,u.mill];})));
+    ws1['!cols']=[12,22,6,18,22,16,18,22,10].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws1,'Unità Immobiliari');
+  }
+
+  if(contr.length){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['Unità','CF Locatore','Locatore','CF Conduttore','Conduttore','Data Inizio','Data Fine','Canone Annuo','Tipo','Cod. Registrazione']].concat(
+      contr.map(function(c){return [c.unita,c.locCF,c.locNome,c.condCF,c.condNome,c.dataInizio,c.dataFine,c.canone,c.tipo,c.regCod];})));
+    ws2['!cols']=[12,16,22,16,22,10,10,12,16,16].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Contratti Locazione');
+  }
+
+  if(spese.length){
+    var ws3=XLSX.utils.aoa_to_sheet(
+      [['Descrizione','Tipologia','Fornitore','Importo','% Detrazione','Quota Detraibile','Codice AdE']].concat(
+      spese.map(function(v){return [v.desc,v.tipNome,v.forn,v.imp,v.detPerc+'%',v.det,v.codDet||'—'];})));
+    ws3['!cols']=[30,22,22,12,10,14,10].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws3,'Spese e Detrazioni');
+  }
+
+  XLSX.writeFile(wb,'CondoKit_QuadroAC_'+cNome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
+}
+
+function acField(label,value,mono){
+  return '<div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem;">'+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem">'+esc(label)+'</div>'+
+    '<div style="font-size:0.85rem;font-weight:500'+(mono?';font-family:\'DM Mono\',monospace':'')+'">'+(value?esc(String(value)):'—')+'</div>'+
+    '</div>';
+}
+
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

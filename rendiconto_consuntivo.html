@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Rendiconto Consuntivo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --ink:#1a1a2e; --paper:#f5f0e8; --cream:#ede8dc;
+  --accent:#c8402a; --accent-light:#e8d5d0;
+  --gold:#b8860b; --gold-light:#f0e6c0;
+  --border:#c8bfaa; --muted:#7a7060;
+  --success:#2a6640; --success-light:#d0e8d8;
+  --warning:#8b4a00; --warning-light:#fce8cc;
+  --shadow:rgba(26,26,46,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.2rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}
+.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}
+.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}
+.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* SUMMARY */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}
+.sc.k::before{background:var(--ink);}
+.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}
+.cv.go{color:var(--gold);}
+.cv.gn{color:var(--success);}
+.cv.bl{color:#2a5080;}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.55rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.tr-sub td{background:var(--cream);font-weight:600;font-family:'DM Mono',monospace;font-size:0.78rem;}
+.tr-tot td{background:var(--ink);color:var(--paper);font-weight:700;font-family:'DM Mono',monospace;}
+
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.pos{color:var(--success);font-weight:500;}
+.neg{color:var(--accent);font-weight:500;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-mora{background:var(--accent-light);color:var(--accent);}
+.b-parz{background:var(--gold-light);color:var(--warning);}
+
+/* CONFRONTO */
+.diff-pos{color:var(--success);font-weight:500;}
+.diff-neg{color:var(--accent);font-weight:500;}
+
+/* SALDO BOX */
+.saldo-box{background:var(--ink);color:var(--paper);border-radius:4px;padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;}
+.si{text-align:center;}
+.si-l{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--border);margin-bottom:0.4rem;}
+.si-v{font-family:'DM Serif Display',serif;font-size:1.5rem;}
+.si-v.pos{color:#90d8a8;}
+.si-v.neg{color:#f0a090;}
+.si-v.neu{color:#e8b090;}
+.sep{width:1px;height:40px;background:rgba(255,255,255,0.15);}
+
+/* DOC */
+.doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-st{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-an{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;}
+.doc-bd{padding:2rem 2.5rem;}
+.doc-t{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:0.3rem;}
+.doc-su{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+.dst{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+.dvr{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f0ede6;font-size:0.85rem;}
+.dvr:last-child{border-bottom:none;}
+.dsb{display:flex;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--cream);border-radius:3px;margin:0.5rem 0;font-size:0.82rem;font-weight:600;}
+.dtb{background:var(--ink);color:var(--paper);border-radius:4px;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0;}
+.dtbl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--border);}
+.dtbv{font-family:'DM Serif Display',serif;font-size:2rem;color:#e8b090;}
+.doc-ft{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+.firma{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2.5rem;}
+
+.lettera{background:white;border:1px solid var(--border);border-radius:4px;padding:2rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1rem;font-size:0.875rem;line-height:1.7;}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+@media print{.navbar,.tab-bar,.brow,.lnav,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}.doc,.lettera{box-shadow:none;border:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.8</div>
+  <h1>Rendiconto<br><em>Consuntivo</em></h1>
+  <p class="header-sub">Registra le spese effettive, confrontale con il preventivo, verifica i pagamenti dei condomini e genera il documento ufficiale per l'assemblea.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on"  id="tb-setup"     onclick="go('setup')">⚙️ 1 · Dati Generali</button>
+    <button class="tab-btn"     id="tb-spese"      onclick="go('spese')">📋 2 · Spese Effettive</button>
+    <button class="tab-btn"     id="tb-condomini"  onclick="go('condomini')">👥 3 · Pagamenti Condomini</button>
+    <button class="tab-btn"     id="tb-cassa"      onclick="go('cassa')">🏦 4 · Saldo di Cassa</button>
+    <button class="tab-btn"     id="tb-documento"  onclick="go('documento')">📄 5 · Documento</button>
+    <button class="tab-btn"     id="tb-lettere"    onclick="go('lettere')">✉️ 6 · Lettere</button>
+  </div>
+
+  <!-- ══ TAB 1 — DATI GENERALI ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati del condominio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale</label><input type="text" id="condoCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r3">
+        <div class="fg"><label>Anno di esercizio</label>
+          <select id="annoEsercizio"><option value="2025" selected>2025</option><option value="2024">2024</option><option value="2023">2023</option></select>
+        </div>
+        <div class="fg"><label>Data assemblea approvazione</label><input type="date" id="dataAssemblea"></div>
+        <div class="fg"><label>N° rate versate nell'anno</label>
+          <select id="nRate"><option value="12">12 mensili</option><option value="4">4 trimestrali</option><option value="2">2 semestrali</option><option value="1">1 annuale</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="sl">Studio amministrativo</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Studio / Amministratore</label><input type="text" id="studioNome" placeholder="Es. Studio Amm. Bianchi"></div>
+        <div class="fg"><label>Contatti</label><input type="text" id="studioContatti" placeholder="Es. Via Milano 5 · Tel. 02 1234567"></div>
+      </div>
+    </div>
+    <div class="sl">Saldi di apertura</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Saldo cassa inizio anno (€)</label><input type="number" id="saldoInizio" placeholder="0.00" step="0.01" value="0"></div>
+        <div class="fg"><label>Fondo riserva inizio anno (€)</label><input type="number" id="fondoInizio" placeholder="0.00" step="0.01" value="0"></div>
+        <div class="fg"><label>Avanzo/Disavanzo anno prec. (€)</label><input type="number" id="avanzoPrec" placeholder="0.00" step="0.01" value="0"></div>
+      </div>
+      <div class="fg"><label>Note verbale assemblea</label><textarea id="noteAssemblea" placeholder="Es. L'assemblea, esaminato il rendiconto, approva la gestione dell'anno..."></textarea></div>
+    </div>
+    <div class="brow"><button class="btn btn-p" onclick="go('spese')">→ Inserisci le spese effettive</button></div>
+  </div>
+
+  <!-- ══ TAB 2 — SPESE EFFETTIVE ══ -->
+  <div class="panel" id="p-spese">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Voci totali</div><div class="cv" id="svVoci">0</div></div>
+      <div class="sc r"><div class="cl">Spese effettive</div><div class="cv a" id="svEff">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">Spese preventivate</div><div class="cv go" id="svPrev">€ 0,00</div></div>
+      <div class="sc gn"><div class="cl">Δ Scostamento</div><div class="cv" id="svDelta">€ 0,00</div></div>
+    </div>
+
+    <div class="sl">Spese effettive per categoria</div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Descrizione</th><th>Categoria</th><th>Data</th><th>N° Doc.</th>
+          <th>Importo effettivo (€)</th><th>Importo preventivato (€)</th><th>Δ Scost.</th><th></th>
+        </tr></thead>
+        <tbody id="speseBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addSpesa()">＋ Aggiungi spesa</button>
+      <button class="btn btn-g" onclick="loadDefaultSpese()">📋 Carica spese tipiche</button>
+      <button class="btn btn-p" onclick="aggTotali(); go('condomini')">→ Vai ai Condomini</button>
+      <button class="btn btn-g" onclick="document.getElementById('speseBody').innerHTML=''; speseCount=0; aggTotali()">↺ Azzera</button>
+    </div>
+    <div class="nb"><strong>💡 Suggerimento</strong>Inserisci l'importo effettivamente pagato e quello preventivato per vedere automaticamente lo scostamento rispetto al bilancio approvato.</div>
+  </div>
+
+  <!-- ══ TAB 3 — PAGAMENTI CONDOMINI ══ -->
+  <div class="panel" id="p-condomini">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Condomini totali</div><div class="cv" id="ccTot">0</div></div>
+      <div class="sc gn"><div class="cl">Quote pagate</div><div class="cv gn" id="ccPag">€ 0,00</div></div>
+      <div class="sc r"><div class="cl">Quote non pagate</div><div class="cv a" id="ccMora">€ 0,00</div></div>
+      <div class="sc bl"><div class="cl">Morosi</div><div class="cv bl" id="ccNMora">0</div></div>
+    </div>
+    <div class="sl">Situazione pagamenti per condomino</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Inserisci per ogni condomino la quota annuale dovuta e l'importo effettivamente versato. Il sistema calcola automaticamente il saldo (credito/debito) e identifica i morosi.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Nome Condomino</th><th>Interno</th><th>Millesimi</th>
+          <th>Quota dovuta (€)</th><th>Versato (€)</th>
+          <th>Saldo (€)</th><th>Stato</th><th>Email</th><th></th>
+        </tr></thead>
+        <tbody id="condoBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addCondo()">＋ Aggiungi condomino</button>
+      <button class="btn btn-p" onclick="aggCondo(); go('cassa')">→ Vai al Saldo di Cassa</button>
+      <button class="btn btn-g" onclick="document.getElementById('condoBody').innerHTML=''; condoCount=0; aggCondo()">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — SALDO DI CASSA ══ -->
+  <div class="panel" id="p-cassa">
+    <div class="sl">Riepilogo saldo di cassa</div>
+    <div id="cassaContent">
+      <div class="card" style="text-align:center;padding:2rem">
+        <p style="color:var(--muted);font-style:italic">Inserisci le spese effettive e i pagamenti dei condomini per calcolare il saldo di cassa.</p>
+        <div class="brow" style="justify-content:center;margin-top:1rem">
+          <button class="btn btn-g" onclick="go('spese')">→ Vai alle Spese</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — DOCUMENTO ══ -->
+  <div class="panel" id="p-documento">
+    <div id="docContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Genera il rendiconto ufficiale</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci le spese effettive per generare il documento. Oppure carica le spese tipiche e genera subito.</p>
+        <button class="btn btn-g" onclick="go('spese')">→ Vai alle Spese</button>
+        &nbsp;
+        <button class="btn btn-p" onclick="loadDefaultSpese(); aggTotali(); renderDoc()">⚡ Carica spese tipiche e genera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 6 — LETTERE ══ -->
+  <div class="panel" id="p-lettere">
+    <div id="lettereContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">✉️</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Lettere con saldo a debito/credito</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i pagamenti dei condomini (Tab 3) per generare le lettere personalizzate con il loro saldo.</p>
+        <button class="btn btn-g" onclick="go('condomini')">→ Vai ai Condomini</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Rendiconto Consuntivo · Beta · Solo uso indicativo</div>
+
+<script>
+var PANELS = ['setup','spese','condomini','cassa','documento','lettere'];
+var speseCount = 0, condoCount = 0;
+var condoData = [];
+
+var CATS = [
+  {id:'ordinaria',    n:'Manutenzione ordinaria'},
+  {id:'straordinaria',n:'Manutenzione straordinaria'},
+  {id:'utenza',       n:'Utenze'},
+  {id:'professionale',n:'Compensi professionisti'},
+  {id:'assicurazione',n:'Assicurazione'},
+  {id:'altro',        n:'Altro'},
+];
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='cassa')     renderCassa();
+  if (name==='documento') renderDoc();
+  if (name==='lettere')   renderLettere();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  var el = document.getElementById('dataAssemblea');
+  if (el) el.value = new Date().toISOString().split('T')[0];
+  addSpesa(); addSpesa(); addSpesa();
+  addCondo(); addCondo(); addCondo();
+};
+
+// ══ SPESE ══
+function addSpesa(d) {
+  d = d||{};
+  speseCount++;
+  var id = speseCount;
+  var co = CATS.map(function(c){ return '<option value="'+c.id+'"'+(d.cat===c.id?' selected':'')+'>'+c.n+'</option>'; }).join('');
+  var oggi = new Date().toISOString().split('T')[0];
+  var tr = document.createElement('tr');
+  tr.id = 'sp-'+id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text" id="spd-'+id+'" placeholder="Es. Pulizia scale" value="'+(d.desc||'')+'" oninput="aggTotali()"></td>'+
+    '<td><select class="ic" id="spc-'+id+'">'+co+'</select></td>'+
+    '<td><input class="ic" type="date" id="spdt-'+id+'" value="'+(d.data||oggi)+'"></td>'+
+    '<td><input class="ic" type="text" id="spn-'+id+'" placeholder="Es. FT/001" value="'+(d.ndoc||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="spe-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.eff||'')+'" oninput="aggTotali()"></td>'+
+    '<td><input class="ic" type="number" id="spp-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.prev||'')+'" oninput="aggTotali()"></td>'+
+    '<td class="amt" id="spd2-'+id+'">—</td>'+
+    '<td><button onclick="rmSp('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('speseBody').appendChild(tr);
+  aggTotali();
+}
+
+function rmSp(id){ var el=document.getElementById('sp-'+id); if(el)el.remove(); aggTotali(); }
+
+function loadDefaultSpese() {
+  document.getElementById('speseBody').innerHTML=''; speseCount=0;
+  var def=[
+    {desc:'Pulizia scale e parti comuni',     cat:'ordinaria',    eff:3820, prev:3600},
+    {desc:'Manutenzione ascensore',           cat:'ordinaria',    eff:2250, prev:2400},
+    {desc:'Energia elettrica parti comuni',   cat:'utenza',       eff:1920, prev:1800},
+    {desc:'Acqua parti comuni',               cat:'utenza',       eff:580,  prev:600},
+    {desc:'Assicurazione fabbricato',         cat:'assicurazione',eff:1200, prev:1200},
+    {desc:'Compenso amministratore',          cat:'professionale',eff:2400, prev:2400},
+    {desc:'Manutenzione giardino',            cat:'ordinaria',    eff:1350, prev:1200},
+    {desc:'Fondo manutenzione straordinaria', cat:'straordinaria',eff:3000, prev:3000},
+    {desc:'Spese postali e cancelleria',      cat:'altro',        eff:185,  prev:200},
+    {desc:'Revisione impianto antincendio',   cat:'ordinaria',    eff:640,  prev:600},
+  ];
+  def.forEach(function(d){ addSpesa(d); });
+}
+
+function leggiSpese() {
+  var r=[];
+  document.querySelectorAll('#speseBody tr').forEach(function(tr){
+    var id  = tr.id.replace('sp-','');
+    var desc= ((document.getElementById('spd-'+id)||{}).value||'').trim();
+    var cat = (document.getElementById('spc-'+id)||{}).value||'';
+    var data= (document.getElementById('spdt-'+id)||{}).value||'';
+    var ndoc= ((document.getElementById('spn-'+id)||{}).value||'').trim();
+    var eff = parseFloat((document.getElementById('spe-'+id)||{}).value)||0;
+    var prev= parseFloat((document.getElementById('spp-'+id)||{}).value)||0;
+    if(desc && eff>0) r.push({id:id,desc:desc,cat:cat,data:data,ndoc:ndoc,eff:eff,prev:prev});
+  });
+  return r;
+}
+
+function aggTotali() {
+  var sp   = leggiSpese();
+  var totE = sp.reduce(function(s,v){return s+v.eff;},0);
+  var totP = sp.reduce(function(s,v){return s+v.prev;},0);
+  var delt = totE - totP;
+  document.getElementById('svVoci').textContent = sp.length;
+  document.getElementById('svEff').textContent  = fmt(totE);
+  document.getElementById('svPrev').textContent = fmt(totP);
+  var de = document.getElementById('svDelta');
+  de.textContent = (delt>=0?'+':'')+fmt(delt);
+  de.className   = 'cv '+(Math.abs(delt)<0.01?'gn':delt>0?'a':'gn');
+  sp.forEach(function(v){
+    var el=document.getElementById('spd2-'+v.id);
+    if(!el) return;
+    if(!v.prev){el.textContent='—';el.className='amt';return;}
+    var d=v.eff-v.prev;
+    var p=((d/v.prev)*100).toFixed(1);
+    el.textContent=(d>=0?'+':'')+fmt(d)+' ('+p+'%)';
+    el.className='amt '+(d>0?'neg':'pos');
+  });
+}
+
+// ══ CONDOMINI ══
+function addCondo(d) {
+  d=d||{};
+  condoCount++;
+  var id=condoCount;
+  var tr=document.createElement('tr');
+  tr.id='co-'+id;
+  tr.innerHTML=
+    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Mario Rossi" value="'+(d.nome||'')+'" oninput="aggCondo()"></td>'+
+    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1 Sc.A"      value="'+(d.interno||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="cq-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.dovuta||'')+'" oninput="aggCondo()"></td>'+
+    '<td><input class="ic" type="number" id="cv-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.versato||'')+'" oninput="aggCondo()"></td>'+
+    '<td class="amt" id="cs-'+id+'" style="font-weight:600">—</td>'+
+    '<td id="cst-'+id+'">—</td>'+
+    '<td><input class="ic" type="email" id="ce-'+id+'" placeholder="mario@email.it" value="'+(d.email||'')+'"></td>'+
+    '<td><button onclick="rmCo('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('condoBody').appendChild(tr);
+  aggCondo();
+}
+
+function rmCo(id){ var el=document.getElementById('co-'+id); if(el)el.remove(); aggCondo(); }
+
+function leggiCondo() {
+  var r=[];
+  document.querySelectorAll('#condoBody tr').forEach(function(tr){
+    var id     = tr.id.replace('co-','');
+    var nome   = ((document.getElementById('cn-'+id)||{}).value||'').trim();
+    var interno= ((document.getElementById('ci-'+id)||{}).value||'').trim();
+    var mill   = parseFloat((document.getElementById('cm-'+id)||{}).value)||0;
+    var dovuta = parseFloat((document.getElementById('cq-'+id)||{}).value)||0;
+    var versato= parseFloat((document.getElementById('cv-'+id)||{}).value)||0;
+    var email  = ((document.getElementById('ce-'+id)||{}).value||'').trim();
+    if(nome) r.push({id:id,nome:nome,interno:interno,mill:mill,dovuta:dovuta,versato:versato,email:email,saldo:versato-dovuta});
+  });
+  return r;
+}
+
+function aggCondo() {
+  var cond = leggiCondo();
+  var totPag  = cond.reduce(function(s,c){return s+c.versato;},0);
+  var totDov  = cond.reduce(function(s,c){return s+c.dovuta;},0);
+  var totMora = cond.filter(function(c){return c.saldo<-0.01;}).reduce(function(s,c){return s+Math.abs(c.saldo);},0);
+  var nMora   = cond.filter(function(c){return c.saldo<-0.01;}).length;
+  document.getElementById('ccTot').textContent  = cond.length;
+  document.getElementById('ccPag').textContent  = fmt(totPag);
+  document.getElementById('ccMora').textContent = fmt(totMora);
+  document.getElementById('ccNMora').textContent= nMora;
+  cond.forEach(function(c){
+    var se  = document.getElementById('cs-'+c.id);
+    var ste = document.getElementById('cst-'+c.id);
+    if(!se||!ste) return;
+    se.textContent  = fmt(c.saldo);
+    se.style.color  = c.saldo>0.01?'var(--success)':c.saldo<-0.01?'var(--accent)':'var(--muted)';
+    if(c.saldo>0.01)        { ste.innerHTML='<span class="badge b-parz">Credito</span>'; }
+    else if(c.saldo<-0.01)  { ste.innerHTML='<span class="badge b-mora">Moroso</span>'; }
+    else                    { ste.innerHTML='<span class="badge b-ok">In pari</span>'; }
+  });
+  condoData = cond;
+}
+
+// ══ SALDO DI CASSA ══
+function renderCassa() {
+  var sp   = leggiSpese();
+  var cond = leggiCondo();
+  if(!sp.length && !cond.length) return;
+
+  var saldoIniz = parseFloat((document.getElementById('saldoInizio')||{}).value)||0;
+  var fondoIniz = parseFloat((document.getElementById('fondoInizio')||{}).value)||0;
+  var avanzo    = parseFloat((document.getElementById('avanzoPrec')||{}).value)||0;
+  var totSpese  = sp.reduce(function(s,v){return s+v.eff;},0);
+  var totEntr   = cond.reduce(function(s,c){return s+c.versato;},0);
+  var saldoFin  = saldoIniz + totEntr - totSpese;
+  var fondoFin  = fondoIniz; // rimane uguale salvo rettifiche manuali
+  var avanzoFin = saldoFin >= 0 ? saldoFin : 0;
+  var disav     = saldoFin < 0  ? Math.abs(saldoFin) : 0;
+
+  document.getElementById('cassaContent').innerHTML =
+    '<div class="saldo-box">'+
+    '<div class="si"><div class="si-l">Saldo inizio anno</div><div class="si-v neu">'+fmt(saldoIniz)+'</div></div>'+
+    '<div class="sep"></div>'+
+    '<div class="si"><div class="si-l">+ Entrate (quote)</div><div class="si-v pos">'+fmt(totEntr)+'</div></div>'+
+    '<div class="sep"></div>'+
+    '<div class="si"><div class="si-l">− Uscite (spese)</div><div class="si-v neg">'+fmt(totSpese)+'</div></div>'+
+    '<div class="sep"></div>'+
+    '<div class="si"><div class="si-l">Saldo finale</div><div class="si-v '+(saldoFin>=0?'pos':'neg')+'">'+fmt(saldoFin)+'</div></div>'+
+    '</div>'+
+
+    '<div class="sgrid">'+
+    '<div class="sc gn"><div class="cl">Entrate totali</div><div class="cv gn">'+fmt(totEntr)+'</div></div>'+
+    '<div class="sc r"><div class="cl">Uscite totali</div><div class="cv a">'+fmt(totSpese)+'</div></div>'+
+    '<div class="sc k"><div class="cl">Fondo riserva</div><div class="cv">'+fmt(fondoFin)+'</div></div>'+
+    '<div class="sc '+(saldoFin>=0?'gn':'r')+'"><div class="cl">'+(saldoFin>=0?'Avanzo':'Disavanzo')+' esercizio</div>'+
+    '<div class="cv '+(saldoFin>=0?'gn':'a')+'">'+fmt(Math.abs(saldoFin))+'</div></div>'+
+    '</div>'+
+
+    '<div class="sl">Dettaglio entrate per condomino</div>'+
+    '<div class="tw"><table>'+
+    '<thead><tr><th>Condomino</th><th>Quota dovuta</th><th>Versato</th><th>Saldo</th><th>Stato</th></tr></thead>'+
+    '<tbody>'+
+    cond.map(function(c){
+      return '<tr>'+
+        '<td><strong>'+esc(c.nome)+'</strong>'+(c.interno?'<br><span style="font-size:0.72rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+'</td>'+
+        '<td class="amt">'+fmt(c.dovuta)+'</td>'+
+        '<td class="amt">'+fmt(c.versato)+'</td>'+
+        '<td class="amt" style="font-weight:600;color:'+(c.saldo>0.01?'var(--success)':c.saldo<-0.01?'var(--accent)':'var(--muted)')+'">'+fmt(c.saldo)+'</td>'+
+        '<td>'+(c.saldo>0.01?'<span class="badge b-parz">Credito</span>':c.saldo<-0.01?'<span class="badge b-mora">Moroso</span>':'<span class="badge b-ok">In pari</span>')+'</td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div>'+
+
+    '<div class="nb"><strong>📌 Nota avanzo/disavanzo</strong>'+
+    (saldoFin>=0 ?
+      'L\'esercizio chiude con un <strong>avanzo di '+fmt(saldoFin)+'</strong>. Questo importo può essere portato in riduzione delle quote del prossimo anno oppure imputato al fondo di riserva.' :
+      'L\'esercizio chiude con un <strong>disavanzo di '+fmt(Math.abs(saldoFin))+'</strong>. Sarà necessario richiedere ai condomini un conguaglio nella prossima rata.')+
+    '</div>';
+}
+
+// ══ DOCUMENTO ══
+function renderDoc() {
+  var sp = leggiSpese();
+  if(!sp.length) return;
+
+  var cond     = leggiCondo();
+  var cNome    = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF      = (document.getElementById('condoCF')||{}).value||'';
+  var anno     = (document.getElementById('annoEsercizio')||{}).value||'2025';
+  var studio   = (document.getElementById('studioNome')||{}).value||'Studio Amministrativo';
+  var studioC  = (document.getElementById('studioContatti')||{}).value||'';
+  var dataAss  = (document.getElementById('dataAssemblea')||{}).value||'';
+  var dFmt     = dataAss ? new Date(dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var saldoIniz= parseFloat((document.getElementById('saldoInizio')||{}).value)||0;
+  var noteAss  = (document.getElementById('noteAssemblea')||{}).value||'';
+  var oggi     = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var totEff   = sp.reduce(function(s,v){return s+v.eff;},0);
+  var totPrev  = sp.reduce(function(s,v){return s+v.prev;},0);
+  var totEntr  = cond.reduce(function(s,c){return s+c.versato;},0);
+  var saldoFin = saldoIniz + totEntr - totEff;
+
+  // Raggruppa per categoria
+  var grp={};
+  CATS.forEach(function(c){grp[c.id]=[];});
+  sp.forEach(function(v){if(grp[v.cat])grp[v.cat].push(v);});
+
+  var speseH='';
+  CATS.forEach(function(cat){
+    var lista=grp[cat.id];
+    if(!lista.length) return;
+    var subE=lista.reduce(function(s,v){return s+v.eff;},0);
+    var subP=lista.reduce(function(s,v){return s+v.prev;},0);
+    speseH+='<div class="dst">'+cat.n+'</div>';
+    lista.forEach(function(v){
+      var d=v.prev?v.eff-v.prev:null;
+      speseH+='<div class="dvr">'+
+        '<span>'+esc(v.desc)+(v.ndoc?'<span style="font-size:0.72rem;color:var(--muted);margin-left:0.5rem">'+esc(v.ndoc)+'</span>':'')+'</span>'+
+        '<span style="display:flex;gap:1.5rem;align-items:center">'+
+        (v.prev?'<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:var(--muted)">prev. '+fmt(v.prev)+'</span>':'')+
+        '<span style="font-family:\'DM Mono\',monospace;font-weight:500">'+fmt(v.eff)+'</span>'+
+        (d!==null?'<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:'+(d>0?'var(--accent)':'var(--success)')+';">'+(d>=0?'+':'')+fmt(d)+'</span>':'')+
+        '</span></div>';
+    });
+    speseH+='<div class="dsb"><span>Subtotale '+cat.n+'</span><span>'+fmt(subE)+(subP?'<span style="font-size:0.75rem;color:var(--muted);margin-left:0.5rem">(prev. '+fmt(subP)+')</span>':'')+'</span></div>';
+  });
+
+  // Confronto totale
+  var confH='<div class="dst">Confronto consuntivo vs preventivo</div>'+
+    '<div class="dvr"><span>Spese effettive</span><span style="font-family:\'DM Mono\',monospace;font-weight:600">'+fmt(totEff)+'</span></div>'+
+    '<div class="dvr"><span>Spese preventivate</span><span style="font-family:\'DM Mono\',monospace">'+fmt(totPrev)+'</span></div>'+
+    '<div class="dvr"><span><strong>Scostamento</strong></span><span style="font-family:\'DM Mono\',monospace;color:'+(totEff-totPrev>0?'var(--accent)':'var(--success)')+';">'+(totEff-totPrev>=0?'+':'')+fmt(totEff-totPrev)+'</span></div>';
+
+  // Situazione condomini
+  var condoH='';
+  if(cond.length){
+    condoH='<div class="dst">Situazione pagamenti condomini</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem">'+
+      '<thead><tr style="background:var(--cream)">'+
+      '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Condomino</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Dovuto</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Versato</th>'+
+      '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Saldo</th>'+
+      '<th style="padding:0.5rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>'+
+      '</tr></thead><tbody>'+
+      cond.map(function(c){return '<tr style="border-bottom:1px solid #f0ede6">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(c.nome)+(c.interno?'<br><span style="font-size:0.72rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+fmt(c.dovuta)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+fmt(c.versato)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600;color:'+(c.saldo>0.01?'var(--success)':c.saldo<-0.01?'var(--accent)':'var(--muted)')+'">'+fmt(c.saldo)+'</td>'+
+        '<td style="padding:0.5rem;text-align:center">'+(c.saldo>0.01?'<span class="badge b-parz">Credito</span>':c.saldo<-0.01?'<span class="badge b-mora">Moroso</span>':'<span class="badge b-ok">In pari</span>')+'</td>'+
+        '</tr>';}).join('')+
+      '</tbody></table>';
+  }
+
+  var verbH = noteAss ?
+    '<div class="dst">Verbale approvazione assemblea — '+dFmt+'</div>'+
+    '<p style="font-size:0.85rem;line-height:1.7;margin-bottom:1.5rem">'+esc(noteAss)+'</p>'+
+    '<div style="display:flex;gap:3rem"><div class="firma">L\'Amministratore<br>'+esc(studio)+'</div><div class="firma">Il Presidente dell\'Assemblea</div></div>' : '';
+
+  document.getElementById('docContent').innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '</div>'+
+    '<div class="doc">'+
+    '<div class="doc-hs"><span class="doc-st">'+esc(studio)+'</span><span class="doc-an">Rendiconto Consuntivo '+anno+'</span></div>'+
+    '<div class="doc-bd">'+
+    '<div class="doc-t">Rendiconto Consuntivo '+anno+'</div>'+
+    '<div class="doc-su">'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</div>'+
+    speseH+
+    '<div class="dtb">'+
+    '<div><div class="dtbl">Totale spese effettive anno '+anno+'</div>'+
+    (totPrev?'<div style="font-size:0.75rem;color:var(--border);margin-top:0.3rem">Preventivato: '+fmt(totPrev)+'</div>':'')+
+    '</div><div class="dtbv">'+fmt(totEff)+'</div></div>'+
+    confH+condoH+
+    '<div class="dst">Saldo di cassa</div>'+
+    '<div class="dvr"><span>Saldo iniziale</span><span style="font-family:\'DM Mono\',monospace">'+fmt(saldoIniz)+'</span></div>'+
+    '<div class="dvr"><span>+ Entrate (quote versate)</span><span style="font-family:\'DM Mono\',monospace;color:var(--success)">'+fmt(totEntr)+'</span></div>'+
+    '<div class="dvr"><span>− Uscite (spese effettive)</span><span style="font-family:\'DM Mono\',monospace;color:var(--accent)">'+fmt(totEff)+'</span></div>'+
+    '<div class="dsb"><span>'+(saldoFin>=0?'✅ Avanzo':'⚠️ Disavanzo')+' di esercizio</span>'+
+    '<span style="color:'+(saldoFin>=0?'var(--success)':'var(--accent)')+'">'+fmt(Math.abs(saldoFin))+'</span></div>'+
+    verbH+
+    '<div class="doc-ft"><span>'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</span><span>Generato il '+oggi+'</span></div>'+
+    '</div></div>';
+}
+
+// ══ LETTERE ══
+function renderLettere() {
+  var cond = leggiCondo();
+  if(!cond.length || cond.every(function(c){return !c.dovuta;})) return;
+
+  var html='<div class="lnav">'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Condomino:</span>'+
+    cond.map(function(c,i){
+      return '<button class="btn btn-g btn-sm" id="lb-'+i+'" onclick="showLettera('+i+')">'+c.nome.split(' ')[0]+'</button>';
+    }).join('')+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '</div><div id="letteraEl"></div>';
+  document.getElementById('lettereContent').innerHTML=html;
+  showLettera(0);
+}
+
+function showLettera(idx) {
+  var cond=leggiCondo();
+  document.querySelectorAll('[id^="lb-"]').forEach(function(b,i){
+    b.className='btn btn-sm '+(i===idx?'btn-p':'btn-g');
+  });
+  var c       = cond[idx];
+  var cNome   = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var studio  = (document.getElementById('studioNome')||{}).value||'Studio Amministrativo';
+  var studioC = (document.getElementById('studioContatti')||{}).value||'';
+  var anno    = (document.getElementById('annoEsercizio')||{}).value||'2025';
+  var dataAss = (document.getElementById('dataAssemblea')||{}).value||'';
+  var dFmt    = dataAss ? new Date(dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var oggi    = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var statoTesto, statoColore, bodyExtra;
+  if(c.saldo>0.01){
+    statoTesto  = 'CREDITO';
+    statoColore = 'var(--success)';
+    bodyExtra   = '<p>La Sua posizione presenta un <strong>credito di '+fmt(c.saldo)+'</strong> che verrà portato in compensazione con le quote del prossimo esercizio, salvo diversa delibera assembleare.</p>';
+  } else if(c.saldo<-0.01){
+    statoTesto  = 'DEBITO (MOROSITÀ)';
+    statoColore = 'var(--accent)';
+    bodyExtra   = '<p>La Sua posizione presenta un <strong>debito di '+fmt(Math.abs(c.saldo))+'</strong>. La invitiamo a provvedere al versamento entro 30 giorni dal ricevimento della presente, per evitare l\'applicazione degli interessi di mora ai sensi dell\'art. 63 disp. att. c.c.</p>';
+  } else {
+    statoTesto  = 'IN PARI';
+    statoColore = 'var(--muted)';
+    bodyExtra   = '<p>La Sua posizione risulta <strong>in pari</strong>. Non è dovuto alcun conguaglio.</p>';
+  }
+
+  document.getElementById('letteraEl').innerHTML=
+    '<div class="lettera">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Mittente</div>'+
+    '<strong>'+esc(studio)+'</strong>'+(studioC?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(studioC)+'</span>':'')+
+    '<br><span style="font-size:0.78rem;color:var(--muted)">'+oggi+'</span></div>'+
+    '<div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Destinatario</div>'+
+    '<strong>'+esc(c.nome)+'</strong>'+(c.interno?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+
+    '<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(cNome)+'</span></div></div>'+
+    '<div style="background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin-bottom:1.5rem;font-weight:500">'+
+    'Oggetto: Rendiconto Consuntivo '+anno+' — Comunicazione saldo — '+esc(cNome)+'</div>'+
+    '<p>Gentile '+esc(c.nome)+',</p><br>'+
+    '<p>con la presente Le comunichiamo che l\'assemblea condominiale del <strong>'+dFmt+'</strong> ha approvato il <strong>Rendiconto Consuntivo '+anno+'</strong> del condominio <strong>'+esc(cNome)+'</strong>.</p><br>'+
+    '<p>A seguito dell\'approvazione, la Sua situazione contabile risulta la seguente:</p><br>'+
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin:1rem 0">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:0.5rem"><span style="color:var(--muted)">Quota dovuta per l\'anno '+anno+'</span><span style="font-family:\'DM Mono\',monospace;font-weight:600">'+fmt(c.dovuta)+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:0.5rem"><span style="color:var(--muted)">Totale versato nell\'anno</span><span style="font-family:\'DM Mono\',monospace;font-weight:600">'+fmt(c.versato)+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding-top:0.5rem;border-top:1px solid var(--border)">'+
+    '<span><strong>Saldo — '+statoTesto+'</strong></span>'+
+    '<span style="font-family:\'DM Serif Display\',serif;font-size:1.4rem;color:'+statoColore+'">'+fmt(Math.abs(c.saldo))+'</span>'+
+    '</div></div><br>'+
+    bodyExtra+'<br>'+
+    '<p>Per qualsiasi informazione non esiti a contattarci.</p><br>'+
+    '<p>Distinti saluti,</p>'+
+    '<div class="firma">'+esc(studio)+'</div>'+
+    '</div>';
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel() {
+  var sp   = leggiSpese();
+  var cond = leggiCondo();
+  if(!sp.length){alert('Inserisci le spese prima di esportare.');return;}
+  var wb   = XLSX.utils.book_new();
+  var nome = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var anno = (document.getElementById('annoEsercizio')||{}).value||'2025';
+
+  var ws1 = XLSX.utils.aoa_to_sheet(
+    [['RENDICONTO CONSUNTIVO '+anno+' — '+nome],[]].concat(
+    [['Descrizione','Categoria','Data','N° Doc','Spesa Effettiva','Preventivato','Scostamento €','Scostamento %']]).concat(
+    sp.map(function(v){
+      return [v.desc, CATS.find(function(c){return c.id===v.cat;})||{n:v.cat}, v.data, v.ndoc,
+        v.eff, v.prev, v.prev?(v.eff-v.prev):0, v.prev?((v.eff-v.prev)/v.prev*100).toFixed(1)+'%':'—'];
+    })));
+  ws1['!cols']=[30,22,10,12,14,14,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'Spese Effettive');
+
+  if(cond.length){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['Condomino','Interno','Millesimi','Quota Dovuta','Versato','Saldo','Stato']].concat(
+      cond.map(function(c){return [c.nome,c.interno,c.mill,c.dovuta,c.versato,c.saldo,
+        c.saldo>0.01?'Credito':c.saldo<-0.01?'Moroso':'In pari'];})));
+    ws2['!cols']=[24,14,10,14,14,14,10].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Pagamenti Condomini');
+  }
+
+  XLSX.writeFile(wb,'CondoKit_Rendiconto_'+nome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
+}
+
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

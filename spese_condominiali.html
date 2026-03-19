@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Registro Spese Condominiali</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<!-- SheetJS per export Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8402a;
+    --accent-light: #e8d5d0;
+    --gold: #b8860b;
+    --gold-light: #f0e6c0;
+    --border: #c8bfaa;
+    --muted: #7a7060;
+    --success: #2a6640;
+    --success-light: #d0e8d8;
+    --warning: #8b4a00;
+    --warning-light: #fce8cc;
+    --shadow: rgba(26,26,46,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* NAVBAR */
+  .navbar {
+    background: white; border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px var(--shadow);
+  }
+  .navbar-logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); text-decoration: none; padding: 0.9rem 0; }
+  .navbar-logo em { color: var(--accent); font-style: italic; }
+  .navbar-links { display: flex; align-items: center; gap: 0.25rem; }
+  .nav-link {
+    font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); text-decoration: none;
+    padding: 0.5rem 0.9rem; border-radius: 3px; transition: all 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-link:hover { color: var(--ink); background: var(--cream); }
+  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .nav-link.disabled { color: var(--border); pointer-events: none; cursor: default; }
+
+  /* HEADER */
+  .header { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem 2rem; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; border: 2px solid rgba(200,190,170,0.15); border-radius: 50%; }
+  .header::after  { content: ''; position: absolute; top: 20px; right: 60px; width: 120px; height: 120px; border: 1px solid rgba(200,190,170,0.1); border-radius: 50%; }
+  .header-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--border); margin-bottom: 0.6rem; }
+  .header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem; }
+  .header h1 em { color: #e8b090; font-style: italic; }
+  .header-sub { font-size: 0.9rem; color: var(--border); font-weight: 300; max-width: 520px; }
+
+  /* MAIN */
+  .main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--border); }
+  .tab {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 0.75rem 1.5rem; cursor: pointer;
+    color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: var(--ink); background: var(--cream); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* SETTINGS BAR */
+  .settings-bar {
+    background: var(--cream); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1.5rem 2rem; margin-bottom: 2rem;
+    display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 160px; }
+  .field-group label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .field-group select,
+  .field-group input[type="text"],
+  .field-group input[type="number"],
+  .field-group input[type="date"] {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 3px;
+    padding: 0.55rem 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+    color: var(--ink); appearance: none; transition: border-color 0.2s;
+  }
+  .field-group input:focus, .field-group select:focus { outline: none; border-color: var(--accent); }
+
+  /* TABLE */
+  .table-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; margin-bottom: 1.5rem; box-shadow: 0 2px 12px var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  thead tr { background: var(--ink); color: var(--paper); }
+  thead th { padding: 0.85rem 1rem; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; white-space: nowrap; }
+  thead th:first-child { padding-left: 1.5rem; }
+  tbody tr { border-bottom: 1px solid var(--cream); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf8f4; }
+  tbody td { padding: 0.5rem 0.6rem; }
+  tbody td:first-child { padding-left: 1.5rem; }
+  tbody td:last-child { padding-right: 1rem; }
+
+  .input-cell {
+    background: transparent; border: 1px solid transparent; border-radius: 3px;
+    padding: 0.4rem 0.6rem; font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+    color: var(--ink); width: 100%; transition: all 0.15s;
+  }
+  .input-cell:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-light); }
+  .input-cell::placeholder { color: #bbb; font-style: italic; }
+  select.input-cell { appearance: none; cursor: pointer; }
+  input[type="date"].input-cell { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+
+  .btn-remove { background: none; border: none; cursor: pointer; color: var(--border); font-size: 1.1rem; padding: 0.2rem 0.4rem; border-radius: 3px; transition: all 0.15s; }
+  .btn-remove:hover { color: var(--accent); background: var(--accent-light); }
+
+  /* BUTTONS */
+  .actions-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem; align-items: center; }
+  .btn { padding: 0.7rem 1.6rem; border-radius: 3px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; display: flex; align-items: center; gap: 0.5rem; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #a03020; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,64,42,0.3); }
+  .btn-secondary { background: var(--ink); color: var(--paper); }
+  .btn-secondary:hover { background: #2d2d4a; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #1e4d30; transform: translateY(-1px); }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .summary-card { background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.2rem 1.5rem; position: relative; overflow: hidden; }
+  .summary-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .summary-card.red::before   { background: var(--accent); }
+  .summary-card.gold::before  { background: var(--gold); }
+  .summary-card.green::before { background: var(--success); }
+  .summary-card.blue::before  { background: #2a5080; }
+  .summary-card.ink::before   { background: var(--ink); }
+  .card-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+  .card-value { font-family: 'DM Serif Display', serif; font-size: 1.7rem; color: var(--ink); line-height: 1; }
+  .card-value.accent { color: var(--accent); }
+  .card-value.gold   { color: var(--gold); }
+  .card-value.green  { color: var(--success); }
+
+  /* BADGE CATEGORIA */
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; font-weight: 500; white-space: nowrap; }
+  .badge-ord  { background: var(--success-light); color: var(--success); }
+  .badge-str  { background: var(--accent-light);  color: var(--accent); }
+  .badge-ute  { background: #d0e0f0; color: #1a4060; }
+  .badge-pro  { background: var(--gold-light); color: var(--warning); }
+
+  /* RIPARTIZIONE TABLE */
+  .rip-table-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 1.5rem; }
+  .rip-header { background: var(--ink); color: var(--paper); }
+  .rip-subheader { background: #2d2d4a; color: var(--border); }
+  .rip-subheader th { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 0.8rem; text-align: right; white-space: nowrap; font-weight: 400; }
+  .rip-subheader th:first-child { text-align: left; padding-left: 1.5rem; }
+  .rip-row td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--cream); font-size: 0.82rem; }
+  .rip-row td:first-child { padding-left: 1.5rem; font-weight: 500; }
+  .rip-row:last-child td { border-bottom: none; }
+  .rip-row:hover { background: #faf8f4; }
+  .rip-total { background: var(--cream); font-weight: 600; border-top: 2px solid var(--border); }
+  .rip-total td { padding: 0.75rem 0.8rem; font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .rip-total td:first-child { padding-left: 1.5rem; }
+  .amount { font-family: 'DM Mono', monospace; text-align: right; }
+  .amount-pos { color: var(--accent); font-weight: 500; }
+
+  /* MODALE CONDOMINI */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.6); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--paper); border: 1px solid var(--border); border-radius: 6px; width: 90%; max-width: 700px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(26,26,46,0.3); }
+  .modal-header { background: var(--ink); color: var(--paper); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; }
+  .modal-close { background: none; border: none; color: var(--border); font-size: 1.3rem; cursor: pointer; }
+  .modal-close:hover { color: white; }
+  .modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; justify-content: flex-end; background: var(--cream); }
+
+  /* NOTE BOX */
+  .note-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 1.2rem 1.5rem; margin-top: 1.5rem; font-size: 0.875rem; line-height: 1.6; }
+  .note-box strong { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warning); display: block; margin-bottom: 0.5rem; }
+
+  .page-footer { text-align: center; padding: 2rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); margin-top: 3rem; }
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="navbar-links">
+    <a class="nav-link" href="index.html">🏠 Home</a>
+    
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">Gestione Condominiale · Modulo Contabilità</div>
+  <h1>Registro <em>Spese</em><br>Condominiali</h1>
+  <p class="header-sub">Registra le spese, configura i condomini con i loro millesimi e ottieni la ripartizione automatica in un clic. Esporta tutto in Excel.</p>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('spese')">📋 1 · Registro Spese</button>
+    <button class="tab" onclick="switchTab('condomini')" id="tabCondomini">👥 2 · Configura Condomini</button>
+    <button class="tab" onclick="switchTab('ripartizione')" id="tabRipartizione">🧮 3 · Ripartizione Automatica</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 1 — REGISTRO SPESE
+  ════════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-spese">
+
+    <!-- Impostazioni -->
+    <div class="section-label">Impostazioni condominio</div>
+    <div class="settings-bar">
+      <div class="field-group">
+        <label>Nome Condominio</label>
+        <input type="text" id="nomeCondominio" placeholder="Es. Via Roma 10">
+      </div>
+      <div class="field-group">
+        <label>Anno di esercizio</label>
+        <select id="annoEsercizio">
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Filtro categoria</label>
+        <select id="filtroCategoria" onchange="filtraSpese()">
+          <option value="tutte">Tutte le categorie</option>
+          <option value="ordinaria">Manutenzione ordinaria</option>
+          <option value="straordinaria">Manutenzione straordinaria</option>
+          <option value="utenza">Utenze</option>
+          <option value="professionale">Compensi professionisti</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Totali rapidi -->
+    <div class="summary-grid" id="summarySpese">
+      <div class="summary-card ink">
+        <div class="card-label">Spese registrate</div>
+        <div class="card-value" id="cardNumSpese">0</div>
+      </div>
+      <div class="summary-card red">
+        <div class="card-label">Totale spese</div>
+        <div class="card-value accent" id="cardTotSpese">€ 0,00</div>
+      </div>
+      <div class="summary-card gold">
+        <div class="card-label">Manutenzione ord.</div>
+        <div class="card-value gold" id="cardOrd">€ 0,00</div>
+      </div>
+      <div class="summary-card green">
+        <div class="card-label">Manutenzione straord.</div>
+        <div class="card-value green" id="cardStr">€ 0,00</div>
+      </div>
+      <div class="summary-card blue">
+        <div class="card-label">Utenze</div>
+        <div class="card-value" id="cardUte" style="color:#2a5080">€ 0,00</div>
+      </div>
+    </div>
+
+    <!-- Tabella spese -->
+    <div class="section-label">Elenco spese</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrizione</th>
+            <th>Categoria</th>
+            <th>Fornitore</th>
+            <th>Importo (€)</th>
+            <th>Tipo ripartizione</th>
+            <th>N° Fattura</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="speseBody"></tbody>
+      </table>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-ghost" onclick="addSpesa()">＋ Aggiungi spesa</button>
+      <button class="btn btn-primary" onclick="aggiornaTotali(); switchTab('ripartizione')">🧮 Vai alla Ripartizione</button>
+      <button class="btn btn-ghost" onclick="resetSpese()">↺ Azzera spese</button>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 2 — CONFIGURA CONDOMINI
+  ════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-condomini">
+
+    <div class="section-label">Anagrafica condomini e millesimi</div>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem; line-height:1.6;">
+      Inserisci i condomini dello stabile con i rispettivi millesimi di proprietà. 
+      I millesimi totali devono sommare a <strong>1000</strong>. 
+      Se preferisci la divisione in quote uguali, lascia tutti i millesimi a zero e il sistema dividerà automaticamente in parti uguali.
+    </p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome Condomino</th>
+            <th>Interno / Scala</th>
+            <th>Millesimi proprietà</th>
+            <th>Millesimi scala</th>
+            <th>Email (opz.)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="condominiBody"></tbody>
+      </table>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-ghost" onclick="addCondomino()">＋ Aggiungi condomino</button>
+      <button class="btn btn-primary" onclick="salvaCondomini()">✓ Salva e continua</button>
+      <button class="btn btn-ghost" onclick="resetCondomini()">↺ Azzera lista</button>
+    </div>
+
+    <div class="note-box">
+      <strong>💡 Cosa sono i millesimi?</strong>
+      I millesimi sono la "quota di proprietà" di ogni condomino sul totale dello stabile, espressa su 1000. 
+      Chi ha 100 millesimi possiede il 10% del condominio e paga il 10% delle spese comuni. 
+      Li trovi nella tabella millesimale allegata all'atto di acquisto o nel regolamento condominiale.
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 3 — RIPARTIZIONE AUTOMATICA
+  ════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-ripartizione">
+
+    <div id="ripWarning" class="note-box" style="margin-bottom:1.5rem; display:none">
+      <strong>⚠️ Attenzione</strong>
+      Per calcolare la ripartizione devi prima inserire le spese (Tab 1) e i condomini (Tab 2).
+    </div>
+
+    <div id="ripContent" style="display:none">
+
+      <div class="section-label">Riepilogo ripartizione per condomino</div>
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem;">
+        Le spese con ripartizione <strong>millesimale</strong> vengono divise in base ai millesimi di proprietà. 
+        Le spese con ripartizione <strong>quote uguali</strong> vengono divise equamente tra tutti i condomini.
+      </p>
+
+      <div id="ripTabella"></div>
+
+      <div class="actions-row" style="margin-top:1.5rem">
+        <button class="btn btn-success" onclick="esportaExcel()">📊 Esporta in Excel</button>
+        <button class="btn btn-secondary" onclick="stampaPagina()">🖨️ Stampa / PDF</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="page-footer">
+  CondoKit · Registro Spese Condominiali · Versione 1.0 Beta · Solo uso indicativo
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DATI
+// ══════════════════════════════════════════════════════════════
+const CATEGORIE = [
+  { id:'ordinaria',    nome:'Manutenzione ordinaria',    badge:'badge-ord' },
+  { id:'straordinaria',nome:'Manutenzione straordinaria',badge:'badge-str' },
+  { id:'utenza',       nome:'Utenze',                    badge:'badge-ute' },
+  { id:'professionale',nome:'Compensi professionisti',   badge:'badge-pro' },
+];
+
+const RIPARTIZIONI = [
+  { id:'millesimi',   nome:'Millesimale (proprietà)' },
+  { id:'scala',       nome:'Millesimale (scala)'     },
+  { id:'uguali',      nome:'Quote uguali'             },
+];
+
+let speseCount    = 0;
+let condominiCount = 0;
+let speseData     = []; // array degli oggetti spesa salvati
+let condominiData = []; // array dei condomini salvati
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  const idx = ['spese','condomini','ripartizione'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (name === 'ripartizione') calcolaRipartizione();
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 1 — SPESE
+// ══════════════════════════════════════════════════════════════
+function addSpesa() {
+  speseCount++;
+  const id = speseCount;
+  const oggi = new Date().toISOString().split('T')[0];
+
+  let catOpts = CATEGORIE.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  let ripOpts = RIPARTIZIONI.map(r => `<option value="${r.id}">${r.nome}</option>`).join('');
+
+  const tr = document.createElement('tr');
+  tr.id = `spesa-${id}`;
+  tr.innerHTML = `
+    <td><input class="input-cell" type="date" id="sdata-${id}" value="${oggi}"></td>
+    <td><input class="input-cell" type="text" placeholder="Es. Pulizia scale" id="sdesc-${id}"></td>
+    <td><select class="input-cell" id="scat-${id}">${catOpts}</select></td>
+    <td><input class="input-cell" type="text" placeholder="Es. Rossi Pulizie" id="sforn-${id}"></td>
+    <td><input class="input-cell" type="number" placeholder="0.00" step="0.01" min="0" id="simp-${id}"></td>
+    <td><select class="input-cell" id="srip-${id}">${ripOpts}</select></td>
+    <td><input class="input-cell" type="text" placeholder="Es. FT/2025/001" id="sfatt-${id}"></td>
+    <td><button class="btn-remove" onclick="removeSpesa(${id})">✕</button></td>
+  `;
+  document.getElementById('speseBody').appendChild(tr);
+  aggiornaTotali();
+}
+
+function removeSpesa(id) {
+  document.getElementById(`spesa-${id}`)?.remove();
+  aggiornaTotali();
+}
+
+function resetSpese() {
+  if (!confirm('Eliminare tutte le spese?')) return;
+  document.getElementById('speseBody').innerHTML = '';
+  speseCount = 0;
+  aggiornaTotali();
+}
+
+function leggiSpese() {
+  const righe = [];
+  document.querySelectorAll('#speseBody tr').forEach(tr => {
+    const id   = tr.id.replace('spesa-','');
+    const data = document.getElementById(`sdata-${id}`)?.value;
+    const desc = document.getElementById(`sdesc-${id}`)?.value.trim();
+    const cat  = document.getElementById(`scat-${id}`)?.value;
+    const forn = document.getElementById(`sforn-${id}`)?.value.trim();
+    const imp  = parseFloat(document.getElementById(`simp-${id}`)?.value) || 0;
+    const rip  = document.getElementById(`srip-${id}`)?.value;
+    const fatt = document.getElementById(`sfatt-${id}`)?.value.trim();
+    if (!desc || imp <= 0) return;
+    righe.push({ id, data, desc, cat, forn, imp, rip, fatt });
+  });
+  return righe;
+}
+
+function aggiornaTotali() {
+  const spese = leggiSpese();
+  const tot   = spese.reduce((s,r) => s+r.imp, 0);
+  const ord   = spese.filter(r=>r.cat==='ordinaria').reduce((s,r)=>s+r.imp,0);
+  const str   = spese.filter(r=>r.cat==='straordinaria').reduce((s,r)=>s+r.imp,0);
+  const ute   = spese.filter(r=>r.cat==='utenza').reduce((s,r)=>s+r.imp,0);
+  document.getElementById('cardNumSpese').textContent = spese.length;
+  document.getElementById('cardTotSpese').textContent = fmt(tot);
+  document.getElementById('cardOrd').textContent      = fmt(ord);
+  document.getElementById('cardStr').textContent      = fmt(str);
+  document.getElementById('cardUte').textContent      = fmt(ute);
+}
+
+function filtraSpese() {
+  const cat = document.getElementById('filtroCategoria').value;
+  document.querySelectorAll('#speseBody tr').forEach(tr => {
+    const id = tr.id.replace('spesa-','');
+    const sel = document.getElementById(`scat-${id}`)?.value;
+    tr.style.display = (cat === 'tutte' || sel === cat) ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 2 — CONDOMINI
+// ══════════════════════════════════════════════════════════════
+function addCondomino() {
+  condominiCount++;
+  const id = condominiCount;
+  const tr = document.createElement('tr');
+  tr.id = `condo-${id}`;
+  tr.innerHTML = `
+    <td><input class="input-cell" type="text" placeholder="Es. Mario Rossi" id="cnome-${id}"></td>
+    <td><input class="input-cell" type="text" placeholder="Es. Int.3 Sc.A"  id="cint-${id}"></td>
+    <td><input class="input-cell" type="number" placeholder="Es. 85" step="0.01" min="0" id="cmill-${id}"></td>
+    <td><input class="input-cell" type="number" placeholder="Es. 250" step="0.01" min="0" id="cscala-${id}"></td>
+    <td><input class="input-cell" type="text" placeholder="mario@email.it" id="cemail-${id}"></td>
+    <td><button class="btn-remove" onclick="removeCondomino(${id})">✕</button></td>
+  `;
+  document.getElementById('condominiBody').appendChild(tr);
+}
+
+function removeCondomino(id) {
+  document.getElementById(`condo-${id}`)?.remove();
+}
+
+function resetCondomini() {
+  if (!confirm('Eliminare tutti i condomini?')) return;
+  document.getElementById('condominiBody').innerHTML = '';
+  condominiCount = 0;
+}
+
+function leggiCondomini() {
+  const righe = [];
+  document.querySelectorAll('#condominiBody tr').forEach(tr => {
+    const id    = tr.id.replace('condo-','');
+    const nome  = document.getElementById(`cnome-${id}`)?.value.trim();
+    const interno = document.getElementById(`cint-${id}`)?.value.trim();
+    const mill  = parseFloat(document.getElementById(`cmill-${id}`)?.value) || 0;
+    const scala = parseFloat(document.getElementById(`cscala-${id}`)?.value) || 0;
+    const email = document.getElementById(`cemail-${id}`)?.value.trim();
+    if (!nome) return;
+    righe.push({ id, nome, interno, mill, scala, email });
+  });
+  return righe;
+}
+
+function salvaCondomini() {
+  const cond = leggiCondomini();
+  if (cond.length === 0) { alert('Inserisci almeno un condomino.'); return; }
+  const totMill = cond.reduce((s,c) => s+c.mill, 0);
+  if (totMill > 0 && Math.abs(totMill - 1000) > 1) {
+    alert(`⚠️ La somma dei millesimi di proprietà è ${totMill.toFixed(2)}, non 1000.\nControllare prima di procedere.`);
+    return;
+  }
+  alert(`✅ ${cond.length} condomini salvati correttamente!\nOra vai alla Tab "Ripartizione Automatica".`);
+  switchTab('ripartizione');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 3 — RIPARTIZIONE
+// ══════════════════════════════════════════════════════════════
+function calcolaRipartizione() {
+  const spese     = leggiSpese();
+  const condomini = leggiCondomini();
+
+  const warn = document.getElementById('ripWarning');
+  const cont = document.getElementById('ripContent');
+
+  if (spese.length === 0 || condomini.length === 0) {
+    warn.style.display = ''; cont.style.display = 'none'; return;
+  }
+  warn.style.display = 'none'; cont.style.display = '';
+
+  const n = condomini.length;
+  const totMill  = condomini.reduce((s,c) => s+c.mill, 0)  || n;
+  const totScala = condomini.reduce((s,c) => s+c.scala, 0) || n;
+
+  // Per ogni condomino calcola la quota per ogni spesa
+  const matriceQuote = condomini.map(c => {
+    let totaleCondo = 0;
+    const dettaglio = spese.map(s => {
+      let quota = 0;
+      if (s.rip === 'millesimi') {
+        quota = totMill > 0 ? s.imp * (c.mill / totMill) : s.imp / n;
+      } else if (s.rip === 'scala') {
+        quota = totScala > 0 ? s.imp * (c.scala / totScala) : s.imp / n;
+      } else {
+        quota = s.imp / n;
+      }
+      totaleCondo += quota;
+      return quota;
+    });
+    return { ...c, dettaglio, totaleCondo };
+  });
+
+  // Costruisci tabella
+  let html = `
+    <div class="rip-table-wrapper">
+      <table>
+        <thead>
+          <tr class="rip-header">
+            <th style="padding:0.85rem 1.5rem; font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:400; white-space:nowrap; text-align:left">
+              Condomino
+            </th>
+            ${spese.map(s => `
+              <th style="padding:0.85rem 0.8rem; font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:400; white-space:nowrap; text-align:right; max-width:120px">
+                ${esc(s.desc)}<br>
+                <span style="opacity:0.6; font-size:0.55rem">${badgeTestoCategoria(s.cat)} · ${s.rip === 'millesimi' ? 'Mill.' : s.rip === 'scala' ? 'Scala' : 'Uguali'}</span>
+              </th>
+            `).join('')}
+            <th style="padding:0.85rem 1rem; font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:400; white-space:nowrap; text-align:right">
+              Totale
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${matriceQuote.map(c => `
+            <tr class="rip-row">
+              <td>
+                <strong>${esc(c.nome)}</strong>
+                ${c.interno ? `<br><span style="font-size:0.75rem; color:var(--muted)">${esc(c.interno)}</span>` : ''}
+                ${c.mill > 0 ? `<br><span style="font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--muted)">${c.mill} mill.</span>` : ''}
+              </td>
+              ${c.dettaglio.map(q => `
+                <td class="amount ${q > 0 ? 'amount-pos' : ''}">${q > 0 ? fmt(q) : '—'}</td>
+              `).join('')}
+              <td class="amount" style="font-weight:700; color:var(--ink)">${fmt(c.totaleCondo)}</td>
+            </tr>
+          `).join('')}
+          <tr class="rip-total">
+            <td><strong>TOTALE SPESE</strong></td>
+            ${spese.map(s => `<td class="amount" style="font-weight:600">${fmt(s.imp)}</td>`).join('')}
+            <td class="amount" style="font-weight:700; color:var(--accent)">${fmt(spese.reduce((s,r)=>s+r.imp,0))}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('ripTabella').innerHTML = html;
+
+  // Salva per export
+  speseData     = spese;
+  condominiData = matriceQuote;
+}
+
+function badgeTestoCategoria(cat) {
+  const map = { ordinaria:'Ord.', straordinaria:'Straord.', utenza:'Utenza', professionale:'Prof.' };
+  return map[cat] || cat;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT EXCEL
+// ══════════════════════════════════════════════════════════════
+function esportaExcel() {
+  if (!speseData.length || !condominiData.length) {
+    alert('Calcola prima la ripartizione prima di esportare.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const nomeCondominio = document.getElementById('nomeCondominio').value || 'Condominio';
+  const anno = document.getElementById('annoEsercizio').value;
+
+  // ── Foglio 1: Registro Spese ──
+  const wsSpese = [
+    ['REGISTRO SPESE CONDOMINIALI'],
+    [`Condominio: ${nomeCondominio}  |  Anno: ${anno}`],
+    [],
+    ['Data','Descrizione','Categoria','Fornitore','Importo €','Ripartizione','N° Fattura'],
+    ...speseData.map(s => [
+      s.data, s.desc,
+      CATEGORIE.find(c=>c.id===s.cat)?.nome || s.cat,
+      s.forn, s.imp,
+      RIPARTIZIONI.find(r=>r.id===s.rip)?.nome || s.rip,
+      s.fatt
+    ]),
+    [],
+    ['', '', '', 'TOTALE', speseData.reduce((t,s)=>t+s.imp,0), '', ''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(wsSpese);
+  ws1['!cols'] = [14,28,22,22,12,22,16].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Registro Spese');
+
+  // ── Foglio 2: Ripartizione ──
+  const headerRip = ['Condomino','Interno','Millesimi', ...speseData.map(s=>s.desc), 'TOTALE'];
+  const rowsRip = condominiData.map(c => [
+    c.nome, c.interno, c.mill,
+    ...c.dettaglio,
+    c.totaleCondo
+  ]);
+  const totaleRow = ['TOTALE', '', '',
+    ...speseData.map(s=>s.imp),
+    speseData.reduce((t,s)=>t+s.imp,0)
+  ];
+  const wsRip = XLSX.utils.aoa_to_sheet([
+    [`RIPARTIZIONE SPESE — ${nomeCondominio} — Anno ${anno}`],
+    [],
+    headerRip,
+    ...rowsRip,
+    [],
+    totaleRow
+  ]);
+  wsRip['!cols'] = [22,14,10,...speseData.map(()=>({wch:14})),14].map((w,i) =>
+    typeof w === 'number' ? {wch:w} : w
+  );
+  XLSX.utils.book_append_sheet(wb, wsRip, 'Ripartizione');
+
+  XLSX.writeFile(wb, `CondoKit_Spese_${nomeCondominio}_${anno}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function fmt(n) {
+  return '€\u00a0' + n.toLocaleString('it-IT', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function stampaPagina() { window.print(); }
+
+// ══════════════════════════════════════════════════════════════
+// INIT — 3 righe di default
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  addSpesa(); addSpesa(); addSpesa();
+  addCondomino(); addCondomino(); addCondomino();
+});
+</script>
+</body>
+</html>

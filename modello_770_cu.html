@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Modello 770 e CU</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --ink:#1a1a2e; --paper:#f5f0e8; --cream:#ede8dc;
+  --accent:#c8402a; --accent-light:#e8d5d0;
+  --gold:#b8860b; --gold-light:#f0e6c0;
+  --border:#c8bfaa; --muted:#7a7060;
+  --success:#2a6640; --success-light:#d0e8d8;
+  --warning:#8b4a00; --warning-light:#fce8cc;
+  --shadow:rgba(26,26,46,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}
+.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}
+.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}
+.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-gold{background:var(--gold);color:white;}
+.btn-gold:hover{background:#8a6008;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* SUMMARY */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);} .sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);} .sc.k::before{background:var(--ink);}
+.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);} .cv.go{color:var(--gold);} .cv.gn{color:var(--success);}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.tr-tot td{background:var(--ink);color:var(--paper);font-weight:700;font-family:'DM Mono',monospace;}
+
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-prof{background:#d0e8f0;color:#1a4060;}
+.b-imp{background:var(--gold-light);color:var(--warning);}
+.b-dip{background:var(--success-light);color:var(--success);}
+
+/* CU CARD */
+.cu-card{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1rem;}
+.cu-hs{background:var(--ink);color:var(--paper);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.cu-hs-title{font-family:'DM Serif Display',serif;font-size:1rem;}
+.cu-hs-badge{font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;background:rgba(255,255,255,0.12);padding:0.25rem 0.6rem;border-radius:2px;}
+.cu-body{padding:1.5rem;}
+.cu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1rem;}
+.cu-field{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem;}
+.cu-field-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.cu-field-value{font-size:0.85rem;font-weight:500;}
+.cu-field-value.mono{font-family:'DM Mono',monospace;}
+.cu-totals{background:var(--ink);color:var(--paper);border-radius:3px;padding:0.75rem 1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
+.cu-tot-item{text-align:center;}
+.cu-tot-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--border);margin-bottom:0.3rem;}
+.cu-tot-value{font-family:'DM Serif Display',serif;font-size:1.3rem;color:#e8b090;}
+
+/* LETTERA CU */
+.lettera{background:white;border:1px solid var(--border);border-radius:4px;padding:2rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1rem;font-size:0.875rem;line-height:1.7;}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+
+/* NOTE */
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+/* 770 TABLE */
+.q770{background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:1.5rem;}
+.q770-header{background:var(--ink);color:var(--paper);padding:0.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.q770-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;}
+.q770-body{padding:1.25rem 1.5rem;}
+.q770-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--cream);font-size:0.82rem;align-items:center;}
+.q770-row:last-child{border-bottom:none;}
+.q770-head{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding-bottom:0.5rem;border-bottom:2px solid var(--border);}
+.q770-tot{background:var(--cream);font-weight:600;font-family:'DM Mono',monospace;font-size:0.78rem;padding:0.6rem 0;margin-top:0.5rem;}
+
+@media print{.navbar,.tab-bar,.brow,.lnav,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}.cu-card,.lettera,.q770{box-shadow:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Fiscale · Modulo 1.10</div>
+  <h1>Modello 770<br><em>e Certificazione Unica</em></h1>
+  <p class="header-sub">Registra i pagamenti ai percettori, calcola le ritenute versate e genera i dati per il Modello 770, le CU e le comunicazioni ai collaboratori.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"      onclick="go('setup')">⚙️ 1 · Dati Generali</button>
+    <button class="tab-btn"   id="tb-percettori"  onclick="go('percettori')">👥 2 · Percettori</button>
+    <button class="tab-btn"   id="tb-pagamenti"   onclick="go('pagamenti')">💳 3 · Pagamenti</button>
+    <button class="tab-btn"   id="tb-cu"          onclick="go('cu')">📋 4 · Certificazioni Uniche</button>
+    <button class="tab-btn"   id="tb-770"         onclick="go('770')">🏛️ 5 · Modello 770</button>
+    <button class="tab-btn"   id="tb-lettere"     onclick="go('lettere')">✉️ 6 · Comunicazioni CU</button>
+  </div>
+
+  <!-- ══ TAB 1 — DATI GENERALI ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati del sostituto d'imposta (condominio)</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Denominazione Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale Condominio</label><input type="text" id="condoCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r3">
+        <div class="fg"><label>Anno di imposta</label>
+          <select id="annoImposta">
+            <option value="2025">2025</option><option value="2024" selected>2024</option>
+            <option value="2023">2023</option><option value="2022">2022</option>
+          </select>
+        </div>
+        <div class="fg"><label>Scadenza presentazione CU</label><input type="date" id="scadCU"></div>
+        <div class="fg"><label>Scadenza Modello 770</label><input type="date" id="scad770"></div>
+      </div>
+    </div>
+    <div class="sl">Dati dello studio amministrativo</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Studio / Amministratore</label><input type="text" id="studioNome" placeholder="Es. Studio Amm. Bianchi"></div>
+        <div class="fg"><label>Indirizzo e contatti</label><input type="text" id="studioContatti" placeholder="Es. Via Milano 5 · Tel. 02 1234567"></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>Email studio</label><input type="email" id="studioEmail" placeholder="Es. info@studiobianchi.it"></div>
+        <div class="fg"><label>Codice Fiscale Amministratore</label><input type="text" id="adminCF" placeholder="Es. BNCMRC70A01H501Z"></div>
+      </div>
+    </div>
+    <div class="nb">
+      <strong>📅 Scadenze importanti</strong>
+      La <strong>Certificazione Unica (CU)</strong> va inviata all'Agenzia delle Entrate entro il <strong>16 marzo</strong> dell'anno successivo e consegnata ai percettori entro la stessa data. Il <strong>Modello 770</strong> va presentato telematicamente entro il <strong>31 ottobre</strong> dell'anno successivo a quello di riferimento.
+    </div>
+    <div class="brow"><button class="btn btn-p" onclick="go('percettori')">→ Inserisci i percettori</button></div>
+  </div>
+
+  <!-- ══ TAB 2 — PERCETTORI ══ -->
+  <div class="panel" id="p-percettori">
+    <div class="sl">Anagrafica percettori</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Inserisci tutti i soggetti a cui il condominio ha corrisposto compensi nell'anno soggetti a ritenuta d'acconto: professionisti, imprese in appalto e dipendenti (portiere/custode).
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Cognome / Denominazione</th><th>Nome</th><th>Cod. Fiscale / P.IVA</th>
+          <th>Tipo</th><th>Indirizzo</th><th>Email</th><th></th>
+        </tr></thead>
+        <tbody id="percBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addPerc()">＋ Aggiungi percettore</button>
+      <button class="btn btn-g" onclick="loadDefaultPerc()">📋 Carica esempi</button>
+      <button class="btn btn-p" onclick="go('pagamenti')">→ Vai ai Pagamenti</button>
+      <button class="btn btn-g" onclick="document.getElementById('percBody').innerHTML='';percCount=0;">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — PAGAMENTI ══ -->
+  <div class="panel" id="p-pagamenti">
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Pagamenti totali</div><div class="cv" id="spTot">0</div></div>
+      <div class="sc r"><div class="cl">Totale compensi lordi</div><div class="cv a" id="spLordi">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">Totale ritenute</div><div class="cv go" id="spRit">€ 0,00</div></div>
+      <div class="sc gn"><div class="cl">Totale netto pagato</div><div class="cv gn" id="spNetto">€ 0,00</div></div>
+    </div>
+    <div class="sl">Registro pagamenti soggetti a ritenuta</div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Percettore</th><th>Data pagamento</th><th>Descrizione</th>
+          <th>Compenso lordo (€)</th><th>Tipo ritenuta</th><th>Aliquota</th>
+          <th>Ritenuta (€)</th><th>Netto pagato (€)</th><th>F24 versato</th><th></th>
+        </tr></thead>
+        <tbody id="pagBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addPag()">＋ Aggiungi pagamento</button>
+      <button class="btn btn-g" onclick="loadDefaultPag()">📋 Carica esempi</button>
+      <button class="btn btn-p" onclick="aggPag(); go('cu')">→ Genera CU</button>
+      <button class="btn btn-g" onclick="document.getElementById('pagBody').innerHTML='';pagCount=0;aggPag();">↺ Azzera</button>
+    </div>
+    <div class="nb">
+      <strong>💡 Come funziona</strong>
+      Seleziona il percettore dal menu a tendina. Il tipo di ritenuta e l'aliquota si impostano automaticamente in base alla categoria del percettore. Puoi modificarli manualmente se necessario.
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — CU ══ -->
+  <div class="panel" id="p-cu">
+    <div id="cuContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Certificazioni Uniche</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i percettori e i pagamenti per generare le CU. Oppure carica i dati di esempio.</p>
+        <button class="btn btn-g" onclick="go('pagamenti')">→ Vai ai Pagamenti</button>
+        &nbsp;
+        <button class="btn btn-p" onclick="loadDefaultPerc();loadDefaultPag();aggPag();renderCU()">⚡ Carica esempi e genera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — 770 ══ -->
+  <div class="panel" id="p-770">
+    <div id="content770">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">🏛️</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Dati per il Modello 770</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i pagamenti per generare il riepilogo quadro ST/SX per il Modello 770.</p>
+        <button class="btn btn-g" onclick="go('pagamenti')">→ Vai ai Pagamenti</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 6 — LETTERE CU ══ -->
+  <div class="panel" id="p-lettere">
+    <div id="lettereContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">✉️</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Comunicazioni CU ai percettori</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera le lettere di trasmissione CU da inviare a ogni percettore con i dati certificati.</p>
+        <button class="btn btn-g" onclick="go('cu')">→ Genera prima le CU</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Modello 770 e CU · Beta · Solo uso indicativo — trasmissione telematica a cura del professionista abilitato</div>
+
+<script>
+var PANELS = ['setup','percettori','pagamenti','cu','770','lettere'];
+var percCount=0, pagCount=0;
+var percettoriData=[], pagamentiData=[];
+
+var TIPI_PERC = {
+  professionista: {label:'Professionista',     badge:'b-prof', aliquota:0.20, codTrib:'1040', codRit:'A'},
+  impresa:        {label:'Impresa appalto',     badge:'b-imp',  aliquota:0.04, codTrib:'1020', codRit:'B'},
+  dipendente:     {label:'Dipendente/Portiere', badge:'b-dip',  aliquota:0.23, codTrib:'1001', codRit:'C'},
+};
+
+// ══ TAB ══
+function go(name) {
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display = n===name?'block':'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if(name==='cu')      renderCU();
+  if(name==='770')     render770();
+  if(name==='lettere') renderLettere();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i){
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  // scadenze default
+  var cu  = document.getElementById('scadCU');
+  var s770= document.getElementById('scad770');
+  if(cu)   cu.value   = (new Date().getFullYear()+1)+'-03-16';
+  if(s770) s770.value = (new Date().getFullYear()+1)+'-10-31';
+  addPerc(); addPerc();
+  addPag();  addPag();
+};
+
+// ══ PERCETTORI ══
+function addPerc(d) {
+  d=d||{};
+  percCount++;
+  var id=percCount;
+  var tipoOpts=Object.keys(TIPI_PERC).map(function(k){
+    return '<option value="'+k+'"'+(d.tipo===k?' selected':'')+'>'+TIPI_PERC[k].label+'</option>';
+  }).join('');
+  var tr=document.createElement('tr');
+  tr.id='pe-'+id;
+  tr.innerHTML=
+    '<td><input class="ic" type="text" id="pec-'+id+'" placeholder="Es. Bianchi / Rossi Impianti srl" value="'+(d.cognome||'')+'"></td>'+
+    '<td><input class="ic" type="text" id="pen-'+id+'" placeholder="Es. Marco" value="'+(d.nome||'')+'"></td>'+
+    '<td><input class="ic" type="text" id="pecf-'+id+'" placeholder="Es. BNCMRC..." value="'+(d.cf||'')+'"></td>'+
+    '<td><select class="ic" id="pet-'+id+'">'+tipoOpts+'</select></td>'+
+    '<td><input class="ic" type="text" id="pei-'+id+'" placeholder="Via..." value="'+(d.indirizzo||'')+'"></td>'+
+    '<td><input class="ic" type="email" id="pee-'+id+'" placeholder="email@..." value="'+(d.email||'')+'"></td>'+
+    '<td><button onclick="rmPe('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('percBody').appendChild(tr);
+}
+
+function rmPe(id){var el=document.getElementById('pe-'+id);if(el)el.remove();}
+
+function loadDefaultPerc(){
+  document.getElementById('percBody').innerHTML=''; percCount=0;
+  var def=[
+    {cognome:'Bianchi',     nome:'Marco',     cf:'BNCMRC70A01H501Z', tipo:'professionista', indirizzo:'Via Roma 5, Milano',      email:'marco.bianchi@email.it'},
+    {cognome:'Rossi Impianti S.r.l.', nome:'',cf:'03456789012',      tipo:'impresa',        indirizzo:'Via Torino 12, Milano',   email:'info@rossiimpianti.it'},
+    {cognome:'Verdi',       nome:'Giuseppe',  cf:'VRDGPP65M10H501X', tipo:'dipendente',     indirizzo:'Via Venezia 3, Milano',   email:'giuseppe.verdi@email.it'},
+  ];
+  def.forEach(function(d){addPerc(d);});
+}
+
+function leggiPercettori(){
+  var r=[];
+  document.querySelectorAll('#percBody tr').forEach(function(tr){
+    var id=tr.id.replace('pe-','');
+    var cog= ((document.getElementById('pec-'+id)||{}).value||'').trim();
+    var nom= ((document.getElementById('pen-'+id)||{}).value||'').trim();
+    var cf=  ((document.getElementById('pecf-'+id)||{}).value||'').trim();
+    var tipo=(document.getElementById('pet-'+id)||{}).value||'professionista';
+    var ind= ((document.getElementById('pei-'+id)||{}).value||'').trim();
+    var email=((document.getElementById('pee-'+id)||{}).value||'').trim();
+    if(cog) r.push({id:id,cognome:cog,nome:nom,cf:cf,tipo:tipo,indirizzo:ind,email:email});
+  });
+  return r;
+}
+
+// ══ PAGAMENTI ══
+function addPag(d){
+  d=d||{};
+  pagCount++;
+  var id=pagCount;
+  var perc=leggiPercettori();
+  var percOpts='<option value="">— Seleziona percettore —</option>'+
+    perc.map(function(p){return '<option value="'+p.id+'"'+(d.percId===p.id?' selected':'')+'>'+esc(p.cognome+(p.nome?' '+p.nome:''))+'</option>';}).join('');
+  var oggi=new Date().toISOString().split('T')[0];
+  var tr=document.createElement('tr');
+  tr.id='pg-'+id;
+  tr.innerHTML=
+    '<td><select class="ic" id="pgp-'+id+'" onchange="autoFillTipo('+id+')" style="min-width:140px">'+percOpts+'</select></td>'+
+    '<td><input class="ic" type="date" id="pgd-'+id+'" value="'+(d.data||oggi)+'"></td>'+
+    '<td><input class="ic" type="text" id="pgdesc-'+id+'" placeholder="Es. Onorario progettazione" value="'+(d.desc||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="pgl-'+id+'" placeholder="1000.00" step="0.01" min="0" value="'+(d.lordo||'')+'" oninput="calcRit('+id+')"></td>'+
+    '<td><select class="ic" id="pgt-'+id+'" onchange="calcRit('+id+')" style="min-width:120px">'+
+      '<option value="professionista">Professionista</option>'+
+      '<option value="impresa">Impresa appalto</option>'+
+      '<option value="dipendente">Dipendente</option>'+
+    '</select></td>'+
+    '<td class="amt" id="pga-'+id+'" style="font-size:0.78rem;color:var(--muted)">20%</td>'+
+    '<td class="amt" id="pgr-'+id+'" style="color:var(--accent);font-weight:600">—</td>'+
+    '<td class="amt" id="pgn-'+id+'" style="color:var(--success);font-weight:600">—</td>'+
+    '<td><input class="ic" type="checkbox" id="pgf-'+id+'" style="width:auto;cursor:pointer" title="F24 versato?"></td>'+
+    '<td><button onclick="rmPg('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('pagBody').appendChild(tr);
+  if(d.tipo){
+    var sel=document.getElementById('pgt-'+id);
+    if(sel) sel.value=d.tipo;
+  }
+  calcRit(id);
+}
+
+function rmPg(id){var el=document.getElementById('pg-'+id);if(el)el.remove();aggPag();}
+
+function autoFillTipo(id){
+  var percId=(document.getElementById('pgp-'+id)||{}).value;
+  if(!percId) return;
+  var perc=leggiPercettori();
+  var p=perc.find(function(x){return x.id===percId;});
+  if(p){
+    var sel=document.getElementById('pgt-'+id);
+    if(sel) sel.value=p.tipo;
+    calcRit(id);
+  }
+}
+
+function calcRit(id){
+  var lordo=parseFloat((document.getElementById('pgl-'+id)||{}).value)||0;
+  var tipo=(document.getElementById('pgt-'+id)||{}).value||'professionista';
+  var cfg=TIPI_PERC[tipo]||TIPI_PERC.professionista;
+  var rit=lordo*cfg.aliquota;
+  var netto=lordo-rit;
+  var ae=document.getElementById('pga-'+id);
+  var re=document.getElementById('pgr-'+id);
+  var ne=document.getElementById('pgn-'+id);
+  if(ae) ae.textContent=(cfg.aliquota*100).toFixed(0)+'%';
+  if(re) re.textContent=rit>0?fmt(rit):'—';
+  if(ne) ne.textContent=netto>0?fmt(netto):'—';
+  aggPag();
+}
+
+function loadDefaultPag(){
+  document.getElementById('pagBody').innerHTML=''; pagCount=0;
+  var perc=leggiPercettori();
+  if(!perc.length){alert('Inserisci prima i percettori (Tab 2).'); return;}
+  var def=[
+    {percId:perc[0]?perc[0].id:'', data:'2024-03-15', desc:'Onorario redazione rendiconto',  lordo:1200, tipo:'professionista'},
+    {percId:perc[0]?perc[0].id:'', data:'2024-09-10', desc:'Onorario consulenza assemblea',  lordo:800,  tipo:'professionista'},
+    {percId:perc[1]?perc[1].id:'', data:'2024-04-01', desc:'Pulizia scale trimestre 1',      lordo:900,  tipo:'impresa'},
+    {percId:perc[1]?perc[1].id:'', data:'2024-07-01', desc:'Pulizia scale trimestre 2',      lordo:900,  tipo:'impresa'},
+    {percId:perc[2]?perc[2].id:'', data:'2024-01-31', desc:'Stipendio portiere gennaio',     lordo:1500, tipo:'dipendente'},
+    {percId:perc[2]?perc[2].id:'', data:'2024-02-28', desc:'Stipendio portiere febbraio',    lordo:1500, tipo:'dipendente'},
+  ];
+  def.forEach(function(d){addPag(d);});
+}
+
+function leggiPagamenti(){
+  var r=[];
+  document.querySelectorAll('#pagBody tr').forEach(function(tr){
+    var id=tr.id.replace('pg-','');
+    var percId=(document.getElementById('pgp-'+id)||{}).value||'';
+    var data=  (document.getElementById('pgd-'+id)||{}).value||'';
+    var desc=  ((document.getElementById('pgdesc-'+id)||{}).value||'').trim();
+    var lordo= parseFloat((document.getElementById('pgl-'+id)||{}).value)||0;
+    var tipo=  (document.getElementById('pgt-'+id)||{}).value||'professionista';
+    var f24=   (document.getElementById('pgf-'+id)||{}).checked||false;
+    if(!lordo) return;
+    var cfg=TIPI_PERC[tipo]||TIPI_PERC.professionista;
+    var rit=lordo*cfg.aliquota;
+    r.push({id:id,percId:percId,data:data,desc:desc,lordo:lordo,tipo:tipo,
+            aliquota:cfg.aliquota,rit:rit,netto:lordo-rit,codTrib:cfg.codTrib,f24:f24});
+  });
+  return r;
+}
+
+function aggPag(){
+  var pag=leggiPagamenti();
+  var totL=pag.reduce(function(s,p){return s+p.lordo;},0);
+  var totR=pag.reduce(function(s,p){return s+p.rit;},0);
+  var totN=pag.reduce(function(s,p){return s+p.netto;},0);
+  document.getElementById('spTot').textContent   = pag.length;
+  document.getElementById('spLordi').textContent = fmt(totL);
+  document.getElementById('spRit').textContent   = fmt(totR);
+  document.getElementById('spNetto').textContent = fmt(totN);
+  pagamentiData=pag;
+}
+
+// ══ CU ══
+function renderCU(){
+  var perc=leggiPercettori();
+  var pag=leggiPagamenti();
+  if(!pag.length){return;}
+
+  var anno=(document.getElementById('annoImposta')||{}).value||'2024';
+  var cNome=(document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF=(document.getElementById('condoCF')||{}).value||'';
+
+  // Raggruppa pagamenti per percettore
+  var percMap={};
+  pag.forEach(function(p){
+    if(!percMap[p.percId]) percMap[p.percId]={lordo:0,rit:0,netto:0,pagamenti:[]};
+    percMap[p.percId].lordo+=p.lordo;
+    percMap[p.percId].rit+=p.rit;
+    percMap[p.percId].netto+=p.netto;
+    percMap[p.percId].tipo=p.tipo;
+    percMap[p.percId].codTrib=p.codTrib;
+    percMap[p.percId].pagamenti.push(p);
+  });
+
+  var html='<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcelCU()">📊 Excel per CAF</button>'+
+    '</div>';
+
+  perc.forEach(function(p){
+    var dati=percMap[p.id];
+    if(!dati) return;
+    var cfg=TIPI_PERC[p.tipo]||TIPI_PERC.professionista;
+    var numCU='CU'+anno+'-'+String(p.id).padStart(3,'0');
+    html+=
+      '<div class="cu-card">'+
+      '<div class="cu-hs">'+
+      '<span class="cu-hs-title">'+esc(p.cognome+(p.nome?' '+p.nome:''))+'</span>'+
+      '<span class="cu-hs-badge">'+numCU+' · '+cfg.label+'</span>'+
+      '</div>'+
+      '<div class="cu-body">'+
+      '<div class="cu-grid">'+
+      cuField('Codice Fiscale/P.IVA',p.cf||'—',true)+
+      cuField('Cognome / Denominazione',p.cognome)+
+      cuField('Nome',p.nome||'—')+
+      cuField('Indirizzo',p.indirizzo||'—')+
+      cuField('Tipo prestazione',cfg.label)+
+      cuField('Codice tributo F24',dati.codTrib,true)+
+      cuField('Anno imposta',anno,true)+
+      cuField('Sostituto d\'imposta',cNome)+
+      cuField('C.F. Sostituto',cCF,true)+
+      '</div>'+
+      '<div class="cu-totals">'+
+      '<div class="cu-tot-item"><div class="cu-tot-label">Compensi lordi erogati</div><div class="cu-tot-value">'+fmt(dati.lordo)+'</div></div>'+
+      '<div class="cu-tot-item"><div class="cu-tot-label">Ritenute operate</div><div class="cu-tot-value">'+fmt(dati.rit)+'</div></div>'+
+      '<div class="cu-tot-item"><div class="cu-tot-label">Aliquota applicata</div><div class="cu-tot-value">'+(cfg.aliquota*100).toFixed(0)+'%</div></div>'+
+      '<div class="cu-tot-item"><div class="cu-tot-label">Netto corrisposto</div><div class="cu-tot-value">'+fmt(dati.netto)+'</div></div>'+
+      '</div>'+
+      '</div></div>';
+  });
+
+  // Percettori senza anagrafica (solo pagamenti)
+  Object.keys(percMap).forEach(function(pid){
+    if(!perc.find(function(p){return p.id===pid;})){
+      var dati=percMap[pid];
+      var cfg=TIPI_PERC[dati.tipo]||TIPI_PERC.professionista;
+      html+=
+        '<div class="cu-card">'+
+        '<div class="cu-hs"><span class="cu-hs-title">Percettore non anagrafico</span>'+
+        '<span class="cu-hs-badge">'+cfg.label+'</span></div>'+
+        '<div class="cu-body">'+
+        '<div class="cu-totals">'+
+        '<div class="cu-tot-item"><div class="cu-tot-label">Compensi lordi</div><div class="cu-tot-value">'+fmt(dati.lordo)+'</div></div>'+
+        '<div class="cu-tot-item"><div class="cu-tot-label">Ritenute operate</div><div class="cu-tot-value">'+fmt(dati.rit)+'</div></div>'+
+        '<div class="cu-tot-item"><div class="cu-tot-label">Netto</div><div class="cu-tot-value">'+fmt(dati.netto)+'</div></div>'+
+        '</div></div></div>';
+    }
+  });
+
+  document.getElementById('cuContent').innerHTML=html;
+  percettoriData=perc;
+}
+
+function cuField(label,value,mono){
+  return '<div class="cu-field"><div class="cu-field-label">'+esc(label)+'</div>'+
+    '<div class="cu-field-value'+(mono?' mono':'')+'">'+esc(String(value))+'</div></div>';
+}
+
+// ══ 770 ══
+function render770(){
+  var pag=leggiPagamenti();
+  if(!pag.length){return;}
+
+  var anno=(document.getElementById('annoImposta')||{}).value||'2024';
+  var cNome=(document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF=(document.getElementById('condoCF')||{}).value||'';
+  var scad770=(document.getElementById('scad770')||{}).value||'';
+  var scadFmt=scad770?new Date(scad770).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+
+  // Raggruppa per tipo/codice tributo
+  var gruppi={};
+  pag.forEach(function(p){
+    var k=p.codTrib;
+    if(!gruppi[k]){gruppi[k]={codTrib:p.codTrib,tipo:p.tipo,lordo:0,rit:0,netto:0,npag:0};}
+    gruppi[k].lordo+=p.lordo; gruppi[k].rit+=p.rit; gruppi[k].netto+=p.netto; gruppi[k].npag++;
+  });
+
+  var totL=pag.reduce(function(s,p){return s+p.lordo;},0);
+  var totR=pag.reduce(function(s,p){return s+p.rit;},0);
+  var perc=leggiPercettori();
+
+  var html=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel770()">📊 Excel per commercialista</button>'+
+    '</div>'+
+
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Sostituto d\'imposta</div>'+
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">'+esc(cNome)+'</div>'+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">C.F.: '+esc(cCF)+' · Anno imposta: '+anno+'</div></div>'+
+    '<div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.3rem">Scadenza presentazione</div>'+
+    '<div style="font-weight:600">'+scadFmt+'</div></div>'+
+    '</div>'+
+
+    '<div class="sl">Quadro ST — Riepiligo ritenute per codice tributo</div>'+
+    '<div class="q770">'+
+    '<div class="q770-header"><span class="q770-title">Quadro ST — Ritenute operate e versate</span></div>'+
+    '<div class="q770-body">'+
+    '<div class="q770-row q770-head">'+
+    '<span>Tipo percettore</span><span style="text-align:right">Cod. Tributo</span><span style="text-align:right">N. Percettori</span><span style="text-align:right">Compensi lordi</span><span style="text-align:right">Ritenute operate</span>'+
+    '</div>'+
+    Object.values(gruppi).map(function(g){
+      var cfg=TIPI_PERC[g.tipo]||TIPI_PERC.professionista;
+      var npercTipo=perc.filter(function(p){return p.tipo===g.tipo;}).length||g.npag;
+      return '<div class="q770-row">'+
+        '<span><span class="badge '+cfg.badge+'">'+cfg.label+'</span></span>'+
+        '<span class="amt">'+g.codTrib+'</span>'+
+        '<span class="amt">'+npercTipo+'</span>'+
+        '<span class="amt">'+fmt(g.lordo)+'</span>'+
+        '<span class="amt" style="color:var(--accent);font-weight:600">'+fmt(g.rit)+'</span>'+
+        '</div>';
+    }).join('')+
+    '<div class="q770-row q770-tot">'+
+    '<span>TOTALE</span><span></span><span class="amt">'+perc.length+'</span>'+
+    '<span class="amt">'+fmt(totL)+'</span><span class="amt" style="color:#e8b090">'+fmt(totR)+'</span>'+
+    '</div>'+
+    '</div></div>'+
+
+    '<div class="sl" style="margin-top:2rem">Quadro SX — Riepilogo compensazioni e rimborsi</div>'+
+    '<div class="q770">'+
+    '<div class="q770-header"><span class="q770-title">Quadro SX — Riepilogo</span></div>'+
+    '<div class="q770-body">'+
+    '<div class="q770-row"><span>Totale ritenute da versare</span><span></span><span></span><span></span><span class="amt" style="font-weight:600">'+fmt(totR)+'</span></div>'+
+    '<div class="q770-row"><span>Totale compensazioni (F24)</span><span></span><span></span><span></span><span class="amt" style="color:var(--success)">'+fmt(totR)+'</span></div>'+
+    '<div class="q770-row q770-tot"><span>DIFFERENZA A DEBITO/CREDITO</span><span></span><span></span><span></span><span class="amt">€ 0,00</span></div>'+
+    '</div></div>'+
+
+    '<div class="nb"><strong>⚠️ Nota importante</strong>'+
+    'I dati generati da questo modulo sono un riepilogo operativo ad uso interno. La trasmissione telematica del Modello 770 deve essere effettuata da un professionista abilitato (commercialista, CAF) tramite i software ufficiali dell\'Agenzia delle Entrate. Fornisci questi dati al tuo consulente fiscale.'+
+    '</div>';
+
+  document.getElementById('content770').innerHTML=html;
+}
+
+// ══ LETTERE CU ══
+function renderLettere(){
+  var perc=leggiPercettori();
+  var pag=leggiPagamenti();
+  if(!pag.length||!perc.length) return;
+
+  var percMap={};
+  pag.forEach(function(p){
+    if(!percMap[p.percId]){percMap[p.percId]={lordo:0,rit:0,netto:0,tipo:p.tipo};}
+    percMap[p.percId].lordo+=p.lordo; percMap[p.percId].rit+=p.rit; percMap[p.percId].netto+=p.netto;
+  });
+
+  var percConPag=perc.filter(function(p){return percMap[p.id];});
+  if(!percConPag.length) return;
+
+  var html='<div class="lnav">'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Percettore:</span>'+
+    percConPag.map(function(p,i){
+      return '<button class="btn btn-g btn-sm" id="lb-'+i+'" onclick="showLetteraCU('+i+')">'+p.cognome.split(' ')[0]+'</button>';
+    }).join('')+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '</div><div id="letteraCUEl"></div>';
+  document.getElementById('lettereContent').innerHTML=html;
+  showLetteraCU(0);
+  percettoriData=percConPag;
+  pagamentiData=percMap;
+}
+
+function showLetteraCU(idx){
+  var perc=leggiPercettori();
+  var pag=leggiPagamenti();
+  var percMap={};
+  pag.forEach(function(p){
+    if(!percMap[p.percId]){percMap[p.percId]={lordo:0,rit:0,netto:0,tipo:p.tipo,codTrib:''};}
+    percMap[p.percId].lordo+=p.lordo; percMap[p.percId].rit+=p.rit;
+    percMap[p.percId].netto+=p.netto; percMap[p.percId].codTrib=p.codTrib;
+  });
+  var percConPag=perc.filter(function(p){return percMap[p.id];});
+
+  document.querySelectorAll('[id^="lb-"]').forEach(function(b,i){
+    b.className='btn btn-sm '+(i===idx?'btn-p':'btn-g');
+  });
+
+  var p=percConPag[idx];
+  if(!p) return;
+  var dati=percMap[p.id];
+  var cfg=TIPI_PERC[p.tipo||dati.tipo]||TIPI_PERC.professionista;
+  var anno=(document.getElementById('annoImposta')||{}).value||'2024';
+  var cNome=(document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF=(document.getElementById('condoCF')||{}).value||'';
+  var studio=(document.getElementById('studioNome')||{}).value||'Studio Amministrativo';
+  var studioC=(document.getElementById('studioContatti')||{}).value||'';
+  var studioEmail=(document.getElementById('studioEmail')||{}).value||'';
+  var scadCU=(document.getElementById('scadCU')||{}).value||'';
+  var scadFmt=scadCU?new Date(scadCU).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var numCU='CU'+anno+'-'+String(p.id).padStart(3,'0');
+
+  document.getElementById('letteraCUEl').innerHTML=
+    '<div class="lettera">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Sostituto d\'imposta</div>'+
+    '<strong>'+esc(cNome)+'</strong>'+(cCF?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.78rem;color:var(--muted)">C.F. '+esc(cCF)+'</span>':'')+
+    '<br><span style="font-size:0.78rem;color:var(--muted)">Amministrato da: '+esc(studio)+'</span>'+
+    (studioC?'<br><span style="font-size:0.75rem;color:var(--muted)">'+esc(studioC)+'</span>':'')+
+    '<br><span style="font-size:0.75rem;color:var(--muted)">'+oggi+'</span></div>'+
+    '<div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Percettore</div>'+
+    '<strong>'+esc(p.cognome+(p.nome?' '+p.nome:''))+'</strong>'+
+    (p.cf?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.78rem;color:var(--muted)">C.F./P.IVA: '+esc(p.cf)+'</span>':'')+
+    (p.indirizzo?'<br><span style="font-size:0.78rem;color:var(--muted)">'+esc(p.indirizzo)+'</span>':'')+
+    '</div></div>'+
+
+    '<div style="background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin-bottom:1.5rem;font-weight:500">'+
+    'Oggetto: Trasmissione Certificazione Unica '+anno+' ('+numCU+') — '+esc(cNome)+'</div>'+
+
+    '<p>Gentile '+esc(p.cognome+(p.nome?' '+p.nome:''))+',</p><br>'+
+    '<p>ai sensi dell\'art. 4 del D.P.R. 322/1998, Le trasmettiamo la <strong>Certificazione Unica '+anno+'</strong> relativa ai compensi erogati nell\'anno di imposta <strong>'+anno+'</strong> dal condominio <strong>'+esc(cNome)+'</strong> in qualità di sostituto d\'imposta.</p><br>'+
+
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin:1rem 0">'+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Dati certificati — Anno '+anno+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Tipo prestazione</div><div style="font-weight:600">'+esc(cfg.label)+'</div></div>'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Codice tributo F24</div><div style="font-family:\'DM Mono\',monospace;font-weight:600;color:var(--warning)">'+dati.codTrib+'</div></div>'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Compensi lordi erogati</div><div style="font-family:\'DM Mono\',monospace;font-weight:600;font-size:1.1rem">'+fmt(dati.lordo)+'</div></div>'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Ritenute operate</div><div style="font-family:\'DM Mono\',monospace;font-weight:600;font-size:1.1rem;color:var(--accent)">'+fmt(dati.rit)+'</div></div>'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Aliquota applicata</div><div style="font-weight:600">'+(cfg.aliquota*100).toFixed(0)+'%</div></div>'+
+    '<div><div style="font-size:0.75rem;color:var(--muted)">Netto corrisposto</div><div style="font-family:\'DM Mono\',monospace;font-weight:600;font-size:1.1rem;color:var(--success)">'+fmt(dati.netto)+'</div></div>'+
+    '</div></div><br>'+
+
+    '<p>La preghiamo di conservare questa certificazione per la compilazione della Sua dichiarazione dei redditi.</p>'+
+    '<p>La Certificazione Unica è stata trasmessa telematicamente all\'Agenzia delle Entrate entro il <strong>'+scadFmt+'</strong>.</p><br>'+
+    (studioEmail?'<p>Per qualsiasi chiarimento è disponibile: <strong>'+esc(studioEmail)+'</strong></p><br>':'')+
+    '<p>Distinti saluti,</p>'+
+    '<div style="border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2rem">'+esc(studio)+'<br>per '+esc(cNome)+'</div>'+
+    '</div>';
+}
+
+// ══ EXPORT ══
+function expExcelCU(){
+  var perc=leggiPercettori();
+  var pag=leggiPagamenti();
+  if(!pag.length){alert('Inserisci i pagamenti prima di esportare.');return;}
+  var anno=(document.getElementById('annoImposta')||{}).value||'2024';
+  var cNome=(document.getElementById('condoNome')||{}).value||'Condominio';
+  var percMap={};
+  pag.forEach(function(p){
+    if(!percMap[p.percId]){percMap[p.percId]={lordo:0,rit:0,netto:0,tipo:p.tipo,codTrib:p.codTrib};}
+    percMap[p.percId].lordo+=p.lordo; percMap[p.percId].rit+=p.rit; percMap[p.percId].netto+=p.netto;
+  });
+  var wb=XLSX.utils.book_new();
+  var ws1=XLSX.utils.aoa_to_sheet(
+    [['CERTIFICAZIONI UNICHE '+anno+' — '+cNome],[],
+     ['Cognome/Denominazione','Nome','C.F./P.IVA','Tipo','Cod.Tributo','Compensi Lordi','Ritenute Operate','Aliquota %','Netto Corrisposto']].concat(
+    perc.filter(function(p){return percMap[p.id];}).map(function(p){
+      var d=percMap[p.id];
+      var cfg=TIPI_PERC[p.tipo]||TIPI_PERC.professionista;
+      return [p.cognome,p.nome,p.cf,cfg.label,d.codTrib,d.lordo,d.rit,(cfg.aliquota*100).toFixed(0)+'%',d.netto];
+    })));
+  ws1['!cols']=[24,14,16,18,10,14,14,10,14].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'CU '+anno);
+  var ws2=XLSX.utils.aoa_to_sheet(
+    [['Data','Percettore','Descrizione','Compenso Lordo','Tipo','Aliquota','Ritenuta','Netto','F24 Versato']].concat(
+    pag.map(function(p){
+      var perc2=perc.find(function(x){return x.id===p.percId;})||{cognome:'N/D'};
+      return [p.data,perc2.cognome+(perc2.nome?' '+perc2.nome:''),p.desc,p.lordo,
+        TIPI_PERC[p.tipo]&&TIPI_PERC[p.tipo].label,
+        (p.aliquota*100).toFixed(0)+'%',p.rit,p.netto,p.f24?'Sì':'No'];
+    })));
+  ws2['!cols']=[10,24,28,14,18,8,12,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws2,'Registro Pagamenti');
+  XLSX.writeFile(wb,'CondoKit_CU_'+cNome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
+}
+
+function expExcel770(){
+  var pag=leggiPagamenti();
+  if(!pag.length){alert('Inserisci i pagamenti prima di esportare.');return;}
+  var anno=(document.getElementById('annoImposta')||{}).value||'2024';
+  var cNome=(document.getElementById('condoNome')||{}).value||'Condominio';
+  var gruppi={};
+  pag.forEach(function(p){
+    var k=p.codTrib;
+    if(!gruppi[k]){gruppi[k]={codTrib:k,tipo:p.tipo,lordo:0,rit:0};}
+    gruppi[k].lordo+=p.lordo; gruppi[k].rit+=p.rit;
+  });
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['MODELLO 770 '+anno+' — QUADRO ST — '+cNome],[],
+     ['Codice Tributo','Tipo Percettore','Compensi Lordi','Ritenute Operate']].concat(
+    Object.values(gruppi).map(function(g){
+      return [g.codTrib,TIPI_PERC[g.tipo]&&TIPI_PERC[g.tipo].label,g.lordo,g.rit];
+    })));
+  ws['!cols']=[12,20,16,16].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Quadro ST');
+  XLSX.writeFile(wb,'CondoKit_770_'+cNome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
+}
+
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
