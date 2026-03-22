@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Bonifici Fornitori</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.2rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-gold{background:var(--gold);color:white;}.btn-gold:hover{background:#8a6008;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* SUMMARY */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}.sc.k::before{background:var(--ink);}
+.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}.cv.gn{color:var(--success);}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.amt-neg{color:var(--accent);font-weight:500;}
+.amt-pos{color:var(--success);font-weight:500;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-att{background:var(--gold-light);color:var(--warning);}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-ann{background:var(--cream);color:var(--muted);}
+.b-forn{background:#d0e8f0;color:#1a4060;}
+.b-prof{background:var(--gold-light);color:var(--warning);}
+.b-amm{background:var(--accent-light);color:var(--accent);}
+
+/* SEPA BOX */
+.sepa-box{background:var(--ink);color:var(--paper);border-radius:4px;padding:1.5rem;margin-bottom:1.5rem;}
+.sepa-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--border);margin-bottom:1rem;}
+.sepa-pre{font-family:'DM Mono',monospace;font-size:0.72rem;color:#e8e0d0;line-height:1.8;overflow-x:auto;white-space:pre;max-height:300px;overflow-y:auto;}
+.sepa-pre::-webkit-scrollbar{width:3px;height:3px;}
+.sepa-pre::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:9999px;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+/* DISTINTA STAMPA */
+.distinta{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.distinta-hs{background:var(--ink);color:var(--paper);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.distinta-title{font-family:'DM Serif Display',serif;font-size:1rem;}
+.distinta-badge{font-family:'DM Mono',monospace;font-size:0.62rem;background:rgba(255,255,255,0.12);padding:0.25rem 0.6rem;border-radius:2px;}
+.distinta-body{padding:1.5rem;}
+.distinta-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--cream);font-size:0.85rem;}
+.distinta-row:last-child{border-bottom:none;}
+.distinta-tot{background:var(--cream);padding:0.75rem 1.5rem;display:flex;justify-content:space-between;font-weight:600;font-family:'DM Mono',monospace;}
+
+@media print{.navbar,.tab-bar,.brow,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}.distinta,.sepa-box{box-shadow:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.12</div>
+  <h1>Bonifici<br><em>Fornitori</em></h1>
+  <p class="header-sub">Genera la lista dei bonifici da eseguire, collega le fatture, tieni lo storico dei pagamenti ed esporta il tracciato SEPA per la banca.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-nuovo"    onclick="go('nuovo')">➕ 1 · Nuovo Bonifico</button>
+    <button class="tab-btn"   id="tb-lista"     onclick="go('lista')">📋 2 · Da Pagare</button>
+    <button class="tab-btn"   id="tb-storico"   onclick="go('storico')">🗄️ 3 · Storico</button>
+    <button class="tab-btn"   id="tb-distinta"  onclick="go('distinta')">🖨️ 4 · Distinta PDF</button>
+    <button class="tab-btn"   id="tb-sepa"      onclick="go('sepa')">💾 5 · Tracciato SEPA</button>
+  </div>
+
+  <!-- ══ TAB 1 — NUOVO BONIFICO ══ -->
+  <div class="panel on" id="p-nuovo">
+
+    <div class="sl">Dati del condominio ordinante</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>IBAN ordinante</label><input type="text" id="condoIBAN" placeholder="IT60 X012 3456 7800 0000 0123 456"></div>
+        <div class="fg"><label>Banca ordinante</label><input type="text" id="condoBanca" placeholder="Es. UniCredit Milano"></div>
+      </div>
+    </div>
+
+    <div class="sl">Dati del bonifico</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Beneficiario</label><input type="text" id="bNome" placeholder="Es. Rossi Impianti S.r.l."></div>
+        <div class="fg"><label>Tipo beneficiario</label>
+          <select id="bTipo">
+            <option value="fornitore">🏢 Fornitore</option>
+            <option value="professionista">👤 Professionista</option>
+            <option value="amministratore">🧑‍💼 Amministratore</option>
+          </select>
+        </div>
+        <div class="fg"><label>Codice Fiscale / P.IVA</label><input type="text" id="bCF" placeholder="Es. 03456789012"></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>IBAN beneficiario</label><input type="text" id="bIBAN" placeholder="IT60 X012 3456 7800 0000 0987 654"></div>
+        <div class="fg"><label>BIC / SWIFT (opzionale)</label><input type="text" id="bBIC" placeholder="Es. UNCRITMM"></div>
+      </div>
+      <div class="r4">
+        <div class="fg"><label>Importo (€)</label><input type="number" id="bImporto" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="fg"><label>Data esecuzione</label><input type="date" id="bData"></div>
+        <div class="fg"><label>N° Fattura collegata</label><input type="text" id="bFattura" placeholder="Es. FT/2025/001"></div>
+        <div class="fg"><label>Priorità</label>
+          <select id="bPriorita">
+            <option value="normale">Normale</option>
+            <option value="urgente">⚡ Urgente</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Causale bonifico</label><input type="text" id="bCausale" placeholder="Es. Pagamento fattura FT/2025/001 - Manutenzione ascensore"></div>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="aggiungiBonifico()">➕ Aggiungi alla lista</button>
+      <button class="btn btn-g" onclick="resetForm()">↺ Azzera</button>
+    </div>
+
+    <div class="nb">
+      <strong>💡 Come funziona</strong>
+      Inserisci i dati del bonifico e premi "Aggiungi alla lista". I bonifici vengono raccolti nella tab "Da Pagare". Quando sei pronto, seleziona quelli da eseguire e genera la distinta PDF o il tracciato SEPA da caricare sul portale della tua banca.
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — DA PAGARE ══ -->
+  <div class="panel" id="p-lista">
+
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Bonifici in attesa</div><div class="cv" id="slTot">0</div></div>
+      <div class="sc r"><div class="cl">Totale da pagare</div><div class="cv a" id="slImporto">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">Selezionati</div><div class="cv go" id="slSel">0</div></div>
+      <div class="sc gn"><div class="cl">Totale selezionati</div><div class="cv gn" id="slSelImporto">€ 0,00</div></div>
+    </div>
+
+    <div class="sl">Bonifici da eseguire</div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th><input type="checkbox" id="checkAll" onclick="selTutti()" title="Seleziona tutti"></th>
+          <th>Data</th><th>Beneficiario</th><th>Tipo</th>
+          <th>IBAN</th><th>Causale</th><th>Fattura</th>
+          <th>Importo</th><th>Priorità</th><th>Azioni</th>
+        </tr></thead>
+        <tbody id="listaBody"></tbody>
+      </table>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="eseguiSelezionati()">✅ Segna come pagati</button>
+      <button class="btn btn-s btn-sm" onclick="go('distinta')">🖨️ Distinta PDF</button>
+      <button class="btn btn-gold btn-sm" onclick="go('sepa')">💾 Tracciato SEPA</button>
+      <button class="btn btn-g btn-sm" onclick="expExcelLista()">📊 Excel</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — STORICO ══ -->
+  <div class="panel" id="p-storico">
+
+    <div class="sgrid">
+      <div class="sc k"><div class="cl">Bonifici eseguiti</div><div class="cv" id="ssTot">0</div></div>
+      <div class="sc gn"><div class="cl">Totale pagato</div><div class="cv gn" id="ssTotale">€ 0,00</div></div>
+      <div class="sc g"><div class="cl">Fornitori pagati</div><div class="cv go" id="ssForn">0</div></div>
+      <div class="sc bl"><div class="cl">Annullati</div><div class="cv" id="ssAnn" style="color:#2a5080">0</div></div>
+    </div>
+
+    <!-- Filtri -->
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
+      <div class="fg" style="margin:0;min-width:150px">
+        <label>Filtra per tipo</label>
+        <select id="filtroTipo" onchange="renderStorico()">
+          <option value="tutti">Tutti</option>
+          <option value="fornitore">Fornitori</option>
+          <option value="professionista">Professionisti</option>
+          <option value="amministratore">Amministratore</option>
+        </select>
+      </div>
+      <div class="fg" style="margin:0;min-width:150px">
+        <label>Cerca beneficiario</label>
+        <input type="text" id="filtroNome" placeholder="Nome..." oninput="renderStorico()">
+      </div>
+      <button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="expExcelStorico()">📊 Excel storico</button>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Data pagamento</th><th>Beneficiario</th><th>Tipo</th>
+          <th>IBAN</th><th>Causale</th><th>Fattura</th>
+          <th>Importo</th><th>Stato</th><th></th>
+        </tr></thead>
+        <tbody id="storicoBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — DISTINTA PDF ══ -->
+  <div class="panel" id="p-distinta">
+    <div id="distinataContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">🖨️</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Distinta di pagamento</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Seleziona i bonifici nella tab "Da Pagare" e torna qui per la distinta ufficiale.</p>
+        <button class="btn btn-g btn-sm" onclick="go('lista')">→ Vai a Da Pagare</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — SEPA ══ -->
+  <div class="panel" id="p-sepa">
+    <div id="sepaContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">💾</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Tracciato SEPA XML</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Aggiungi i bonifici nella tab "Da Pagare" per generare il tracciato SEPA da caricare sul portale della tua banca.</p>
+        <button class="btn btn-g btn-sm" onclick="go('lista')">→ Vai a Da Pagare</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Bonifici Fornitori · Beta · Verifica sempre i dati prima di inviare alla banca</div>
+
+<script>
+var PANELS = ['nuovo','lista','storico','distinta','sepa'];
+var bonifici = [];   // in attesa
+var storico  = [];   // eseguiti/annullati
+var bCount   = 0;
+
+var TIPI = {
+  fornitore:      {label:'Fornitore',      badge:'b-forn'},
+  professionista: {label:'Professionista', badge:'b-prof'},
+  amministratore: {label:'Amministratore', badge:'b-amm'},
+};
+
+// ══ TAB ══
+function go(name) {
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display = n===name?'block':'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if(name==='lista')    { aggSummaryLista(); renderLista(); }
+  if(name==='storico')  { aggSummaryStorico(); renderStorico(); }
+  if(name==='distinta') renderDistinta();
+  if(name==='sepa')     renderSEPA();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i){
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  var oggi = new Date().toISOString().split('T')[0];
+  document.getElementById('bData').value = oggi;
+};
+
+// ══ FORM ══
+function aggiungiBonifico() {
+  var nome    = (document.getElementById('bNome')||{}).value.trim();
+  var tipo    = (document.getElementById('bTipo')||{}).value;
+  var cf      = (document.getElementById('bCF')||{}).value.trim();
+  var iban    = (document.getElementById('bIBAN')||{}).value.trim().replace(/\s/g,'');
+  var bic     = (document.getElementById('bBIC')||{}).value.trim();
+  var importo = parseFloat((document.getElementById('bImporto')||{}).value)||0;
+  var data    = (document.getElementById('bData')||{}).value;
+  var fattura = (document.getElementById('bFattura')||{}).value.trim();
+  var causale = (document.getElementById('bCausale')||{}).value.trim();
+  var prior   = (document.getElementById('bPriorita')||{}).value;
+
+  if(!nome)    { alert('Inserisci il nome del beneficiario.'); return; }
+  if(!iban)    { alert('Inserisci l\'IBAN del beneficiario.'); return; }
+  if(!importo) { alert('Inserisci un importo valido.'); return; }
+  if(!causale) { alert('Inserisci la causale del bonifico.'); return; }
+
+  bCount++;
+  bonifici.push({
+    id:      'b-'+bCount,
+    nome:    nome, tipo:tipo, cf:cf, iban:iban, bic:bic,
+    importo: importo, data:data, fattura:fattura,
+    causale: causale, prior:prior,
+    sel:     false,
+    condoNome: (document.getElementById('condoNome')||{}).value.trim(),
+    condoIBAN: (document.getElementById('condoIBAN')||{}).value.trim().replace(/\s/g,''),
+    condoBanca:(document.getElementById('condoBanca')||{}).value.trim(),
+  });
+
+  alert('✅ Bonifico aggiunto!\nBeneficiario: '+nome+'\nImporto: '+fmt(importo));
+  resetForm();
+  go('lista');
+}
+
+function resetForm() {
+  ['bNome','bCF','bIBAN','bBIC','bImporto','bFattura','bCausale'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('bData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bTipo').value = 'fornitore';
+  document.getElementById('bPriorita').value = 'normale';
+}
+
+// ══ LISTA DA PAGARE ══
+function aggSummaryLista() {
+  var sel = bonifici.filter(function(b){return b.sel;});
+  document.getElementById('slTot').textContent     = bonifici.length;
+  document.getElementById('slImporto').textContent = fmt(bonifici.reduce(function(s,b){return s+b.importo;},0));
+  document.getElementById('slSel').textContent     = sel.length;
+  document.getElementById('slSelImporto').textContent = fmt(sel.reduce(function(s,b){return s+b.importo;},0));
+}
+
+function renderLista() {
+  var tb = document.getElementById('listaBody');
+  if(!bonifici.length) {
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted);font-style:italic">Nessun bonifico in attesa. Aggiungili dalla tab "Nuovo Bonifico".</td></tr>';
+    aggSummaryLista(); return;
+  }
+  tb.innerHTML = bonifici.map(function(b){
+    var cfg = TIPI[b.tipo]||TIPI.fornitore;
+    var ibanFmt = b.iban.replace(/(.{4})/g,'$1 ').trim();
+    return '<tr style="'+(b.prior==='urgente'?'background:#fff8f6':'')+'">'+
+      '<td><input type="checkbox" '+(b.sel?'checked':'')+' onchange="toggleSel(\''+b.id+'\',this.checked)"></td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem;white-space:nowrap">'+esc(b.data||'—')+'</td>'+
+      '<td><strong>'+esc(b.nome)+'</strong>'+(b.cf?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted)">'+esc(b.cf)+'</span>':'')+'</td>'+
+      '<td><span class="badge '+cfg.badge+'">'+cfg.label+'</span></td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.72rem;white-space:nowrap">'+esc(ibanFmt)+'</td>'+
+      '<td style="font-size:0.78rem;max-width:200px">'+esc(b.causale)+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(b.fattura||'—')+'</td>'+
+      '<td class="amt" style="font-weight:600;color:var(--accent)">'+fmt(b.importo)+'</td>'+
+      '<td>'+(b.prior==='urgente'?'<span class="badge" style="background:#fff0e0;color:#c06000">⚡ Urgente</span>':'<span style="font-size:0.75rem;color:var(--muted)">Normale</span>')+'</td>'+
+      '<td><button onclick="eliminaBonifico(\''+b.id+'\')" class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);padding:0.25rem 0.5rem;font-size:0.7rem">✕</button></td>'+
+      '</tr>';
+  }).join('');
+  aggSummaryLista();
+}
+
+function toggleSel(id, val) {
+  var b = bonifici.find(function(x){return x.id===id;});
+  if(b) b.sel = val;
+  aggSummaryLista();
+}
+
+function selTutti() {
+  var chk = document.getElementById('checkAll').checked;
+  bonifici.forEach(function(b){b.sel=chk;});
+  renderLista();
+}
+
+function eliminaBonifico(id) {
+  if(!confirm('Rimuovere questo bonifico dalla lista?')) return;
+  bonifici = bonifici.filter(function(b){return b.id!==id;});
+  renderLista();
+}
+
+function eseguiSelezionati() {
+  var sel = bonifici.filter(function(b){return b.sel;});
+  if(!sel.length) { alert('Seleziona almeno un bonifico da eseguire.'); return; }
+  var oggi = new Date().toLocaleDateString('it-IT');
+  sel.forEach(function(b){
+    storico.push(Object.assign({},b,{stato:'eseguito',dataPagamento:oggi}));
+  });
+  bonifici = bonifici.filter(function(b){return !b.sel;});
+  alert('✅ '+sel.length+' bonifici segnati come eseguiti e spostati nello storico.');
+  renderLista();
+  aggSummaryStorico();
+}
+
+// ══ STORICO ══
+function aggSummaryStorico() {
+  var es  = storico.filter(function(b){return b.stato==='eseguito';});
+  var ann = storico.filter(function(b){return b.stato==='annullato';});
+  var forn= new Set(es.map(function(b){return b.nome;})).size;
+  document.getElementById('ssTot').textContent    = es.length;
+  document.getElementById('ssTotale').textContent = fmt(es.reduce(function(s,b){return s+b.importo;},0));
+  document.getElementById('ssForn').textContent   = forn;
+  document.getElementById('ssAnn').textContent    = ann.length;
+}
+
+function renderStorico() {
+  var filtTipo = (document.getElementById('filtroTipo')||{}).value||'tutti';
+  var filtNome = ((document.getElementById('filtroNome')||{}).value||'').toLowerCase().trim();
+  var tb = document.getElementById('storicoBody');
+
+  var lista = storico.filter(function(b){
+    var matchTipo = filtTipo==='tutti'||b.tipo===filtTipo;
+    var matchNome = !filtNome||b.nome.toLowerCase().includes(filtNome);
+    return matchTipo&&matchNome;
+  });
+
+  if(!lista.length) {
+    tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-style:italic">Nessun bonifico nello storico.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = lista.map(function(b){
+    var cfg = TIPI[b.tipo]||TIPI.fornitore;
+    var ibanFmt = (b.iban||'').replace(/(.{4})/g,'$1 ').trim();
+    return '<tr>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem;white-space:nowrap">'+esc(b.dataPagamento||b.data||'—')+'</td>'+
+      '<td><strong>'+esc(b.nome)+'</strong>'+(b.cf?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted)">'+esc(b.cf)+'</span>':'')+'</td>'+
+      '<td><span class="badge '+cfg.badge+'">'+cfg.label+'</span></td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.72rem;white-space:nowrap">'+esc(ibanFmt)+'</td>'+
+      '<td style="font-size:0.78rem;max-width:180px">'+esc(b.causale)+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(b.fattura||'—')+'</td>'+
+      '<td class="amt" style="font-weight:600">'+fmt(b.importo)+'</td>'+
+      '<td><span class="badge '+(b.stato==='eseguito'?'b-ok':'b-ann')+'">'+(b.stato==='eseguito'?'✅ Eseguito':'❌ Annullato')+'</span></td>'+
+      '<td><button onclick="annullaStorico(\''+b.id+'\')" class="btn btn-sm btn-g" style="font-size:0.65rem;padding:0.2rem 0.5rem" title="Annulla">✕</button></td>'+
+      '</tr>';
+  }).join('');
+}
+
+function annullaStorico(id) {
+  var b = storico.find(function(x){return x.id===id;});
+  if(b && confirm('Annullare questo bonifico nello storico?')) {
+    b.stato = 'annullato';
+    renderStorico();
+    aggSummaryStorico();
+  }
+}
+
+// ══ DISTINTA PDF ══
+function renderDistinta() {
+  var sel = bonifici.filter(function(b){return b.sel;});
+  var lista = sel.length ? sel : bonifici;
+
+  if(!lista.length) return; // mostra stato vuoto di default
+
+  var cNome  = (lista[0]&&lista[0].condoNome)||'Condominio';
+  var cIBAN  = (lista[0]&&lista[0].condoIBAN)||'—';
+  var cBanca = (lista[0]&&lista[0].condoBanca)||'—';
+  var oggi   = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var totale = lista.reduce(function(s,b){return s+b.importo;},0);
+
+  var html =
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcelLista()">📊 Excel</button>'+
+    '</div>'+
+    '<div class="distinta">'+
+    '<div class="distinta-hs">'+
+    '<span class="distinta-title">Distinta Bonifici — '+esc(cNome)+'</span>'+
+    '<span class="distinta-badge">'+oggi+' · '+lista.length+' bonifici</span>'+
+    '</div>'+
+    '<div class="distinta-body">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Condominio ordinante</div>'+
+    '<div style="font-weight:600">'+esc(cNome)+'</div></div>'+
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">IBAN ordinante · '+esc(cBanca)+'</div>'+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.82rem">'+esc(cIBAN.replace(/(.{4})/g,'$1 ').trim())+'</div></div>'+
+    '</div>'+
+    lista.map(function(b,i){
+      var ibanFmt = b.iban.replace(/(.{4})/g,'$1 ').trim();
+      var cfg = TIPI[b.tipo]||TIPI.fornitore;
+      return '<div class="distinta-row">'+
+        '<div style="flex:1">'+
+        '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem">'+
+        '<span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted)">'+(i+1).toString().padStart(2,'0')+'</span>'+
+        '<strong>'+esc(b.nome)+'</strong>'+
+        '<span class="badge '+cfg.badge+'" style="font-size:0.58rem">'+cfg.label+'</span>'+
+        (b.prior==='urgente'?'<span style="font-size:0.65rem;color:#c06000">⚡</span>':'')+
+        '</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">'+esc(ibanFmt)+'</div>'+
+        '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.15rem">'+esc(b.causale)+(b.fattura?' · <em>'+esc(b.fattura)+'</em>':'')+'</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">Data: '+esc(b.data||'—')+'</div>'+
+        '</div>'+
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:1.2rem;color:var(--accent);font-weight:400;white-space:nowrap;padding-left:1rem">'+fmt(b.importo)+'</div>'+
+        '</div>';
+    }).join('')+
+    '</div>'+
+    '<div class="distinta-tot">'+
+    '<span>TOTALE DA PAGARE</span>'+
+    '<span style="color:var(--accent)">'+fmt(totale)+'</span>'+
+    '</div>'+
+    '</div>'+
+    '<div class="nb" style="margin-top:1rem">'+
+    '<strong>📌 Istruzioni per la banca</strong>'+
+    'Consegnare o caricare questa distinta sul portale bancario. Verificare IBAN e importi prima di autorizzare i pagamenti. '+
+    'Per un\'elaborazione più rapida, utilizzare il tracciato SEPA XML disponibile nella tab "Tracciato SEPA".'+
+    '</div>';
+
+  document.getElementById('distinataContent').innerHTML = html;
+}
+
+// ══ SEPA XML ══
+function renderSEPA() {
+  var sel = bonifici.filter(function(b){return b.sel;});
+  var lista = sel.length ? sel : bonifici;
+  if(!lista.length) return;
+
+  var msgId   = 'CKIT-'+Date.now();
+  var oggi    = new Date().toISOString().split('.')[0];
+  var totale  = lista.reduce(function(s,b){return s+b.importo;},0);
+  var cNome   = (lista[0]&&lista[0].condoNome)||'CONDOMINIO';
+  var cIBAN   = (lista[0]&&lista[0].condoIBAN)||'';
+  var cBanca  = (lista[0]&&lista[0].condoBanca)||'';
+
+  var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03">\n';
+  xml += '  <CstmrCdtTrfInitn>\n';
+  xml += '    <GrpHdr>\n';
+  xml += '      <MsgId>'+esc(msgId)+'</MsgId>\n';
+  xml += '      <CreDtTm>'+oggi+'</CreDtTm>\n';
+  xml += '      <NbOfTxs>'+lista.length+'</NbOfTxs>\n';
+  xml += '      <CtrlSum>'+totale.toFixed(2)+'</CtrlSum>\n';
+  xml += '      <InitgPty><Nm>'+escXml(cNome)+'</Nm></InitgPty>\n';
+  xml += '    </GrpHdr>\n';
+  xml += '    <PmtInf>\n';
+  xml += '      <PmtInfId>'+esc(msgId)+'-001</PmtInfId>\n';
+  xml += '      <PmtMtd>TRF</PmtMtd>\n';
+  xml += '      <NbOfTxs>'+lista.length+'</NbOfTxs>\n';
+  xml += '      <CtrlSum>'+totale.toFixed(2)+'</CtrlSum>\n';
+  xml += '      <PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf>\n';
+  xml += '      <ReqdExctnDt>'+(lista[0].data||new Date().toISOString().split('T')[0])+'</ReqdExctnDt>\n';
+  xml += '      <Dbtr><Nm>'+escXml(cNome)+'</Nm></Dbtr>\n';
+  xml += '      <DbtrAcct><Id><IBAN>'+escXml(cIBAN)+'</IBAN></Id></DbtrAcct>\n';
+  xml += '      <DbtrAgt><FinInstnId><Nm>'+escXml(cBanca)+'</Nm></FinInstnId></DbtrAgt>\n';
+
+  lista.forEach(function(b, i){
+    xml += '      <CdtTrfTxInf>\n';
+    xml += '        <PmtId>\n';
+    xml += '          <EndToEndId>'+esc(msgId)+'-'+(i+1).toString().padStart(3,'0')+'</EndToEndId>\n';
+    xml += '        </PmtId>\n';
+    xml += '        <Amt><InstdAmt Ccy="EUR">'+b.importo.toFixed(2)+'</InstdAmt></Amt>\n';
+    if(b.bic) xml += '        <CdtrAgt><FinInstnId><BIC>'+escXml(b.bic)+'</BIC></FinInstnId></CdtrAgt>\n';
+    xml += '        <Cdtr><Nm>'+escXml(b.nome)+'</Nm></Cdtr>\n';
+    xml += '        <CdtrAcct><Id><IBAN>'+escXml(b.iban)+'</IBAN></Id></CdtrAcct>\n';
+    xml += '        <RmtInf><Ustrd>'+escXml(b.causale)+'</Ustrd></RmtInf>\n';
+    xml += '      </CdtTrfTxInf>\n';
+  });
+
+  xml += '    </PmtInf>\n';
+  xml += '  </CstmrCdtTrfInitn>\n';
+  xml += '</Document>';
+
+  document.getElementById('sepaContent').innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-gold btn-sm" onclick="scaricaXML()">⬇️ Scarica file XML SEPA</button>'+
+    '<button class="btn btn-g btn-sm" onclick="copiaXML()">📋 Copia negli appunti</button>'+
+    '</div>'+
+    '<div class="sepa-box">'+
+    '<div class="sepa-title">📄 Tracciato SEPA pain.001.001.03 — '+lista.length+' bonifici · '+fmt(totale)+'</div>'+
+    '<div class="sepa-pre" id="sepaXmlPre">'+escHtml(xml)+'</div>'+
+    '</div>'+
+    '<div class="nb">'+
+    '<strong>⚠️ Come usare questo file</strong>'+
+    'Scarica il file XML e caricalo sul portale online della tua banca nella sezione "Bonifici multipli" o "Importa file SEPA". '+
+    'Il formato utilizzato è lo standard <strong>pain.001.001.03</strong> riconosciuto da tutti gli istituti bancari italiani ed europei. '+
+    'Verifica sempre l\'anteprima sul portale bancario prima di autorizzare i pagamenti.'+
+    '</div>';
+
+  window._sepaXml = xml;
+  window._sepaCount = lista.length;
+}
+
+function scaricaXML() {
+  if(!window._sepaXml) { alert('Genera prima il tracciato SEPA.'); return; }
+  var blob = new Blob([window._sepaXml], {type:'application/xml;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'CondoKit_SEPA_'+new Date().toISOString().split('T')[0]+'.xml';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function copiaXML() {
+  if(!window._sepaXml) return;
+  navigator.clipboard.writeText(window._sepaXml)
+    .then(function(){alert('✅ Tracciato XML copiato negli appunti!');})
+    .catch(function(){alert('Seleziona il testo manualmente e copia con Ctrl+C.');});
+}
+
+// ══ EXPORT EXCEL ══
+function expExcelLista() {
+  if(!bonifici.length) { alert('Nessun bonifico da esportare.'); return; }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(
+    [['LISTA BONIFICI DA PAGARE'],[]].concat(
+    [['Data','Beneficiario','CF/P.IVA','Tipo','IBAN','Causale','Fattura','Importo','Priorità']]).concat(
+    bonifici.map(function(b){
+      return [b.data,b.nome,b.cf,TIPI[b.tipo]&&TIPI[b.tipo].label,b.iban,b.causale,b.fattura,b.importo,b.prior];
+    })).concat([[]]).concat([['','','','','','','TOTALE',bonifici.reduce(function(s,b){return s+b.importo;},0),'']])
+  );
+  ws['!cols']=[10,24,16,14,28,34,14,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Bonifici');
+  XLSX.writeFile(wb,'CondoKit_Bonifici_'+new Date().toISOString().split('T')[0]+'.xlsx');
+}
+
+function expExcelStorico() {
+  if(!storico.length) { alert('Nessun bonifico nello storico.'); return; }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(
+    [['Data Pagamento','Beneficiario','CF/P.IVA','Tipo','IBAN','Causale','Fattura','Importo','Stato']].concat(
+    storico.map(function(b){
+      return [b.dataPagamento||b.data,b.nome,b.cf,TIPI[b.tipo]&&TIPI[b.tipo].label,b.iban,b.causale,b.fattura,b.importo,b.stato];
+    }))
+  );
+  ws['!cols']=[12,24,16,14,28,34,14,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Storico');
+  XLSX.writeFile(wb,'CondoKit_StoricoBonicifi_'+new Date().toISOString().split('T')[0]+'.xlsx');
+}
+
+// ══ UTILS ══
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escXml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

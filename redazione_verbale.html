@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Redazione Verbale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4060;}
+
+/* ODG ITEM */
+.odg-item{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 2px 8px var(--shadow);}
+.odg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);}
+.odg-numero{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);}
+.odg-titolo{font-family:'DM Serif Display',serif;font-size:1rem;flex:1;margin:0 1rem;}
+.odg-esito{font-size:0.9rem;}
+.voti-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin:1rem 0;}
+.voto-box{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.75rem;}
+.voto-label{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;}
+.voto-input{background:white;border:1px solid var(--border);border-radius:3px;padding:0.4rem 0.6rem;font-family:'DM Mono',monospace;font-size:0.9rem;width:100%;text-align:center;outline:none;transition:border-color 0.2s;}
+.voto-input:focus{border-color:var(--accent);}
+.mag-check{margin-top:0.75rem;padding:0.6rem 0.9rem;border-radius:3px;font-size:0.82rem;font-family:'DM Mono',monospace;}
+.mag-check.ok{background:var(--success-light);color:var(--success);}
+.mag-check.fail{background:var(--accent-light);color:var(--accent);}
+.delibera-testo{width:100%;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;line-height:1.5;resize:vertical;min-height:70px;outline:none;margin-top:0.75rem;transition:border-color 0.2s;}
+.delibera-testo:focus{border-color:var(--accent);}
+
+/* VERBALE DOCUMENTO */
+.verbale-doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.verbale-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.verbale-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.verbale-bd{padding:2.5rem 3rem;font-size:0.9rem;line-height:1.8;}
+.verbale-bd p{margin-bottom:0.85rem;}
+.v-sezione{margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid var(--border);}
+.v-sezione:last-child{border-bottom:none;margin-bottom:0;}
+.v-sezione-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--cream);}
+.v-punto{background:var(--cream);border-left:4px solid var(--ink);padding:1rem 1.5rem;border-radius:0 4px 4px 0;margin-bottom:1rem;}
+.v-punto-num{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.v-punto-title{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.5rem;}
+.v-delibera{background:white;border:1px solid var(--border);border-radius:3px;padding:0.75rem 1rem;margin-top:0.5rem;font-style:italic;}
+.v-delibera.approvata{border-left:4px solid var(--success);}
+.v-delibera.respinta{border-left:4px solid var(--accent);}
+.v-delibera.ritirata{border-left:4px solid var(--gold);}
+.v-voti{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);margin-top:0.35rem;}
+.firma-grid{display:flex;gap:3rem;flex-wrap:wrap;margin-top:2.5rem;}
+.firma-line{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.78rem;color:var(--muted);}
+.v-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+
+/* ANNOTAZIONI */
+.ann-item{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;}
+.ann-testo{font-size:0.85rem;flex:1;}
+.ann-meta{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--warning);white-space:nowrap;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+@media print{
+  .navbar,.tab-bar,.brow,.page-footer,.no-print{display:none!important;}
+  .main{padding:0;}body{background:white;}
+  .verbale-doc{box-shadow:none;border:1px solid #ccc;}
+  .odg-item{break-inside:avoid;}
+}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="convocazione_assemblee.html">📨 Convocazione</a>
+    <a class="nav-link" href="presenze_millesimi.html">👥 Presenze</a>
+    <a class="nav-link" href="calcolo_maggioranze.html">⚖️ Maggioranze</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.5</div>
+  <h1>Redazione<br><em>Verbale</em></h1>
+  <p class="header-sub">Redigi il verbale dell'assemblea punto per punto, registra i voti, verifica le maggioranze e genera il documento definitivo da firmare e archiviare.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"     onclick="go('setup')">⚙️ 1 · Intestazione</button>
+    <button class="tab-btn"   id="tb-presenti"   onclick="go('presenti')">👥 2 · Presenti</button>
+    <button class="tab-btn"   id="tb-odg"        onclick="go('odg')">📋 3 · Punti ODG</button>
+    <button class="tab-btn"   id="tb-annotazioni"onclick="go('annotazioni')">📝 4 · Annotazioni</button>
+    <button class="tab-btn"   id="tb-verbale"    onclick="go('verbale')">📄 5 · Verbale</button>
+  </div>
+
+  <!-- ══ TAB 1 — INTESTAZIONE ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati dell'assemblea</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale Condominio</label><input type="text" id="condoCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r4">
+        <div class="fg"><label>Data assemblea</label><input type="date" id="dataAss"></div>
+        <div class="fg"><label>Ora inizio</label><input type="time" id="oraInizio" value="19:00"></div>
+        <div class="fg"><label>Ora chiusura</label><input type="time" id="oraFine" value="21:00"></div>
+        <div class="fg"><label>Tipo assemblea</label>
+          <select id="tipoAss">
+            <option value="ordinaria">Ordinaria annuale</option>
+            <option value="straordinaria">Straordinaria</option>
+          </select>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>Luogo</label><input type="text" id="luogoAss" placeholder="Es. Sala riunioni c/o condominio, Via Roma 10"></div>
+        <div class="fg"><label>Convocazione</label>
+          <select id="convAss">
+            <option value="prima">Prima convocazione</option>
+            <option value="seconda" selected>Seconda convocazione</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">Dati amministratore e ufficio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Amministratore / Studio</label><input type="text" id="adminNome" placeholder="Es. Dott. Marco Bianchi"></div>
+        <div class="fg"><label>Contatti studio</label><input type="text" id="adminContatti" placeholder="Es. Tel. 02 1234567 · Via Milano 5"></div>
+      </div>
+      <div class="r3">
+        <div class="fg"><label>Presidente assemblea</label><input type="text" id="presidente" placeholder="Es. Rossi Mario"></div>
+        <div class="fg"><label>Segretario assemblea</label><input type="text" id="segretario" placeholder="Es. Verdi Giuseppe"></div>
+        <div class="fg"><label>N° verbale</label><input type="text" id="nVerbale" placeholder="Es. 01/2025"></div>
+      </div>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="go('presenti')">→ Vai ai Presenti</button>
+      <button class="btn btn-g" onclick="loadDefault()">📋 Carica esempio</button>
+      <button class="btn btn-g" onclick="azzeraIntestazione()">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — PRESENTI ══ -->
+  <div class="panel" id="p-presenti">
+    <div class="sl">Registro presenti, assenti e deleghe</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">
+      Registra chi è presente in assemblea. Il sistema calcola automaticamente millesimi presenti e verifica il numero legale.
+    </p>
+
+    <!-- Mini cruscotto -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.5rem">
+      <div style="background:var(--ink);color:var(--paper);border-radius:4px;padding:0.9rem 1.2rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.6;margin-bottom:0.3rem">Totali</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.5rem" id="pTot">0</div>
+        <div style="font-size:0.7rem;opacity:0.6"><span id="pTotMill">0</span> mill.</div>
+      </div>
+      <div style="background:var(--success);color:white;border-radius:4px;padding:0.9rem 1.2rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.75;margin-bottom:0.3rem">Presenti + deleghe</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.5rem" id="pPres">0</div>
+        <div style="font-size:0.7rem;opacity:0.75"><span id="pPresMill">0</span> mill.</div>
+      </div>
+      <div style="background:var(--accent);color:white;border-radius:4px;padding:0.9rem 1.2rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.75;margin-bottom:0.3rem">Assenti</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.5rem" id="pAss">0</div>
+        <div style="font-size:0.7rem;opacity:0.75"><span id="pAssMill">0</span> mill.</div>
+      </div>
+      <div id="nlMini" style="border-radius:4px;padding:0.9rem 1.2rem;background:var(--cream);border:1px solid var(--border)">
+        <div style="font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">N° legale</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1rem" id="nlStatus">—</div>
+      </div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Nome Condomino</th><th>Interno</th><th>Millesimi</th>
+          <th>Stato</th><th>Delega di / a</th><th></th>
+        </tr></thead>
+        <tbody id="presentiBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addPresente()">＋ Aggiungi</button>
+      <button class="btn btn-g" onclick="loadDefaultPresenti()">📋 Carica esempio</button>
+      <button class="btn btn-p" onclick="go('odg')">→ Vai ai Punti ODG</button>
+      <button class="btn btn-g" onclick="document.getElementById('presentiBody').innerHTML='';presentiCount=0;aggPresenti()">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — PUNTI ODG ══ -->
+  <div class="panel" id="p-odg">
+    <div class="sl">Punti all'ordine del giorno e votazioni</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Per ogni punto inserisci il testo della delibera, i voti e il sistema verifica automaticamente se la maggioranza è stata raggiunta.
+    </p>
+
+    <div id="odgContainer"></div>
+
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">
+      <input type="text" id="nuovoPunto" placeholder="Descrizione nuovo punto ODG..."
+        style="flex:1;min-width:260px;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);outline:none;"
+        onkeydown="if(event.key==='Enter')aggiungiPunto()">
+      <button class="btn btn-g" onclick="aggiungiPunto()">＋ Aggiungi punto</button>
+      <button class="btn btn-g btn-sm" onclick="loadDefaultODG()">📋 Punti tipici</button>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="go('annotazioni')">→ Vai alle Annotazioni</button>
+      <button class="btn btn-g" onclick="if(confirm('Azzerare tutti i punti ODG?')){puntiODG=[];renderODG();}">↺ Azzera ODG</button>
+    </div>
+
+    <div class="nb">
+      <strong>⚖️ Calcolo maggioranze automatico</strong>
+      Per ogni punto inserisci i voti favorevoli, contrari e astenuti (sia come numero di condomini che come millesimi).
+      Il sistema verifica automaticamente se la delibera è approvata in base al tipo selezionato.
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — ANNOTAZIONI ══ -->
+  <div class="panel" id="p-annotazioni">
+    <div class="sl">Annotazioni e riserve dei condomini</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Registra dichiarazioni, riserve e proteste dei condomini. Verranno riportate nel verbale nella sezione apposita.
+    </p>
+
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Condomino</label><input type="text" id="annCondo" placeholder="Es. Rossi Mario"></div>
+        <div class="fg"><label>Tipo</label>
+          <select id="annTipo">
+            <option value="dichiarazione">📢 Dichiarazione</option>
+            <option value="riserva">⚠️ Riserva</option>
+            <option value="protesta">🚫 Protesta</option>
+            <option value="astensione">🟡 Motivazione astensione</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Testo annotazione</label>
+        <textarea id="annTesto" placeholder="Es. Il sig. Rossi dichiara di votare contro il punto 2 in quanto ritiene l'importo eccessivo..."></textarea>
+      </div>
+      <button class="btn btn-g" onclick="aggiungiAnnotazione()" style="margin-top:0.5rem">＋ Aggiungi annotazione</button>
+    </div>
+
+    <div id="annotazioniList">
+      <div style="text-align:center;padding:2rem;color:var(--muted);font-style:italic">Nessuna annotazione ancora.</div>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="go('verbale')">→ Genera Verbale</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — VERBALE ══ -->
+  <div class="panel" id="p-verbale">
+    <div id="verbaleContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Compila i dati nelle tab precedenti per generare il verbale definitivo.</p>
+        <button class="btn btn-p btn-sm" onclick="generaVerbale()">📄 Genera verbale</button>
+      </div>
+    </div>
+    <div class="brow no-print">
+      <button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>
+      <button class="btn btn-p btn-sm" onclick="generaVerbale()">↺ Aggiorna verbale</button>
+      <button class="btn btn-g btn-sm" onclick="azzeraVerbale()">🗑️ Azzera tutto</button>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Redazione Verbale · Beta · Il verbale va trasmesso ai condomini entro 30 giorni (art. 1130 c.c.)</div>
+
+<script>
+var PANELS       = ['setup','presenti','odg','annotazioni','verbale'];
+var presentiCount = 0;
+var puntiODG     = [];
+var odgCount     = 0;
+var annotazioni  = [];
+var annCount     = 0;
+
+var TIPI_MAGGIORANZA = {
+  ordinaria:    {label:'Delibera ordinaria (2ª conv.)',   rif:'Art.1136 c.3', calcN:function(p,t){return Math.ceil(p/2)+1;}, calcM:function(p,t){return Math.ceil(t/3);}},
+  qualificata:  {label:'Innovazioni / lavori straord.',   rif:'Art.1136 c.5', calcN:function(p,t){return Math.ceil(p/2)+1;}, calcM:function(p,t){return Math.ceil(t*2/3);}},
+  regolamento:  {label:'Regolamento condominiale',        rif:'Art.1138 c.3', calcN:function(p,t){return Math.ceil(p/2)+1;}, calcM:function(p,t){return Math.ceil(t/2);}},
+  unanimita:    {label:'Unanimità',                       rif:'Art.1138 c.4', calcN:function(p,t){return t;},              calcM:function(p,t){return t;}},
+  superbonus:   {label:'Superbonus / Ecobonus',           rif:'Art.119 DL34', calcN:function(p,t){return Math.ceil(p/2)+1;}, calcM:function(p,t){return Math.ceil(t/3);}},
+};
+
+var TIPI_ESITO = {
+  approvata: {label:'✅ Approvata', cls:'approvata'},
+  respinta:  {label:'❌ Respinta',  cls:'respinta'},
+  ritirata:  {label:'🟡 Ritirata',  cls:'ritirata'},
+  rinviata:  {label:'📅 Rinviata',  cls:'ritirata'},
+};
+
+// ══ TAB ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='odg')        renderODG();
+  if (name==='annotazioni')renderAnnotazioni();
+  if (name==='verbale')    generaVerbale();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  var oggi = new Date();
+  document.getElementById('dataAss').value = oggi.toISOString().split('T')[0];
+  addPresente(); addPresente(); addPresente();
+};
+
+// ══ DATI ESEMPIO ══
+function loadDefault() {
+  document.getElementById('condoNome').value    = 'Condominio Via Roma 10';
+  document.getElementById('condoCF').value      = '80012340582';
+  document.getElementById('adminNome').value    = 'Studio Amm. Bianchi';
+  document.getElementById('adminContatti').value= 'Tel. 02 1234567 · Via Milano 5, Milano';
+  document.getElementById('presidente').value   = 'Rossi Mario';
+  document.getElementById('segretario').value   = 'Verdi Giuseppe';
+  document.getElementById('nVerbale').value     = '01/2025';
+  document.getElementById('oraInizio').value    = '19:00';
+  document.getElementById('oraFine').value      = '21:15';
+  document.getElementById('luogoAss').value     = 'Sala riunioni c/o Condominio Via Roma 10, Milano';
+}
+
+// ══ PRESENTI ══
+function addPresente(d) {
+  d = d||{};
+  presentiCount++;
+  var id = presentiCount;
+  var tr = document.createElement('tr');
+  tr.id = 'pr-'+id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text"   id="prn-'+id+'" placeholder="Es. Rossi Mario"   value="'+(d.nome||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="pri-'+id+'" placeholder="Int.1"              value="'+(d.interno||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="prm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'" oninput="aggPresenti()"></td>'+
+    '<td><select class="ic" id="prs-'+id+'" onchange="aggPresenti()">'+
+      '<option value="presente"'+(d.stato==='presente'?' selected':'')+'>✅ Presente</option>'+
+      '<option value="delega"'+(d.stato==='delega'?' selected':'')+'>📋 Con delega</option>'+
+      '<option value="assente"'+(d.stato==='assente'?' selected':'')+'>❌ Assente</option>'+
+    '</select></td>'+
+    '<td><input class="ic" type="text" id="prd-'+id+'" placeholder="Es. Rossi Mario" value="'+(d.delega||'')+'"></td>'+
+    '<td><button onclick="rmPr('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('presentiBody').appendChild(tr);
+  aggPresenti();
+}
+
+function rmPr(id) { var el=document.getElementById('pr-'+id); if(el) el.remove(); aggPresenti(); }
+
+function loadDefaultPresenti() {
+  document.getElementById('presentiBody').innerHTML = ''; presentiCount = 0;
+  var def = [
+    {nome:'Rossi Mario',    interno:'Int.1 Sc.A', mill:95,  stato:'presente', delega:''},
+    {nome:'Verdi Giuseppe', interno:'Int.2 Sc.A', mill:88,  stato:'presente', delega:''},
+    {nome:'Neri Anna',      interno:'Int.3 Sc.A', mill:72,  stato:'assente',  delega:''},
+    {nome:'Bianchi Laura',  interno:'Int.4 Sc.B', mill:105, stato:'delega',   delega:'Rossi Mario'},
+    {nome:'Colombo Luca',   interno:'Int.5 Sc.B', mill:98,  stato:'presente', delega:''},
+    {nome:'Ferrari Anna',   interno:'Int.6 Sc.B', mill:80,  stato:'assente',  delega:''},
+    {nome:'Russo Marco',    interno:'Box 1',       mill:30,  stato:'presente', delega:''},
+    {nome:'Marino Carlo',   interno:'Int.7 Sc.A', mill:110, stato:'presente', delega:''},
+    {nome:'Costa Elena',    interno:'Int.8 Sc.B', mill:92,  stato:'assente',  delega:''},
+    {nome:'Bruno Lucia',    interno:'Int.9 Sc.A', mill:130, stato:'presente', delega:''},
+  ];
+  def.forEach(function(d) { addPresente(d); });
+}
+
+function leggiPresenti() {
+  var r = [];
+  document.querySelectorAll('#presentiBody tr').forEach(function(tr) {
+    var id      = tr.id.replace('pr-','');
+    var nome    = ((document.getElementById('prn-'+id)||{}).value||'').trim();
+    var interno = ((document.getElementById('pri-'+id)||{}).value||'').trim();
+    var mill    = parseFloat((document.getElementById('prm-'+id)||{}).value)||0;
+    var stato   = (document.getElementById('prs-'+id)||{}).value||'presente';
+    var delega  = ((document.getElementById('prd-'+id)||{}).value||'').trim();
+    if (nome) r.push({id:id,nome:nome,interno:interno,mill:mill,stato:stato,delega:delega});
+  });
+  return r;
+}
+
+function aggPresenti() {
+  var p      = leggiPresenti();
+  var nTot   = p.length;
+  var totM   = p.reduce(function(s,c){return s+c.mill;},0);
+  var pres   = p.filter(function(c){return c.stato==='presente'||c.stato==='delega';});
+  var ass    = p.filter(function(c){return c.stato==='assente';});
+  var nPres  = pres.length;
+  var mPres  = pres.reduce(function(s,c){return s+c.mill;},0);
+  var nAss   = ass.length;
+  var mAss   = ass.reduce(function(s,c){return s+c.mill;},0);
+  var conv   = (document.getElementById('convAss')||{}).value||'seconda';
+  var sogN   = conv==='prima' ? Math.ceil(nTot/2)+1 : Math.ceil(nTot/3);
+  var sogM   = conv==='prima' ? Math.ceil(totM*2/3) : Math.ceil(totM/3);
+  var ok     = nPres>=sogN && mPres>=sogM;
+
+  setText('pTot',    nTot);   setText('pTotMill',  totM);
+  setText('pPres',   nPres);  setText('pPresMill', mPres);
+  setText('pAss',    nAss);   setText('pAssMill',  mAss);
+
+  var nl = document.getElementById('nlMini');
+  var ns = document.getElementById('nlStatus');
+  if (nl && ns) {
+    nl.style.background = ok ? 'var(--success)' : nPres>0 ? 'var(--gold)' : 'var(--cream)';
+    nl.style.color      = ok||nPres>0 ? 'white' : 'var(--ink)';
+    nl.style.border     = 'none';
+    ns.textContent      = ok ? '✅ Valida' : '⚠️ Non ancora';
+  }
+}
+
+function setText(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+
+// ══ ODG ══
+function aggiungiPunto() {
+  var inp = document.getElementById('nuovoPunto');
+  var txt = inp.value.trim();
+  if (!txt){inp.focus();return;}
+  odgCount++;
+  puntiODG.push({
+    id:odgCount, titolo:txt,
+    tipoMag:'ordinaria', esito:'approvata', delibera:'',
+    favN:0,favM:0, conN:0,conM:0, astN:0,astM:0
+  });
+  inp.value='';
+  renderODG();
+}
+
+function loadDefaultODG() {
+  odgCount=0; puntiODG=[];
+  var tipici=[
+    'Lettura e approvazione verbale assemblea precedente',
+    'Approvazione rendiconto consuntivo anno precedente',
+    'Approvazione bilancio preventivo anno in corso',
+    'Conferma / nomina amministratore e compenso',
+    'Varie ed eventuali',
+  ];
+  tipici.forEach(function(t){
+    odgCount++;
+    puntiODG.push({id:odgCount,titolo:t,tipoMag:'ordinaria',esito:'approvata',delibera:'',favN:0,favM:0,conN:0,conM:0,astN:0,astM:0});
+  });
+  renderODG();
+}
+
+function rimuoviPunto(id) {
+  puntiODG = puntiODG.filter(function(p){return p.id!==id;});
+  renderODG();
+}
+
+function renderODG() {
+  var p      = leggiPresenti();
+  var nPres  = p.filter(function(c){return c.stato==='presente'||c.stato==='delega';}).length;
+  var totM   = p.reduce(function(s,c){return s+c.mill;},0);
+  var cont   = document.getElementById('odgContainer');
+
+  if (!puntiODG.length) {
+    cont.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-style:italic;background:var(--cream);border:1px solid var(--border);border-radius:4px;margin-bottom:1rem">Nessun punto ODG. Aggiungili con il campo qui sotto.</div>';
+    return;
+  }
+
+  cont.innerHTML = puntiODG.map(function(p,i) {
+    var tipOpts = Object.keys(TIPI_MAGGIORANZA).map(function(k){
+      return '<option value="'+k+'"'+(p.tipoMag===k?' selected':'')+'>'+TIPI_MAGGIORANZA[k].label+'</option>';
+    }).join('');
+    var esOpts = Object.keys(TIPI_ESITO).map(function(k){
+      return '<option value="'+k+'"'+(p.esito===k?' selected':'')+'>'+TIPI_ESITO[k].label+'</option>';
+    }).join('');
+
+    var def     = TIPI_MAGGIORANZA[p.tipoMag];
+    var sogN    = nPres>0 ? def.calcN(nPres,totM) : '?';
+    var sogM    = totM>0  ? def.calcM(nPres,totM) : '?';
+    var okN     = typeof sogN==='number' && p.favN >= sogN;
+    var okM     = typeof sogM==='number' && p.favM >= sogM;
+    var magOk   = okN && okM;
+    var magHtml = nPres>0 ?
+      '<div class="mag-check '+(magOk?'ok':'fail')+'">'+
+      (magOk?'✅ Maggioranza raggiunta':'⚠️ Maggioranza non raggiunta')+
+      ' — Soglia: '+sogN+' cond. '+(okN?'✓':'✗')+' · '+sogM+' mill. '+(okM?'✓':'✗')+
+      '</div>' : '';
+
+    return '<div class="odg-item" id="odgi-'+p.id+'">'+
+      '<div class="odg-header">'+
+      '<span class="odg-numero">Punto '+(i+1)+'</span>'+
+      '<span class="odg-titolo"><strong>'+esc(p.titolo)+'</strong></span>'+
+      '<button onclick="rimuoviPunto('+p.id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem;flex-shrink:0">✕</button>'+
+      '</div>'+
+
+      '<div class="r2" style="margin-bottom:0.75rem">'+
+      '<div class="fg" style="margin:0"><label>Tipo maggioranza</label>'+
+      '<select style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.45rem 0.7rem;font-family:\'DM Sans\',sans-serif;font-size:0.82rem;color:var(--ink);width:100%" '+
+      'onchange="setPunto('+p.id+',\'tipoMag\',this.value);renderODG()">'+tipOpts+'</select></div>'+
+      '<div class="fg" style="margin:0"><label>Esito delibera</label>'+
+      '<select style="background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.45rem 0.7rem;font-family:\'DM Sans\',sans-serif;font-size:0.82rem;color:var(--ink);width:100%" '+
+      'onchange="setPunto('+p.id+',\'esito\',this.value)">'+esOpts+'</select></div>'+
+      '</div>'+
+
+      '<div class="voti-grid">'+
+      votoBox('✅ Fav. (n°)','favN',p.id,p.favN)+
+      votoBox('✅ Fav. mill.','favM',p.id,p.favM)+
+      votoBox('❌ Contr. (n°)','conN',p.id,p.conN)+
+      votoBox('❌ Contr. mill.','conM',p.id,p.conM)+
+      votoBox('🟡 Ast. (n°)','astN',p.id,p.astN)+
+      votoBox('🟡 Ast. mill.','astM',p.id,p.astM)+
+      '</div>'+
+
+      magHtml+
+
+      '<div><label style="font-family:\'DM Mono\',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.4rem">Testo delibera</label>'+
+      '<textarea class="delibera-testo" placeholder="Es. L\'assemblea approva il rendiconto consuntivo con la maggioranza dei presenti..." '+
+      'onchange="setPunto('+p.id+',\'delibera\',this.value)">'+esc(p.delibera)+'</textarea>'+
+      '</div>'+
+      '</div>';
+  }).join('');
+}
+
+function votoBox(label, campo, id, val) {
+  return '<div class="voto-box">'+
+    '<div class="voto-label">'+label+'</div>'+
+    '<input class="voto-input" type="number" min="0" step="0.01" value="'+(val||0)+'" '+
+    'onchange="setPunto('+id+',\''+campo+'\',parseFloat(this.value)||0);renderODG()">'+
+    '</div>';
+}
+
+function setPunto(id, campo, val) {
+  var p = puntiODG.find(function(x){return x.id===id;});
+  if (p) p[campo] = val;
+}
+
+// ══ ANNOTAZIONI ══
+function aggiungiAnnotazione() {
+  var condo = (document.getElementById('annCondo')||{}).value.trim();
+  var tipo  = (document.getElementById('annTipo')||{}).value||'dichiarazione';
+  var testo = (document.getElementById('annTesto')||{}).value.trim();
+  if (!testo) { alert('Inserisci il testo dell\'annotazione.'); return; }
+  annCount++;
+  annotazioni.push({id:annCount, condo:condo, tipo:tipo, testo:testo});
+  document.getElementById('annCondo').value='';
+  document.getElementById('annTesto').value='';
+  renderAnnotazioni();
+}
+
+function renderAnnotazioni() {
+  var el = document.getElementById('annotazioniList');
+  if (!annotazioni.length) {
+    el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-style:italic">Nessuna annotazione ancora.</div>';
+    return;
+  }
+  var tipoLabel = {dichiarazione:'📢 Dichiarazione',riserva:'⚠️ Riserva',protesta:'🚫 Protesta',astensione:'🟡 Astensione'};
+  el.innerHTML = annotazioni.map(function(a) {
+    return '<div class="ann-item">'+
+      '<div class="ann-testo">'+
+      '<strong>'+(a.condo||'Condomino')+'</strong> — '+esc(a.testo)+'</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem">'+
+      '<span class="ann-meta">'+esc(tipoLabel[a.tipo]||a.tipo)+'</span>'+
+      '<button onclick="rimuoviAnn('+a.id+')" style="background:none;border:none;cursor:pointer;color:var(--warning);font-size:0.8rem">✕ Rimuovi</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+function rimuoviAnn(id) {
+  annotazioni=annotazioni.filter(function(a){return a.id!==id;});
+  renderAnnotazioni();
+}
+
+// ══ GENERA VERBALE ══
+function generaVerbale() {
+  var presenti  = leggiPresenti();
+  var cNome     = (document.getElementById('condoNome')||{}).value||'Condominio';
+  var cCF       = (document.getElementById('condoCF')||{}).value||'';
+  var adminNome = (document.getElementById('adminNome')||{}).value||'Amministratore';
+  var adminC    = (document.getElementById('adminContatti')||{}).value||'';
+  var pres      = (document.getElementById('presidente')||{}).value||'___________________________';
+  var segr      = (document.getElementById('segretario')||{}).value||'___________________________';
+  var nVerb     = (document.getElementById('nVerbale')||{}).value||'___';
+  var dataAss   = (document.getElementById('dataAss')||{}).value||'';
+  var oraIniz   = (document.getElementById('oraInizio')||{}).value||'';
+  var oraFin    = (document.getElementById('oraFine')||{}).value||'';
+  var tipoAss   = (document.getElementById('tipoAss')||{}).value||'ordinaria';
+  var convAss   = (document.getElementById('convAss')||{}).value||'seconda';
+  var luogo     = (document.getElementById('luogoAss')||{}).value||'___________________________';
+  var dFmt      = dataAss ? new Date(dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var oggi      = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var tipoLabel = tipoAss==='ordinaria' ? 'Assemblea Ordinaria Annuale' : 'Assemblea Straordinaria';
+  var convLabel = convAss==='prima' ? 'prima' : 'seconda';
+  var nTot      = presenti.length;
+  var totM      = presenti.reduce(function(s,c){return s+c.mill;},0);
+  var presList  = presenti.filter(function(c){return c.stato==='presente'||c.stato==='delega';});
+  var assList   = presenti.filter(function(c){return c.stato==='assente';});
+  var nPres     = presList.length;
+  var mPres     = presList.reduce(function(s,c){return s+c.mill;},0);
+  var sogN      = convAss==='prima' ? Math.ceil(nTot/2)+1 : Math.ceil(nTot/3);
+  var sogM      = convAss==='prima' ? Math.ceil(totM*2/3) : Math.ceil(totM/3);
+  var nlOk      = nPres>=sogN && mPres>=sogM;
+
+  // Tabella presenti
+  var presentiHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem">'+
+    '<thead><tr style="background:var(--cream)">'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Condomino</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Unità</th>'+
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Millesimi</th>'+
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>'+
+    '</tr></thead><tbody>'+
+    presenti.map(function(c){
+      var sl = c.stato==='presente'?'✅ Presente':c.stato==='delega'?'📋 Delega ('+esc(c.delega)+')':'❌ Assente';
+      return '<tr style="border-bottom:1px solid var(--cream)">'+
+        '<td style="padding:0.5rem;font-weight:500">'+esc(c.nome)+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>'+
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+c.mill+'</td>'+
+        '<td style="padding:0.5rem;font-size:0.82rem">'+sl+'</td>'+
+        '</tr>';
+    }).join('')+
+    '<tr style="background:var(--cream);font-weight:600;font-family:\'DM Mono\',monospace">'+
+    '<td style="padding:0.5rem">TOTALE</td><td></td>'+
+    '<td style="padding:0.5rem;text-align:right">'+totM+'</td>'+
+    '<td style="padding:0.5rem;font-size:0.82rem">'+nPres+' presenti · '+mPres+' mill.</td></tr>'+
+    '</tbody></table>';
+
+  // Punti ODG
+  var puntiHtml = puntiODG.length ? puntiODG.map(function(p,i){
+    var esito     = TIPI_ESITO[p.esito]||TIPI_ESITO.approvata;
+    var def       = TIPI_MAGGIORANZA[p.tipoMag]||TIPI_MAGGIORANZA.ordinaria;
+    var sogN2     = nPres>0?def.calcN(nPres,totM):0;
+    var sogM2     = totM>0?def.calcM(nPres,totM):0;
+    var magOk     = p.favN>=sogN2 && p.favM>=sogM2;
+    return '<div class="v-punto">'+
+      '<div class="v-punto-num">Punto '+(i+1)+'</div>'+
+      '<div class="v-punto-title">'+esc(p.titolo)+'</div>'+
+      '<p style="font-size:0.82rem;color:var(--muted)">'+esc(def.label)+' — '+esc(def.rif)+'</p>'+
+      '<div class="v-delibera '+(p.delibera?esito.cls:'')+'">'+
+      (p.delibera ? esc(p.delibera) : '<em style="color:var(--muted)">[Testo delibera da completare]</em>')+
+      '</div>'+
+      '<div class="v-voti">'+
+      'Favorevoli: '+p.favN+' cond. / '+p.favM+' mill. &nbsp;·&nbsp; '+
+      'Contrari: '+p.conN+' cond. / '+p.conM+' mill. &nbsp;·&nbsp; '+
+      'Astenuti: '+p.astN+' cond. / '+p.astM+' mill.<br>'+
+      'Esito: <strong>'+esito.label+'</strong> &nbsp;·&nbsp; '+
+      'Maggioranza: '+(nPres>0?(magOk?'✅ raggiunta':'⚠️ non raggiunta'):'(inserire presenti)')+'&nbsp;'+
+      '(soglia '+sogN2+' cond. + '+sogM2+' mill.)'+
+      '</div>'+
+      '</div>';
+  }).join('') : '<p style="color:var(--muted);font-style:italic">Nessun punto ODG inserito.</p>';
+
+  // Annotazioni
+  var annHtml = annotazioni.length ?
+    '<div class="v-sezione">'+
+    '<div class="v-sezione-title">Dichiarazioni, riserve e annotazioni</div>'+
+    annotazioni.map(function(a){
+      var tl={dichiarazione:'Dichiarazione',riserva:'Riserva',protesta:'Protesta',astensione:'Astensione'};
+      return '<div style="border-left:3px solid var(--gold);padding:0.6rem 1rem;margin-bottom:0.75rem;background:var(--gold-light);border-radius:0 3px 3px 0">'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--warning);margin-bottom:0.25rem">'+
+        esc(tl[a.tipo]||a.tipo)+(a.condo?' — '+esc(a.condo):'')+'</div>'+
+        '<div style="font-size:0.85rem">'+esc(a.testo)+'</div>'+
+        '</div>';
+    }).join('')+
+    '</div>' : '';
+
+  document.getElementById('verbaleContent').innerHTML =
+    '<div class="verbale-doc">'+
+    '<div class="verbale-hs">'+
+    '<span class="verbale-title">Verbale n. '+esc(nVerb)+' — '+esc(tipoLabel)+'</span>'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+esc(cNome)+'</span>'+
+    '</div>'+
+    '<div class="verbale-bd">'+
+
+    // INTESTAZIONE
+    '<div class="v-sezione">'+
+    '<div class="v-sezione-title">Intestazione</div>'+
+    '<p>In data <strong>'+esc(dFmt)+'</strong>, alle ore <strong>'+esc(oraIniz)+'</strong>, '+
+    'presso <strong>'+esc(luogo)+'</strong>, si è riunita in <strong>'+esc(convLabel)+' convocazione</strong> '+
+    'l\'<strong>'+esc(tipoLabel)+'</strong> del condominio <strong>'+esc(cNome)+'</strong>'+(cCF?' (C.F. '+cCF+')':'')+
+    ', amministrato da <strong>'+esc(adminNome)+'</strong>'+(adminC?' — '+esc(adminC):'')+' .</p>'+
+    '<p>Assume la presidenza il Sig./la Sig.ra <strong>'+esc(pres)+'</strong>, '+
+    'che propone come segretario il Sig./la Sig.ra <strong>'+esc(segr)+'</strong>. '+
+    'La proposta viene accettata all\'unanimità.</p>'+
+    '</div>'+
+
+    // PRESENTI
+    '<div class="v-sezione">'+
+    '<div class="v-sezione-title">Presenti, assenti e deleghe</div>'+
+    (presenti.length ? presentiHtml : '<p style="color:var(--muted);font-style:italic">Nessun condomino inserito.</p>')+
+    '<p>Il Presidente constata che l\'assemblea è '+
+    '<strong style="color:'+(nlOk?'var(--success)':'var(--accent)')+'">'+(nlOk?'regolarmente costituita':'non ancora validamente costituita (verificare il numero legale)')+'</strong>'+
+    ' con '+nPres+' condomini presenti (incluse deleghe) per un totale di '+mPres+' millesimi su '+totM+'.'+
+    (nlOk?' L\'assemblea è pertanto abilitata a deliberare.':' Soglia richiesta: '+sogN+' cond. e '+sogM+' mill.')+
+    '</p>'+
+    '</div>'+
+
+    // ODG
+    '<div class="v-sezione">'+
+    '<div class="v-sezione-title">Ordine del giorno e delibere</div>'+
+    puntiHtml+
+    '</div>'+
+
+    // ANNOTAZIONI
+    annHtml+
+
+    // CHIUSURA
+    '<div class="v-sezione">'+
+    '<div class="v-sezione-title">Chiusura assemblea</div>'+
+    '<p>Non essendovi altri argomenti da trattare, il Presidente dichiara chiusa la seduta alle ore <strong>'+esc(oraFin||'__:__')+'</strong>.</p>'+
+    '<p>Il presente verbale, letto e approvato seduta stante, viene sottoscritto come segue.</p>'+
+    '<div class="firma-grid">'+
+    '<div class="firma-line">Il Presidente<br><strong>'+esc(pres)+'</strong></div>'+
+    '<div class="firma-line">Il Segretario<br><strong>'+esc(segr)+'</strong></div>'+
+    '<div class="firma-line">L\'Amministratore<br><strong>'+esc(adminNome)+'</strong></div>'+
+    '</div>'+
+    '</div>'+
+
+    '<div class="v-footer">'+
+    '<span>'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</span>'+
+    '<span>Verbale n. '+esc(nVerb)+' · Generato il '+oggi+'</span>'+
+    '</div>'+
+    '</div></div>'+
+
+    '<div class="nb no-print">'+
+    '<strong>📌 Dopo l\'assemblea</strong>'+
+    'Il verbale deve essere trascritto nel registro dei verbali (art. 1130 n. 7 c.c.) e trasmesso a tutti i condomini entro <strong>30 giorni</strong> dall\'assemblea. '+
+    'Conserva l\'originale firmato insieme al foglio presenze.'+
+    '</div>';
+}
+
+// ══ AZZERA INTESTAZIONE ══
+function azzeraIntestazione() {
+  ['condoNome','condoCF','adminNome','adminContatti','presidente',
+   'segretario','nVerbale','luogoAss','oraInizio','oraFine'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('dataAss').value = new Date().toISOString().split('T')[0];
+  document.getElementById('oraInizio').value = '19:00';
+  document.getElementById('oraFine').value   = '21:00';
+}
+function azzeraVerbale() {
+  if (!confirm('Azzerare tutti i dati del verbale?')) return;
+  document.getElementById('presentiBody').innerHTML=''; presentiCount=0;
+  puntiODG=[]; odgCount=0; annotazioni=[]; annCount=0;
+  ['condoNome','condoCF','adminNome','adminContatti','presidente','segretario',
+   'nVerbale','luogoAss','oraInizio','oraFine'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('verbaleContent').innerHTML=
+    '<div class="card" style="text-align:center;padding:2.5rem">'+
+    '<div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>'+
+    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Compila i dati nelle tab precedenti per generare il verbale definitivo.</p>'+
+    '<button class="btn btn-p btn-sm" onclick="generaVerbale()">📄 Genera verbale</button></div>';
+  aggPresenti();
+  go('setup');
+}
+
+// ══ UTILS ══
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

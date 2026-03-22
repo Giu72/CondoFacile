@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Invio Verbale Post-Assemblea</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;}
+.btn-warn{background:var(--gold);color:white;}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;margin-bottom:0.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4060;}
+.b-pec{background:#e8d0f0;color:#601080;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+.scad{border-radius:4px;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;}
+.scad.ok{background:var(--success-light);border:1px solid var(--success);}
+.scad.warn{background:var(--gold-light);border:1px solid var(--gold);}
+.scad.danger{background:var(--accent-light);border:1px solid var(--accent);}
+.doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-st{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-an{font-family:'DM Mono',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;}
+.doc-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.7;}
+.doc-bd p{margin-bottom:0.75rem;}
+.doc-ogg{background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin:1.25rem 0;font-weight:500;}
+.firma-line{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2.5rem;}
+.doc-ft{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.lnav,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.doc{box-shadow:none;border:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="redazione_verbale.html">📄 Verbale</a>
+    <a class="nav-link" href="anagrafe_condominiale.html">👥 Anagrafe</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.6</div>
+  <h1>Invio Verbale<br><em>Post-Assemblea</em></h1>
+  <p class="header-sub">Genera le lettere di trasmissione, traccia gli invii, gestisci i solleciti e tieni il registro raccomandate e PEC.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"    onclick="go('setup')">⚙️ 1 · Dati</button>
+    <button class="tab-btn"   id="tb-lettere"   onclick="go('lettere')">✉️ 2 · Lettere</button>
+    <button class="tab-btn"   id="tb-registro"  onclick="go('registro')">📋 3 · Registro Invii</button>
+    <button class="tab-btn"   id="tb-solleciti" onclick="go('solleciti')">🔔 4 · Solleciti</button>
+    <button class="tab-btn"   id="tb-riepilogo" onclick="go('riepilogo')">📊 5 · Riepilogo</button>
+  </div>
+
+  <!-- ogni panel ha UN SOLO div che viene riscritto interamente dal JS -->
+  <div class="panel on" id="p-setup">   <div id="c-setup"></div>   </div>
+  <div class="panel"    id="p-lettere"> <div id="c-lettere"></div> </div>
+  <div class="panel"    id="p-registro"><div id="c-registro"></div></div>
+  <div class="panel"    id="p-solleciti"><div id="c-solleciti"></div></div>
+  <div class="panel"    id="p-riepilogo"><div id="c-riepilogo"></div></div>
+</div>
+
+<div class="page-footer">CondoKit · Invio Verbale Post-Assemblea · Beta · Art. 1137 c.c. — termine 30 giorni</div>
+
+<script>
+// ══════════════════════════════════════
+// STATO GLOBALE
+// ══════════════════════════════════════
+var PANELS     = ['setup','lettere','registro','solleciti','riepilogo'];
+var condoCount = 0;
+var lettIdx    = 0;
+
+// Dati assemblea
+var dati = {
+  condoNome:'', condoCF:'', studioNome:'', studioContatti:'',
+  studioPEC:'', nVerbale:'', dataAss:'', dataInvio:'', modalitaDefault:'raccomandata'
+};
+
+// Lista condomini
+var condomini = []; // [{id, nome, interno, indirizzo, email, mod}]
+
+// Registro invii — separato dai condomini, indicizzato per id
+var invii = {}; // id -> {inviato, dataInvio, numRacc, confermato, note}
+
+// ══════════════════════════════════════
+// TAB SYSTEM
+// ══════════════════════════════════════
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  // Ogni tab ridisegna completamente il proprio contenuto
+  if (name==='setup')     drawSetup();
+  if (name==='lettere')   drawLettere();
+  if (name==='registro')  drawRegistro();
+  if (name==='solleciti') drawSolleciti();
+  if (name==='riepilogo') drawRiepilogo();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  var oggi = new Date().toISOString().split('T')[0];
+  dati.dataAss   = oggi;
+  dati.dataInvio = oggi;
+  drawSetup();
+};
+
+// ══════════════════════════════════════
+// TAB 1 — SETUP
+// Ridisegna l'intera tab ogni volta
+// ══════════════════════════════════════
+function drawSetup() {
+  var el = document.getElementById('c-setup');
+  var condoRows = condomini.map(function(c) {
+    return '<tr id="row-'+c.id+'">' +
+      '<td><input class="ic" type="text"  id="cn-'+c.id+'" value="'+esc(c.nome)+'"      placeholder="Es. Rossi Mario"           onchange="aggiornaCondo(\''+c.id+'\',\'nome\',this.value)"></td>' +
+      '<td><input class="ic" type="text"  id="ci-'+c.id+'" value="'+esc(c.interno)+'"   placeholder="Int.1"                      onchange="aggiornaCondo(\''+c.id+'\',\'interno\',this.value)"></td>' +
+      '<td><input class="ic" type="text"  id="cind-'+c.id+'" value="'+esc(c.indirizzo)+'" placeholder="Via Verdi 3, Milano"      onchange="aggiornaCondo(\''+c.id+'\',\'indirizzo\',this.value)"></td>' +
+      '<td><input class="ic" type="email" id="ce-'+c.id+'" value="'+esc(c.email)+'"     placeholder="mario@pec.it"               onchange="aggiornaCondo(\''+c.id+'\',\'email\',this.value)"></td>' +
+      '<td><select class="ic" id="cm-'+c.id+'" onchange="aggiornaCondo(\''+c.id+'\',\'mod\',this.value)">' +
+        '<option value="raccomandata"'+(c.mod==='raccomandata'?' selected':'')+'>📮 Raccomandata</option>' +
+        '<option value="pec"'+(c.mod==='pec'?' selected':'')+'>📧 PEC</option>' +
+        '<option value="email"'+(c.mod==='email'?' selected':'')+'>📨 Email</option>' +
+        '<option value="consegna"'+(c.mod==='consegna'?' selected':'')+'>🤝 Consegna</option>' +
+      '</select></td>' +
+      '<td><button onclick="eliminaCondo(\''+c.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    // DATI ASSEMBLEA
+    '<div class="sl">Dati assemblea e verbale</div>' +
+    '<div class="card">' +
+      '<div class="r2">' +
+        fg('condoNome','Nome Condominio',dati.condoNome,'Es. Condominio Via Roma 10') +
+        fg('condoCF','Codice Fiscale',dati.condoCF,'Es. 80012340582') +
+      '</div>' +
+      '<div class="r3">' +
+        fgDate('dataAss','Data assemblea',dati.dataAss) +
+        fg('nVerbale','N° verbale',dati.nVerbale,'Es. 01/2025') +
+        fgDate('dataInvio','Data invio verbale',dati.dataInvio) +
+      '</div>' +
+    '</div>' +
+    // STUDIO
+    '<div class="sl">Studio amministrativo</div>' +
+    '<div class="card">' +
+      '<div class="r2">' +
+        fg('studioNome','Nome Studio / Amministratore',dati.studioNome,'Es. Studio Amm. Bianchi') +
+        fg('studioContatti','Contatti',dati.studioContatti,'Es. Tel. 02 1234567') +
+      '</div>' +
+      '<div class="r2">' +
+        fg('studioPEC','Email / PEC studio',dati.studioPEC,'Es. studio@pec.it') +
+      '</div>' +
+    '</div>' +
+    // CONDOMINI
+    '<div class="sl">Condomini destinatari</div>' +
+    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">Il verbale va inviato a <strong>tutti</strong> i condomini, inclusi gli assenti (art. 1137 c.c.).</p>' +
+    '<div class="tw"><table>' +
+      '<thead><tr>' +
+        '<th>Nome</th><th>Interno</th><th>Indirizzo spedizione</th>' +
+        '<th>Email / PEC</th><th>Modalità</th><th></th>' +
+      '</tr></thead>' +
+      '<tbody>' + (condoRows || '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted);font-style:italic">Nessun condomino. Premi "+ Aggiungi".</td></tr>') + '</tbody>' +
+    '</table></div>' +
+    // AZIONI
+    '<div class="brow">' +
+      '<button class="btn btn-g" onclick="addCondo()">＋ Aggiungi</button>' +
+      '<button class="btn btn-g" onclick="loadDefault()">📋 Carica esempio</button>' +
+      '<button class="btn btn-p" onclick="salvaDatiEVai()">→ Genera lettere</button>' +
+      '<button class="btn btn-g" onclick="azzeraSetup()">↺ Azzera questa sezione</button>' +
+    '</div>' +
+    '<div class="nb"><strong>⏰ Scadenza — Art. 1137 c.c.</strong>' +
+    'Il verbale deve essere trasmesso a tutti entro <strong>30 giorni</strong> dall\'assemblea. ' +
+    'Passato tale termine, i condomini non possono più impugnare le delibere.</div>';
+
+  // Bind input changes per salvare i dati
+  bindDatiInputs();
+}
+
+function fg(id, label, value, placeholder) {
+  return '<div class="fg"><label>'+label+'</label>' +
+    '<input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+placeholder+'" ' +
+    'onchange="dati[\''+id+'\']=this.value"></div>';
+}
+
+function fgDate(id, label, value) {
+  return '<div class="fg"><label>'+label+'</label>' +
+    '<input type="date" id="'+id+'" value="'+esc(value)+'" ' +
+    'onchange="dati[\''+id+'\']=this.value"></div>';
+}
+
+function bindDatiInputs() {
+  // già gestito con onchange inline
+}
+
+function salvaDatiEVai() {
+  // Salva tutti i campi prima di cambiare tab
+  var campi = ['condoNome','condoCF','studioNome','studioContatti','studioPEC','nVerbale','dataAss','dataInvio'];
+  campi.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) dati[id] = el.value;
+  });
+  // Salva anche i dati condomini dalla tabella
+  salvaCondominiDalDOM();
+  go('lettere');
+}
+
+function salvaCondominiDalDOM() {
+  condomini.forEach(function(c) {
+    var n   = document.getElementById('cn-'+c.id);
+    var i   = document.getElementById('ci-'+c.id);
+    var ind = document.getElementById('cind-'+c.id);
+    var e   = document.getElementById('ce-'+c.id);
+    var m   = document.getElementById('cm-'+c.id);
+    if (n)   c.nome      = n.value;
+    if (i)   c.interno   = i.value;
+    if (ind) c.indirizzo = ind.value;
+    if (e)   c.email     = e.value;
+    if (m)   c.mod       = m.value;
+  });
+}
+
+function aggiornaCondo(id, campo, val) {
+  var c = condomini.find(function(x){return x.id===id;});
+  if (c) c[campo] = val;
+}
+
+function addCondo() {
+  var id = 'c'+(++condoCount);
+  condomini.push({id:id, nome:'', interno:'', indirizzo:'', email:'', mod:'raccomandata'});
+  if (!invii[id]) invii[id] = {inviato:false, dataInvio:'', numRacc:'', confermato:false, note:''};
+  drawSetup();
+}
+
+function eliminaCondo(id) {
+  condomini = condomini.filter(function(c){return c.id!==id;});
+  // NON eliminiamo invii[id] — se l'utente riaggiunge il condomino i dati rimangono
+  drawSetup();
+}
+
+function loadDefault() {
+  condomini = []; condoCount = 0; invii = {};
+  dati.condoNome   = 'Condominio Via Roma 10';
+  dati.studioNome  = 'Studio Amm. Bianchi';
+  dati.nVerbale    = '01/2025';
+  var def = [
+    {nome:'Rossi Mario',    interno:'Int.1 Sc.A', indirizzo:'Via Verdi 3, 20121 Milano',    email:'mario.rossi@email.it',  mod:'raccomandata'},
+    {nome:'Verdi Giuseppe', interno:'Int.2 Sc.A', indirizzo:'Via Roma 10, 20121 Milano',    email:'giuseppe.verdi@pec.it', mod:'pec'},
+    {nome:'Neri Anna',      interno:'Int.3 Sc.A', indirizzo:'Via Torino 5, 20121 Milano',   email:'anna.neri@email.it',    mod:'email'},
+    {nome:'Bianchi Laura',  interno:'Int.4 Sc.B', indirizzo:'Via Milano 8, 20121 Milano',   email:'laura.bianchi@pec.it',  mod:'pec'},
+    {nome:'Colombo Luca',   interno:'Int.5 Sc.B', indirizzo:'Corso Europa 2, 20121 Milano', email:'luca.colombo@email.it', mod:'raccomandata'},
+    {nome:'Ferrari Anna',   interno:'Int.6 Sc.B', indirizzo:'Via Dante 12, 20121 Milano',   email:'anna.ferrari@email.it', mod:'email'},
+    {nome:'Russo Marco',    interno:'Box 1',       indirizzo:'Via Roma 10, 20121 Milano',    email:'marco.russo@pec.it',    mod:'consegna'},
+  ];
+  def.forEach(function(d) {
+    var id = 'c'+(++condoCount);
+    condomini.push({id:id, nome:d.nome, interno:d.interno, indirizzo:d.indirizzo, email:d.email, mod:d.mod});
+    invii[id] = {inviato:false, dataInvio:'', numRacc:'', confermato:false, note:''};
+  });
+  drawSetup();
+}
+
+// AZZERA SOLO TAB 1 — non tocca invii
+function azzeraSetup() {
+  if (!confirm('Azzera i dati della Tab 1 (condominio, studio, lista condomini)?\nIl registro invii rimane invariato.')) return;
+  dati.condoNome = ''; dati.condoCF = ''; dati.studioNome = ''; dati.studioContatti = '';
+  dati.studioPEC = ''; dati.nVerbale = '';
+  dati.dataAss   = new Date().toISOString().split('T')[0];
+  dati.dataInvio = new Date().toISOString().split('T')[0];
+  condomini = []; condoCount = 0;
+  // invii rimane intatto
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n==='setup' ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n==='setup'?' on':'');
+  });
+  drawSetup();
+}
+
+// ══════════════════════════════════════
+// TAB 2 — LETTERE
+// ══════════════════════════════════════
+function drawLettere() {
+  var el = document.getElementById('c-lettere');
+  if (!condomini.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">✉️</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i condomini nella Tab 1 per generare le lettere.</p>' +
+      '<button class="btn btn-g btn-sm" onclick="go(\'setup\')">→ Vai ai Dati</button></div>';
+    return;
+  }
+
+  // Banner scadenza
+  var scadHtml = '';
+  if (dati.dataAss) {
+    var ass    = new Date(dati.dataAss);
+    var scad   = new Date(ass.getTime()+30*86400000);
+    var oggi   = new Date();
+    var diffGg = Math.ceil((scad-oggi)/86400000);
+    var scadFmt= scad.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+    var cls    = diffGg>10?'ok':diffGg>0?'warn':'danger';
+    var ico    = diffGg>10?'✅':diffGg>0?'⚠️':'🚨';
+    scadHtml   = '<div class="scad '+cls+'" style="margin-bottom:1.5rem">' +
+      '<div><strong>'+ico+' Termine invio verbale</strong><br>' +
+      '<span style="font-size:0.82rem">'+(diffGg>0?'Mancano '+diffGg+' giorni':'SCADENZA SUPERATA')+' — '+scadFmt+'</span></div>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.8rem">Scadenza: '+scadFmt+'</span></div>';
+  }
+
+  if (lettIdx >= condomini.length) lettIdx = 0;
+
+  // Navigazione
+  var nav = '<div class="lnav"><span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Condomino:</span>';
+  condomini.forEach(function(c,i) {
+    var inv = invii[c.id]||{};
+    nav += '<button class="btn btn-sm '+(i===lettIdx?'btn-p':inv.inviato?'btn-ok':'btn-g')+'" onclick="lettIdx='+i+';drawLettere()">' +
+      esc(c.nome.split(' ')[0])+(inv.inviato?' ✓':'')+'</button>';
+  });
+  nav += '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>';
+  nav += '<button class="btn btn-g btn-sm" onclick="copiaEmail()">📧 Copia email</button>';
+  nav += '</div>';
+
+  var c      = condomini[lettIdx];
+  var inv    = invii[c.id]||{};
+  var dAFmt  = dati.dataAss  ? new Date(dati.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var dIFmt  = dati.dataInvio? new Date(dati.dataInvio).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var oggi   = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var modL   = {raccomandata:'Raccomandata A/R',pec:'PEC',email:'Email',consegna:'Consegna a mano'}[c.mod]||c.mod;
+
+  var statoHtml = inv.inviato ?
+    '<div style="background:var(--success-light);border:1px solid var(--success);border-radius:3px;padding:0.5rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:var(--success)">' +
+    '✅ Inviato il '+esc(inv.dataInvio)+(inv.numRacc?' — Racc./PEC: '+esc(inv.numRacc):'')+(inv.confermato?' — Ricevuta confermata':'')+'</div>' : '';
+
+  var lettera =
+    '<div class="doc">' +
+    '<div class="doc-hs"><span class="doc-st">'+esc(dati.studioNome||'Studio Amministrativo')+'</span>' +
+    '<span class="doc-an">Verbale n. '+esc(dati.nVerbale||'—')+'</span></div>' +
+    '<div class="doc-bd">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Mittente</div>' +
+    '<strong>'+esc(dati.studioNome||'Studio Amministrativo')+'</strong>' +
+    (dati.studioContatti?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(dati.studioContatti)+'</span>':'')+
+    (dati.studioPEC?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.78rem;color:var(--muted)">'+esc(dati.studioPEC)+'</span>':'')+
+    '<br><span style="font-size:0.78rem;color:var(--muted)">'+dIFmt+'</span></div>' +
+    '<div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Destinatario</div>' +
+    '<strong>'+esc(c.nome)+'</strong>' +
+    (c.interno?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+
+    (c.indirizzo?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(c.indirizzo)+'</span>':'')+
+    '<br><span class="badge b-info" style="margin-top:0.3rem">'+esc(modL)+'</span></div></div>' +
+    '<div class="doc-ogg">Oggetto: Trasmissione Verbale n. '+esc(dati.nVerbale||'—')+' — Assemblea del '+dAFmt+' — '+esc(dati.condoNome||'Condominio')+'</div>' +
+    '<p>Gentile <strong>'+esc(c.nome)+'</strong>,</p>' +
+    '<p>ai sensi dell\'art. 1137 c.c., Le trasmettiamo il verbale dell\'assemblea condominiale del <strong>'+dAFmt+'</strong> del condominio <strong>'+esc(dati.condoNome||'Condominio')+'</strong>'+(dati.condoCF?' (C.F. '+dati.condoCF+')':'')+', regolarmente convocata e svoltasi nella data indicata.</p>' +
+    '<p>Il verbale n. <strong>'+esc(dati.nVerbale||'—')+'</strong> è allegato alla presente comunicazione.</p>' +
+    '<p>La informiamo che i condomini assenti o dissenzienti possono impugnare le delibere assembleari entro <strong>30 giorni</strong> dalla data di ricezione del presente verbale, ai sensi dell\'art. 1137 c.c.</p>' +
+    '<p>Per qualsiasi chiarimento non esiti a contattarci.</p>' +
+    '<p>Distinti saluti,</p>' +
+    '<div class="firma-line">'+esc(dati.studioNome||'Studio Amministrativo')+'<br><span style="color:var(--muted)">Amministratore di Condominio</span></div>' +
+    '<div class="doc-ft"><span>'+esc(dati.condoNome||'Condominio')+(dati.condoCF?' · C.F. '+dati.condoCF:'')+'</span><span>'+oggi+'</span></div>' +
+    '</div></div>';
+
+  var azBtns =
+    '<div class="brow">' +
+    '<button class="btn btn-ok btn-sm" onclick="segnaInviato()">✅ Segna come inviato</button>' +
+    '</div>';
+
+  el.innerHTML = scadHtml + nav + statoHtml + lettera + azBtns;
+
+  // Salvo per copia email
+  window._lettCorrente = {c:c, dAFmt:dAFmt};
+}
+
+function copiaEmail() {
+  var d = window._lettCorrente;
+  if (!d) { alert('Genera prima la lettera.'); return; }
+  var testo =
+    'Oggetto: Trasmissione Verbale n. '+dati.nVerbale+' — Assemblea del '+d.dAFmt+' — '+dati.condoNome+'\n\n'+
+    'Gentile '+d.c.nome+',\n\n'+
+    'ai sensi dell\'art. 1137 c.c., Le trasmettiamo il verbale dell\'assemblea condominiale del '+d.dAFmt+' del condominio '+dati.condoNome+'.\n\n'+
+    'Il verbale n. '+dati.nVerbale+' è allegato alla presente comunicazione.\n\n'+
+    'La informiamo che i condomini assenti o dissenzienti possono impugnare le delibere entro 30 giorni dalla ricezione.\n\n'+
+    'Distinti saluti,\n'+dati.studioNome+
+    (dati.studioPEC?'\n'+dati.studioPEC:'');
+  navigator.clipboard.writeText(testo)
+    .then(function(){alert('✅ Testo email/PEC copiato!');})
+    .catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+function segnaInviato() {
+  if (!window._lettCorrente) { alert('Seleziona prima un condomino.'); return; }
+  var c   = window._lettCorrente.c;
+  var num = prompt('N° raccomandata / ID PEC (opzionale):','') || '';
+  if (!invii[c.id]) invii[c.id] = {inviato:false,dataInvio:'',numRacc:'',confermato:false,note:''};
+  invii[c.id].inviato   = true;
+  invii[c.id].dataInvio = dati.dataInvio || new Date().toISOString().split('T')[0];
+  invii[c.id].numRacc   = num;
+  alert('✅ Invio registrato per '+c.nome+'!');
+  drawLettere();
+}
+
+// ══════════════════════════════════════
+// TAB 3 — REGISTRO INVII
+// Ridisegna tutto, inclusi i bottoni
+// ══════════════════════════════════════
+function drawRegistro() {
+  var el = document.getElementById('c-registro');
+
+  if (!condomini.length) {
+    el.innerHTML =
+      '<div class="brow"><button class="btn btn-g btn-sm" onclick="azzeraRegistro()">↺ Azzera registro invii</button></div>' +
+      '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun condomino nella lista. Vai alla Tab 1.</p>' +
+      '<button class="btn btn-g btn-sm" style="margin-top:1rem" onclick="go(\'setup\')">→ Vai ai Dati</button></div>';
+    return;
+  }
+
+  var nInv  = condomini.filter(function(c){return invii[c.id]&&invii[c.id].inviato;}).length;
+  var nConf = condomini.filter(function(c){return invii[c.id]&&invii[c.id].confermato;}).length;
+  var nPend = condomini.length - nInv;
+
+  var righe = condomini.map(function(c) {
+    var inv = invii[c.id] || {inviato:false,dataInvio:'',numRacc:'',confermato:false,note:''};
+    var modB= {raccomandata:'<span class="badge b-info">📮 Racc.</span>',pec:'<span class="badge b-pec">📧 PEC</span>',email:'<span class="badge b-info">📨 Email</span>',consegna:'<span class="badge b-ok">🤝 Mano</span>'}[c.mod]||'';
+    return '<tr style="'+(inv.inviato?'background:#f8fff9':'')+'">' +
+      '<td><strong>'+esc(c.nome)+'</strong></td>' +
+      '<td style="font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+      '<td>'+modB+'</td>' +
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.dataInvio||'—')+'</td>' +
+      '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.numRacc||'—')+'</td>' +
+      '<td style="text-align:center">' +
+        '<input type="checkbox" '+(inv.confermato?'checked':'')+
+        ' onchange="toggleConferma(\''+c.id+'\',this.checked)" title="Ricevuta confermata"></td>' +
+      '<td><input class="ic" type="text" placeholder="Note..." value="'+esc(inv.note||'')+'" '+
+        'onchange="setNote(\''+c.id+'\',this.value)" style="font-size:0.78rem"></td>' +
+      '<td>' +
+        (inv.inviato ?
+          '<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);font-size:0.7rem" ' +
+          'onclick="annullaInvio(\''+c.id+'\')">✕ Annulla</button>' :
+          '<button class="btn btn-ok btn-sm" style="font-size:0.7rem" ' +
+          'onclick="segnaInviatoId(\''+c.id+'\')">✅ Segna inviato</button>') +
+      '</td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="brow">' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraRegistro()">↺ Azzera registro invii</button>' +
+    '</div>' +
+    '<div class="sgrid">' +
+      '<div class="sc k"><div class="cl">Destinatari</div><div class="cv">'+condomini.length+'</div></div>' +
+      '<div class="sc gn"><div class="cl">Inviati</div><div class="cv gn">'+nInv+'</div></div>' +
+      '<div class="sc r"><div class="cl">Da inviare</div><div class="cv a">'+nPend+'</div></div>' +
+      '<div class="sc g"><div class="cl">Confermati</div><div class="cv go">'+nConf+'</div></div>' +
+    '</div>' +
+    '<div class="tw"><table>' +
+      '<thead><tr>' +
+        '<th>Condomino</th><th>Interno</th><th>Modalità</th>' +
+        '<th>Data invio</th><th>N° Racc./PEC</th>' +
+        '<th>Confermato</th><th>Note</th><th>Azioni</th>' +
+      '</tr></thead>' +
+      '<tbody>'+righe+'</tbody>' +
+    '</table></div>';
+}
+
+function toggleConferma(id, val) {
+  if (!invii[id]) invii[id]={inviato:false,dataInvio:'',numRacc:'',confermato:false,note:''};
+  invii[id].confermato = val;
+  drawRegistro(); drawSolleciti(); drawRiepilogo();
+}
+
+function setNote(id, val) {
+  if (!invii[id]) invii[id]={inviato:false,dataInvio:'',numRacc:'',confermato:false,note:''};
+  invii[id].note = val;
+}
+
+function segnaInviatoId(id) {
+  var c   = condomini.find(function(x){return x.id===id;});
+  if (!c) return;
+  var num = prompt('N° raccomandata / ID PEC (opzionale):','') || '';
+  if (!invii[id]) invii[id]={inviato:false,dataInvio:'',numRacc:'',confermato:false,note:''};
+  invii[id].inviato   = true;
+  invii[id].dataInvio = dati.dataInvio || new Date().toISOString().split('T')[0];
+  invii[id].numRacc   = num;
+  drawRegistro(); drawSolleciti(); drawRiepilogo();
+}
+
+function annullaInvio(id) {
+  if (!confirm('Annullare la registrazione di questo invio?')) return;
+  invii[id] = {inviato:false, dataInvio:'', numRacc:'', confermato:false, note:''};
+  drawRegistro(); drawSolleciti(); drawRiepilogo();
+}
+
+// AZZERA SOLO GLI INVII — non tocca condomini né dati Tab 1
+function azzeraRegistro() {
+  if (!confirm('Azzerare tutti gli invii registrati?\nI condomini e i dati assemblea rimarranno.')) return;
+  // Azzera tutte le entry
+  Object.keys(invii).forEach(function(id) {
+    invii[id] = {inviato:false, dataInvio:'', numRacc:'', confermato:false, note:''};
+  });
+  condomini.forEach(function(c) {
+    invii[c.id] = {inviato:false, dataInvio:'', numRacc:'', confermato:false, note:''};
+  });
+  // Forza ridisegno rimanendo sulla tab registro
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n==='registro' ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+  drawSolleciti();
+  drawRiepilogo();
+}
+
+// ══════════════════════════════════════
+// TAB 4 — SOLLECITI
+// ══════════════════════════════════════
+function drawSolleciti() {
+  var el = document.getElementById('c-solleciti');
+  var nonInv  = condomini.filter(function(c){return !(invii[c.id]&&invii[c.id].inviato);});
+  var nonConf = condomini.filter(function(c){return invii[c.id]&&invii[c.id].inviato&&!invii[c.id].confermato;});
+
+  if (!condomini.length) {
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem"><p style="color:var(--muted)">Nessun condomino. Vai alla Tab 1.</p></div>';
+    return;
+  }
+  if (!nonInv.length && !nonConf.length) {
+    el.innerHTML='<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">✅</div>' +
+      '<p style="font-size:0.85rem;color:var(--success);font-weight:500">Tutti i verbali sono stati inviati e confermati!</p></div>';
+    return;
+  }
+
+  var html = '';
+
+  if (nonInv.length) {
+    html += '<div class="sl">Da inviare ('+nonInv.length+')</div>' +
+      '<div class="tw"><table>' +
+      '<thead><tr><th>Condomino</th><th>Interno</th><th>Modalità</th><th>Email</th><th>Azioni</th></tr></thead><tbody>' +
+      nonInv.map(function(c) {
+        return '<tr>' +
+          '<td><strong>'+esc(c.nome)+'</strong></td>' +
+          '<td style="font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+          '<td><span class="badge b-warn">⚠️ Non inviato</span></td>' +
+          '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(c.email||'—')+'</td>' +
+          '<td>' +
+            '<button class="btn btn-ok btn-sm" onclick="segnaInviatoId(\''+c.id+'\')">✅ Segna inviato</button> ' +
+            '<button class="btn btn-g btn-sm" onclick="copiaSollecito(\''+esc(c.nome)+'\')">📋 Copia testo</button>' +
+          '</td></tr>';
+      }).join('')+
+      '</tbody></table></div>';
+  }
+
+  if (nonConf.length) {
+    html += '<div class="sl">Inviati ma non confermati ('+nonConf.length+')</div>' +
+      '<div class="tw"><table>' +
+      '<thead><tr><th>Condomino</th><th>Interno</th><th>Data invio</th><th>N° Racc./PEC</th><th>Azioni</th></tr></thead><tbody>' +
+      nonConf.map(function(c) {
+        var inv = invii[c.id]||{};
+        return '<tr>' +
+          '<td><strong>'+esc(c.nome)+'</strong></td>' +
+          '<td style="font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+          '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.dataInvio||'—')+'</td>' +
+          '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.numRacc||'—')+'</td>' +
+          '<td><button class="btn btn-g btn-sm" onclick="toggleConferma(\''+c.id+'\',true)">✅ Conferma ricezione</button></td>' +
+          '</tr>';
+      }).join('')+
+      '</tbody></table></div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function copiaSollecito(nome) {
+  var testo =
+    'Oggetto: Sollecito trasmissione Verbale n. '+dati.nVerbale+' — '+dati.condoNome+'\n\n'+
+    'Gentile '+nome+',\n\nLa contattamo in quanto non risulta ancora pervenuta copia del verbale n. '+dati.nVerbale+
+    ' dell\'assemblea del '+new Date(dati.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})+
+    ' del condominio '+dati.condoNome+'.\n\nLa preghiamo di contattarci per ricevere il documento.\n\nDistinti saluti,\n'+dati.studioNome;
+  navigator.clipboard.writeText(testo)
+    .then(function(){alert('✅ Testo sollecito copiato!');})
+    .catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+// ══════════════════════════════════════
+// TAB 5 — RIEPILOGO
+// ══════════════════════════════════════
+function drawRiepilogo() {
+  var el = document.getElementById('c-riepilogo');
+  if (!condomini.length) {
+    el.innerHTML =
+      '<div class="brow"><button class="btn btn-g btn-sm" onclick="azzeraRiepilogo()">↺ Azzera tutto</button></div>' +
+      '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun dato. Vai alla Tab 1.</p></div>';
+    return;
+  }
+
+  var nInv   = condomini.filter(function(c){return invii[c.id]&&invii[c.id].inviato;}).length;
+  var nConf  = condomini.filter(function(c){return invii[c.id]&&invii[c.id].confermato;}).length;
+  var nPend  = condomini.length-nInv;
+  var dAFmt  = dati.dataAss?new Date(dati.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi   = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var tuttiInv = nInv===condomini.length;
+
+  var righe = condomini.map(function(c) {
+    var inv = invii[c.id]||{};
+    var modL={raccomandata:'📮 Racc.',pec:'📧 PEC',email:'📨 Email',consegna:'🤝 Mano'}[c.mod]||c.mod;
+    return '<tr style="border-bottom:1px solid var(--cream);'+(inv.inviato?'background:#f8fff9':'')+'">' +
+      '<td style="padding:0.5rem 1rem;font-weight:500">'+esc(c.nome)+'</td>' +
+      '<td style="padding:0.5rem 1rem;font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+      '<td style="padding:0.5rem 1rem;font-size:0.78rem">'+modL+'</td>' +
+      '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.dataInvio||'—')+'</td>' +
+      '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(inv.numRacc||'—')+'</td>' +
+      '<td style="padding:0.5rem 1rem;text-align:center">'+(inv.confermato?'✅':'☐')+'</td>' +
+      '<td style="padding:0.5rem 1rem;font-size:0.78rem;color:var(--muted)">'+esc(inv.note||'—')+'</td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="brow">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraRiepilogo()">↺ Azzera tutto</button>' +
+    '</div>' +
+    '<div class="'+(tuttiInv?'scad ok':'scad warn')+'" style="margin-bottom:1.5rem">' +
+      '<div><strong>'+(tuttiInv?'✅ Tutti i verbali inviati':'⚠️ Invio incompleto')+'</strong><br>' +
+      '<span style="font-size:0.82rem">'+esc(dati.condoNome)+' · Verbale n. '+esc(dati.nVerbale)+' · Assemblea del '+dAFmt+'</span></div>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.8rem">'+nInv+'/'+condomini.length+' inviati</span>' +
+    '</div>' +
+    '<div class="sgrid">' +
+      '<div class="sc k"><div class="cl">Destinatari</div><div class="cv">'+condomini.length+'</div></div>' +
+      '<div class="sc gn"><div class="cl">Inviati</div><div class="cv gn">'+nInv+'</div></div>' +
+      '<div class="sc r"><div class="cl">Da inviare</div><div class="cv a">'+nPend+'</div></div>' +
+      '<div class="sc g"><div class="cl">Confermati</div><div class="cv go">'+nConf+'</div></div>' +
+    '</div>' +
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px var(--shadow)">' +
+      '<div style="background:var(--ink);color:var(--paper);padding:1rem 1.5rem;display:flex;justify-content:space-between">' +
+        '<span style="font-family:\'DM Serif Display\',serif;font-size:1rem">Registro Invii — '+esc(dati.condoNome)+'</span>' +
+        '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.25rem 0.6rem;border-radius:2px">'+dAFmt+'</span>' +
+      '</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">' +
+        '<thead><tr style="background:var(--cream)">' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Condomino</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Unità</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Modalità</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Data invio</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">N° Racc./PEC</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Confermato</th>' +
+          '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Note</th>' +
+        '</tr></thead>' +
+        '<tbody>'+righe+'</tbody>' +
+      '</table>' +
+      '<div style="padding:1rem 1.5rem;display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);border-top:1px solid var(--border)">' +
+        '<span>'+esc(dati.condoNome)+(dati.condoCF?' · C.F. '+dati.condoCF:'')+'</span>' +
+        '<span>'+esc(dati.studioNome)+' · '+oggi+'</span>' +
+      '</div>' +
+    '</div>';
+}
+
+// AZZERA TUTTO — Tab 1 + condomini + registro invii
+function azzeraRiepilogo() {
+  if (!confirm('Azzera tutto: dati, lista condomini e registro invii?')) return;
+  dati = {condoNome:'',condoCF:'',studioNome:'',studioContatti:'',studioPEC:'',nVerbale:'',
+          dataAss:new Date().toISOString().split('T')[0],
+          dataInvio:new Date().toISOString().split('T')[0],
+          modalitaDefault:'raccomandata'};
+  condomini=[]; condoCount=0; invii={}; lettIdx=0;
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n==='setup' ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n==='setup'?' on':'');
+  });
+  drawSetup();
+}
+
+// ══════════════════════════════════════
+// EXPORT EXCEL
+// ══════════════════════════════════════
+function expExcel() {
+  if (!condomini.length) { alert('Nessun dato da esportare.'); return; }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(
+    [['REGISTRO INVII VERBALE — '+dati.condoNome+' — Verbale n. '+dati.nVerbale],[],
+     ['Condomino','Interno','Indirizzo','Email','Modalità','Data Invio','N° Racc./PEC','Confermato','Note']].concat(
+    condomini.map(function(c) {
+      var inv = invii[c.id]||{};
+      var modL={raccomandata:'Raccomandata A/R',pec:'PEC',email:'Email',consegna:'Consegna a mano'}[c.mod]||c.mod;
+      return [c.nome,c.interno,c.indirizzo,c.email,modL,
+              inv.dataInvio||'',inv.numRacc||'',inv.confermato?'Sì':'No',inv.note||''];
+    }))
+  );
+  ws['!cols']=[24,12,28,24,16,12,16,10,20].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Registro Invii');
+  XLSX.writeFile(wb,'CondoKit_InvioVerbale_'+dati.condoNome.replace(/\s/g,'_')+'_'+dati.nVerbale.replace(/\//g,'-')+'.xlsx');
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

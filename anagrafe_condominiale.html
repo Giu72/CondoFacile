@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Anagrafe Condominiale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+
+/* LAYOUT */
+.app{display:flex;height:calc(100vh - 52px - 110px);}
+.sidebar{width:260px;flex-shrink:0;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,0.06);}
+.sidebar-top{padding:1rem;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-search{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:3px;padding:0.5rem 0.75rem;color:var(--paper);font-family:'DM Sans',sans-serif;font-size:0.8rem;outline:none;}
+.sidebar-search::placeholder{color:rgba(255,255,255,0.3);}
+.sidebar-filters{display:flex;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap;}
+.filter-btn{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.6rem;border-radius:2px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.15s;}
+.filter-btn:hover{background:rgba(255,255,255,0.1);color:var(--paper);}
+.filter-btn.on{background:var(--accent);border-color:var(--accent);color:white;}
+.condo-selector{padding:0.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.08);}
+.condo-selector select{width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:3px;padding:0.4rem 0.6rem;color:var(--paper);font-family:'DM Sans',sans-serif;font-size:0.8rem;outline:none;appearance:none;}
+.condo-selector label{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block;margin-bottom:0.35rem;}
+.unit-list{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.unit-list::-webkit-scrollbar{width:3px;}
+.unit-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:9999px;}
+.unit-item{padding:0.6rem 1rem;cursor:pointer;transition:background 0.12s;border-left:3px solid transparent;display:flex;justify-content:space-between;align-items:center;}
+.unit-item:hover{background:rgba(255,255,255,0.06);}
+.unit-item.active{background:rgba(200,64,42,0.2);border-left-color:var(--accent);}
+.unit-item-left{flex:1;}
+.unit-item-nome{font-size:0.8rem;font-weight:500;color:rgba(255,255,255,0.9);}
+.unit-item-int{font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.4);margin-top:0.1rem;}
+.unit-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:#52c87a;}.dot-mora{background:var(--accent);}.dot-nessuno{background:rgba(255,255,255,0.2);}
+.sidebar-footer{padding:0.75rem 1rem;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:0.5rem;flex-wrap:wrap;}
+
+/* MAIN */
+.main-area{flex:1;overflow-y:auto;background:var(--paper);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:3rem;}
+.empty-state .emoji{font-size:3rem;margin-bottom:1rem;}
+.empty-state p{font-size:0.875rem;}
+
+/* SCHEDA */
+.scheda{padding:2rem;max-width:900px;}
+.scheda-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.scheda-nome{font-family:'DM Serif Display',serif;font-size:1.8rem;font-weight:400;line-height:1.2;margin-bottom:0.3rem;}
+.scheda-sub{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);}
+.scheda-actions{display:flex;gap:0.5rem;flex-wrap:wrap;}
+
+/* SEZIONI SCHEDA */
+.sez{margin-bottom:2rem;}
+.sez-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.8rem;}
+.sez-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;}
+.info-item{background:white;border:1px solid var(--border);border-radius:4px;padding:0.75rem 1rem;}
+.info-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.info-value{font-size:0.875rem;font-weight:500;}
+.info-value.mono{font-family:'DM Mono',monospace;}
+.info-value.accent{color:var(--accent);}
+.info-value.success{color:var(--success);}
+.info-value.gold{color:var(--gold);}
+
+/* STORICO SUBENTRI */
+.timeline{position:relative;padding-left:1.5rem;}
+.timeline::before{content:'';position:absolute;left:0.35rem;top:0;bottom:0;width:1px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:1rem;padding:0.75rem 1rem;background:white;border:1px solid var(--border);border-radius:4px;}
+.tl-item::before{content:'';position:absolute;left:-1.15rem;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--paper);}
+.tl-data{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.3rem;}
+.tl-text{font-size:0.82rem;}
+.tl-type{display:inline-block;font-family:'DM Mono',monospace;font-size:0.58rem;padding:0.15rem 0.4rem;border-radius:2px;margin-right:0.4rem;}
+.tl-vendita{background:var(--accent-light);color:var(--accent);}
+.tl-acquisto{background:var(--success-light);color:var(--success);}
+.tl-subentro{background:var(--gold-light);color:var(--warning);}
+
+/* PAGAMENTO STATUS */
+.pag-box{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+.pag-stat{text-align:center;}
+.pag-stat-label{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.pag-stat-value{font-family:'DM Serif Display',serif;font-size:1.4rem;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.6);z-index:300;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--paper);border:1px solid var(--border);border-radius:6px;width:90%;max-width:780px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(26,26,46,0.3);}
+.modal-header{background:var(--ink);color:var(--paper);padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.modal-header h3{font-family:'DM Serif Display',serif;font-size:1.1rem;font-weight:400;}
+.modal-close{background:none;border:none;color:var(--border);font-size:1.3rem;cursor:pointer;}
+.modal-close:hover{color:white;}
+.modal-body{padding:1.5rem;overflow-y:auto;flex:1;}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.75rem;justify-content:flex-end;background:var(--cream);}
+.modal-tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.5rem;}
+.mtab{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;}
+.mtab:hover{color:var(--ink);background:var(--cream);}
+.mtab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.mpanel{display:none;}.mpanel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:0.9rem 1.2rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}.sc.g::before{background:var(--gold);}.sc.gn::before{background:var(--success);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}.cv.gn{color:var(--success);}
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+/* CONDOMINI LIST */
+.condo-list-area{padding:1.5rem;}
+.condo-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;}
+.condo-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.18s;box-shadow:0 1px 6px var(--shadow);}
+.condo-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px var(--shadow);border-color:var(--accent);}
+.condo-card-nome{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.3rem;}
+.condo-card-meta{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-bottom:0.75rem;}
+.condo-card-stats{display:flex;gap:1rem;}
+.condo-stat{font-size:0.78rem;color:var(--muted);}
+.condo-stat strong{color:var(--ink);}
+
+@media print{.navbar,.sidebar,.scheda-actions,.modal-overlay{display:none!important;}.app{height:auto;}.main-area{overflow:visible;}body{background:white;}}
+.page-footer{text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Anagrafica · Modulo 6.1</div>
+  <h1>Anagrafe<br><em>Condominiale</em></h1>
+  <p class="header-sub">Gestisci proprietari, inquilini, dati catastali, storico subentri e situazione pagamenti per tutti i condomini che amministri.</p>
+</div>
+
+<!-- LAYOUT PRINCIPALE -->
+<div class="app" id="appArea">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebarEl">
+    <div class="condo-selector">
+      <label>Condominio attivo</label>
+      <select id="condoSelect" onchange="cambiaCondominio()">
+        <option value="">— Seleziona condominio —</option>
+      </select>
+    </div>
+    <div class="sidebar-top">
+      <input class="sidebar-search" type="text" id="searchInput" placeholder="🔍 Cerca per nome o interno..." oninput="renderUnitList()">
+      <div class="sidebar-filters">
+        <button class="filter-btn on" id="fAll"   onclick="setFilter('all')">Tutti</button>
+        <button class="filter-btn"   id="fOk"    onclick="setFilter('ok')">✅ OK</button>
+        <button class="filter-btn"   id="fMora"  onclick="setFilter('mora')">⚠️ Mora</button>
+        <button class="filter-btn"   id="fInq"   onclick="setFilter('inquilino')">🔑 Inquilino</button>
+      </div>
+    </div>
+    <div class="unit-list" id="unitList">
+      <div style="padding:1.5rem;text-align:center;color:rgba(255,255,255,0.3);font-size:0.8rem;font-style:italic">
+        Seleziona un condominio
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--paper);border:1px solid rgba(255,255,255,0.2);font-size:0.7rem" onclick="openModal('new')">＋ Nuova unità</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--paper);border:1px solid rgba(255,255,255,0.2);font-size:0.7rem" onclick="expExcel()">📊 Excel</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--paper);border:1px solid rgba(255,255,255,0.2);font-size:0.7rem" onclick="document.getElementById('csvInput').click()">📥 CSV</button>
+      <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--paper);border:1px solid rgba(255,255,255,0.2);font-size:0.7rem" onclick="document.getElementById('xlsInput').click()">📗 Excel</button>
+      <input type="file" id="xlsInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);font-size:0.7rem;width:100%;margin-top:0.25rem" onclick="tornaHome()">← Tutti i condomini</button>
+    </div>
+  </aside>
+
+  <!-- AREA PRINCIPALE -->
+  <main class="main-area" id="mainArea">
+    <!-- Stato iniziale: lista condomini -->
+    <div id="viewHome" class="condo-list-area">
+      <div style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">I tuoi condomini</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Seleziona o crea un condominio</div>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="openModalCondo()">＋ Nuovo condominio</button>
+      </div>
+      <div class="sgrid" id="statsGlobali">
+        <div class="sc k"><div class="cl">Condomini</div><div class="cv" id="sgCond">0</div></div>
+        <div class="sc r"><div class="cl">Unità totali</div><div class="cv a" id="sgUnita">0</div></div>
+        <div class="sc g"><div class="cl">Proprietari</div><div class="cv go" id="sgProp">0</div></div>
+        <div class="sc gn"><div class="cl">Con inquilino</div><div class="cv gn" id="sgInq">0</div></div>
+      </div>
+      <div class="condo-card-grid" id="condoCardGrid">
+        <div style="color:var(--muted);font-style:italic;font-size:0.875rem;grid-column:1/-1;padding:2rem 0;text-align:center">
+          Nessun condominio ancora. Premi "+ Nuovo condominio" per iniziare.
+          <br><br>
+          <button class="btn btn-g btn-sm" onclick="document.getElementById('xlsHome').click()">📗 Importa da Excel</button>
+          <input type="file" id="xlsHome" accept=".xlsx,.xls" style="display:none" onchange="importExcelHome(event)">
+          &nbsp;
+          <button class="btn btn-g btn-sm" onclick="scaricaTemplateCSV()">⬇️ Scarica template Excel/CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista scheda unità -->
+    <div id="viewScheda" style="display:none">
+      <div class="scheda" id="schedaContent"></div>
+    </div>
+  </main>
+</div>
+
+<div class="page-footer">CondoKit · Anagrafe Condominiale · Beta · Dati salvati solo nella sessione corrente</div>
+
+<!-- MODAL NUOVA/MODIFICA UNITÀ -->
+<div class="modal-overlay" id="modalUnita">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nuova Unità Immobiliare</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="mtab on" id="mt-anagrafe" onclick="goMtab('anagrafe')">👤 Anagrafica</button>
+        <button class="mtab"    id="mt-catastale" onclick="goMtab('catastale')">🏠 Catastale</button>
+        <button class="mtab"    id="mt-fiscale"   onclick="goMtab('fiscale')">📋 Fiscale</button>
+        <button class="mtab"    id="mt-pagamenti" onclick="goMtab('pagamenti')">💰 Pagamenti</button>
+        <button class="mtab"    id="mt-subentri"  onclick="goMtab('subentri')">🔄 Subentri</button>
+      </div>
+
+      <!-- ANAGRAFICA -->
+      <div class="mpanel on" id="mp-anagrafe">
+        <div class="r3">
+          <div class="fg"><label>Interno / Scala</label><input type="text" id="fInterno" placeholder="Es. Int.1 Sc.A"></div>
+          <div class="fg"><label>Piano</label><input type="text" id="fPiano" placeholder="Es. 2° piano"></div>
+          <div class="fg"><label>Tipo unità</label>
+            <select id="fTipoUnita">
+              <option>Abitazione</option><option>Box/Garage</option><option>Negozio</option>
+              <option>Ufficio</option><option>Cantina</option><option>Altro</option>
+            </select>
+          </div>
+        </div>
+        <div class="sl">Proprietario</div>
+        <div class="r2">
+          <div class="fg"><label>Cognome e Nome</label><input type="text" id="fPropNome" placeholder="Es. Rossi Mario"></div>
+          <div class="fg"><label>Codice Fiscale</label><input type="text" id="fPropCF" placeholder="Es. RSSMAR70A01H501Z"></div>
+        </div>
+        <div class="r3">
+          <div class="fg"><label>Telefono</label><input type="text" id="fPropTel" placeholder="Es. 02 1234567"></div>
+          <div class="fg"><label>Email</label><input type="email" id="fPropEmail" placeholder="mario.rossi@email.it"></div>
+          <div class="fg"><label>Indirizzo residenza</label><input type="text" id="fPropIndirizzo" placeholder="Es. Via Verdi 3, Milano"></div>
+        </div>
+        <div class="sl" style="margin-top:0.5rem">Inquilino (se presente)</div>
+        <div class="r2">
+          <div class="fg"><label>Cognome e Nome inquilino</label><input type="text" id="fInqNome" placeholder="Es. Bianchi Marco"></div>
+          <div class="fg"><label>Codice Fiscale inquilino</label><input type="text" id="fInqCF" placeholder="Es. BNCMRC80B02H501Y"></div>
+        </div>
+        <div class="r3">
+          <div class="fg"><label>Telefono inquilino</label><input type="text" id="fInqTel" placeholder="Es. 02 9876543"></div>
+          <div class="fg"><label>Email inquilino</label><input type="email" id="fInqEmail" placeholder="marco.bianchi@email.it"></div>
+          <div class="fg"><label>Data inizio locazione</label><input type="date" id="fInqDataInizio"></div>
+        </div>
+      </div>
+
+      <!-- CATASTALE -->
+      <div class="mpanel" id="mp-catastale">
+        <div class="r3">
+          <div class="fg"><label>Categoria catastale</label>
+            <select id="fCatCat">
+              <option>A/2 - Abitazione civile</option><option>A/3 - Abitazione economica</option>
+              <option>A/4 - Abitazione popolare</option><option>B/1 - Collegi</option>
+              <option>C/1 - Negozi</option><option>C/6 - Box/Garage</option><option>C/7 - Tettoie</option>
+            </select>
+          </div>
+          <div class="fg"><label>Subalterno</label><input type="text" id="fSub" placeholder="Es. 12"></div>
+          <div class="fg"><label>Foglio / Particella</label><input type="text" id="fFoglio" placeholder="Es. 45/123"></div>
+        </div>
+        <div class="r4">
+          <div class="fg"><label>Millesimi proprietà</label><input type="number" id="fMillProp" placeholder="Es. 85" step="0.01" min="0"></div>
+          <div class="fg"><label>Millesimi scala</label><input type="number" id="fMillScala" placeholder="Es. 120" step="0.01" min="0"></div>
+          <div class="fg"><label>Millesimi riscaldamento</label><input type="number" id="fMillRisc" placeholder="Es. 90" step="0.01" min="0"></div>
+          <div class="fg"><label>Superficie (mq)</label><input type="number" id="fSuperficie" placeholder="Es. 85" step="0.1" min="0"></div>
+        </div>
+        <div class="r2">
+          <div class="fg"><label>Rendita catastale (€)</label><input type="number" id="fRendita" placeholder="Es. 456.78" step="0.01" min="0"></div>
+          <div class="fg"><label>Classe catastale</label><input type="text" id="fClasse" placeholder="Es. 3"></div>
+        </div>
+      </div>
+
+      <!-- FISCALE -->
+      <div class="mpanel" id="mp-fiscale">
+        <div class="r2">
+          <div class="fg"><label>Regime fiscale proprietario</label>
+            <select id="fRegimeFisc">
+              <option value="ordinario">IRPEF ordinaria</option>
+              <option value="cedolare">Cedolare secca 21%</option>
+              <option value="cedolare_concordato">Cedolare secca 10% (concordato)</option>
+              <option value="esente">Esente (uso proprio)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Partita IVA (se imprenditore)</label><input type="text" id="fPIVA" placeholder="Es. 12345678901"></div>
+        </div>
+        <div class="r2">
+          <div class="fg"><label>Quota proprietà (%)</label><input type="number" id="fQuotaPropr" placeholder="Es. 100" step="0.01" min="0" max="100" value="100"></div>
+          <div class="fg"><label>Comproprietario (se presente)</label><input type="text" id="fCompropr" placeholder="Es. Rossi Anna (50%)"></div>
+        </div>
+        <div class="fg"><label>Note fiscali</label>
+          <textarea id="fNoteFisc" placeholder="Es. Immobile in comodato d'uso al figlio - nessuna locazione in corso..." style="min-height:80px;resize:vertical;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;width:100%;outline:none;"></textarea>
+        </div>
+      </div>
+
+      <!-- PAGAMENTI -->
+      <div class="mpanel" id="mp-pagamenti">
+        <div class="r3">
+          <div class="fg"><label>Quota mensile (€)</label><input type="number" id="fQuotaMens" placeholder="Es. 150.00" step="0.01" min="0"></div>
+          <div class="fg"><label>Stato pagamenti</label>
+            <select id="fStatoPag">
+              <option value="ok">✅ In regola</option>
+              <option value="mora">⚠️ In mora</option>
+              <option value="parziale">🟡 Pagamento parziale</option>
+            </select>
+          </div>
+          <div class="fg"><label>Saldo attuale (€)</label><input type="number" id="fSaldoPag" placeholder="Es. -300.00 se in mora" step="0.01"></div>
+        </div>
+        <div class="r2">
+          <div class="fg"><label>Ultima data pagamento</label><input type="date" id="fUltimaPag"></div>
+          <div class="fg"><label>Prossima scadenza</label><input type="date" id="fProssimaPag"></div>
+        </div>
+        <div class="fg"><label>Note pagamenti</label>
+          <textarea id="fNotePag" placeholder="Es. Accordo rateizzazione mora dal 01/2025..." style="min-height:70px;resize:vertical;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;width:100%;outline:none;"></textarea>
+        </div>
+      </div>
+
+      <!-- SUBENTRI -->
+      <div class="mpanel" id="mp-subentri">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Registra i passaggi di proprietà o i cambi di inquilino. Ogni evento viene salvato nello storico della scheda.</p>
+        <div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem;margin-bottom:1rem">
+          <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Nuovo evento</div>
+          <div class="r3">
+            <div class="fg"><label>Tipo evento</label>
+              <select id="fSubTipo">
+                <option value="vendita">Vendita</option>
+                <option value="acquisto">Acquisto</option>
+                <option value="subentro_inq">Subentro inquilino</option>
+                <option value="fine_loc">Fine locazione</option>
+              </select>
+            </div>
+            <div class="fg"><label>Data evento</label><input type="date" id="fSubData"></div>
+            <div class="fg"><label>Soggetto coinvolto</label><input type="text" id="fSubSogg" placeholder="Es. Bianchi Marco"></div>
+          </div>
+          <div class="fg"><label>Note</label><input type="text" id="fSubNote" placeholder="Es. Rogito notaio Verdi del 15/03/2024"></div>
+          <button class="btn btn-g btn-sm" style="margin-top:0.5rem" onclick="addSubentroModal()">＋ Aggiungi evento</button>
+        </div>
+        <div id="subentriModalList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-g btn-sm" onclick="closeModal()">Annulla</button>
+      <button class="btn btn-p btn-sm" onclick="salvaUnita()">💾 Salva unità</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUOVO CONDOMINIO -->
+<div class="modal-overlay" id="modalCondo">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3>Nuovo Condominio</h3>
+      <button class="modal-close" onclick="document.getElementById('modalCondo').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label>Nome / Indirizzo</label><input type="text" id="ncNome" placeholder="Es. Condominio Via Roma 10"></div>
+      <div class="r2">
+        <div class="fg"><label>Codice Fiscale</label><input type="text" id="ncCF" placeholder="Es. 80012340582"></div>
+        <div class="fg"><label>Comune</label><input type="text" id="ncComune" placeholder="Es. Milano"></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>N° unità abitative</label><input type="number" id="ncNUnita" placeholder="Es. 12" min="1"></div>
+        <div class="fg"><label>Anno costruzione</label><input type="number" id="ncAnno" placeholder="Es. 1975"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-g btn-sm" onclick="document.getElementById('modalCondo').classList.remove('open')">Annulla</button>
+      <button class="btn btn-p btn-sm" onclick="salvaCondominio()">💾 Crea condominio</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATO
+// ══════════════════════════════════════════════
+var condomini = [];   // [{id, nome, cf, comune, nUnita, anno, unita:[]}]
+var condoAttivoId = null;
+var unitaSelezionataId = null;
+var filtroAttivo = 'all';
+var editingUnitaId = null;
+var subentriTemp = [];
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+window.onload = function() {
+  aggiornaStats();
+  renderCondoCards();
+};
+
+// ══════════════════════════════════════════════
+// CONDOMINI
+// ══════════════════════════════════════════════
+function openModalCondo() {
+  ['ncNome','ncCF','ncComune','ncNUnita','ncAnno'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('modalCondo').classList.add('open');
+}
+
+function salvaCondominio() {
+  var nome = (document.getElementById('ncNome')||{}).value||'';
+  if(!nome.trim()){alert('Inserisci il nome del condominio.');return;}
+  var id = 'condo-'+Date.now();
+  condomini.push({
+    id:id,
+    nome:nome.trim(),
+    cf:(document.getElementById('ncCF')||{}).value||'',
+    comune:(document.getElementById('ncComune')||{}).value||'',
+    nUnita:parseInt((document.getElementById('ncNUnita')||{}).value)||0,
+    anno:(document.getElementById('ncAnno')||{}).value||'',
+    unita:[]
+  });
+  document.getElementById('modalCondo').classList.remove('open');
+  aggiornaCondoSelect();
+  aggiornaStats();
+  renderCondoCards();
+  // Seleziona automaticamente il nuovo condominio
+  document.getElementById('condoSelect').value = id;
+  cambiaCondominio();
+}
+
+function aggiornaCondoSelect() {
+  var sel = document.getElementById('condoSelect');
+  sel.innerHTML = '<option value="">— Seleziona condominio —</option>';
+  condomini.forEach(function(c){
+    sel.innerHTML += '<option value="'+c.id+'">'+esc(c.nome)+'</option>';
+  });
+  if(condoAttivoId) sel.value = condoAttivoId;
+}
+
+function cambiaCondominio() {
+  var val = document.getElementById('condoSelect').value;
+  condoAttivoId = val || null;
+  unitaSelezionataId = null;
+  renderUnitList();
+  if(condoAttivoId) {
+    document.getElementById('viewHome').style.display = 'none';
+    document.getElementById('viewScheda').style.display = 'block';
+    var condo = getCondoAttivo();
+    document.getElementById('schedaContent').innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:var(--muted);text-align:center;padding:3rem">'+
+      '<div style="font-size:3rem;margin-bottom:1rem">🏠</div>'+
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:1.2rem;color:var(--ink);margin-bottom:0.5rem">'+esc((condo&&condo.nome)||'')+'</div>'+
+      '<p style="font-size:0.875rem;margin-bottom:1.5rem">'+((condo&&condo.unita.length)?'Seleziona una unità dalla sidebar per vederne la scheda.':'Nessuna unità ancora. Premi "+ Nuova unità" nella sidebar.')+'</p>'+
+      '<button class="btn btn-g btn-sm" onclick="tornaHome()">← Tutti i condomini</button>'+
+      '</div>';
+  } else {
+    tornaHome();
+  }
+}
+
+function tornaHome() {
+  condoAttivoId = null;
+  unitaSelezionataId = null;
+  document.getElementById('condoSelect').value = '';
+  document.getElementById('viewHome').style.display = 'block';
+  document.getElementById('viewScheda').style.display = 'none';
+  renderUnitList();
+  renderCondoCards();
+  aggiornaStats();
+}
+
+function getCondoAttivo() {
+  return condomini.find(function(c){return c.id===condoAttivoId;}) || null;
+}
+
+// ══════════════════════════════════════════════
+// UNIT LIST (SIDEBAR)
+// ══════════════════════════════════════════════
+function setFilter(f) {
+  filtroAttivo = f;
+  ['all','ok','mora','inquilino'].forEach(function(x){
+    var el=document.getElementById('f'+cap(x)); if(el) el.className='filter-btn'+(x===f?' on':'');
+  });
+  renderUnitList();
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+function renderUnitList() {
+  var el = document.getElementById('unitList');
+  var condo = getCondoAttivo();
+  if(!condo) {
+    el.innerHTML='<div style="padding:1.5rem;text-align:center;color:rgba(255,255,255,0.3);font-size:0.8rem;font-style:italic">Seleziona un condominio</div>';
+    return;
+  }
+  var q = (document.getElementById('searchInput')||{}).value||'';
+  q = q.toLowerCase().trim();
+
+  var unita = condo.unita.filter(function(u){
+    var match = !q || (u.propNome||'').toLowerCase().includes(q) || (u.interno||'').toLowerCase().includes(q) || (u.inqNome||'').toLowerCase().includes(q);
+    if(!match) return false;
+    if(filtroAttivo==='ok')        return u.statoPag==='ok'||!u.statoPag;
+    if(filtroAttivo==='mora')      return u.statoPag==='mora';
+    if(filtroAttivo==='inquilino') return !!u.inqNome;
+    return true;
+  });
+
+  if(!unita.length) {
+    el.innerHTML='<div style="padding:1.5rem;text-align:center;color:rgba(255,255,255,0.3);font-size:0.8rem;font-style:italic">'+(condo.unita.length?'Nessun risultato':'Nessuna unità. Premi "+ Nuova unità"')+'</div>';
+    return;
+  }
+
+  el.innerHTML = unita.map(function(u){
+    var dot = u.statoPag==='mora' ? 'dot-mora' : (u.statoPag==='ok'||!u.statoPag) ? 'dot-ok' : 'dot-nessuno';
+    return '<div class="unit-item'+(u.id===unitaSelezionataId?' active':'')+'" onclick="selezionaUnita(\''+u.id+'\')" id="li-'+u.id+'">'+
+      '<div class="unit-item-left">'+
+      '<div class="unit-item-nome">'+esc(u.propNome||'— Senza nome —')+'</div>'+
+      '<div class="unit-item-int">'+esc(u.interno||'—')+(u.inqNome?' · 🔑 '+esc(u.inqNome):'')+'</div>'+
+      '</div>'+
+      '<div class="unit-dot '+dot+'"></div>'+
+      '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// SCHEDA UNITÀ
+// ══════════════════════════════════════════════
+function selezionaUnita(id) {
+  unitaSelezionataId = id;
+  var condo = getCondoAttivo();
+  if(!condo) return;
+  var u = condo.unita.find(function(x){return x.id===id;});
+  if(!u) return;
+
+  document.getElementById('viewHome').style.display = 'none';
+  document.getElementById('viewScheda').style.display = 'block';
+  renderScheda(u, condo);
+  renderUnitList();
+}
+
+function showEmpty(){
+  document.getElementById('viewHome').style.display='none';
+  document.getElementById('viewScheda').style.display='none';
+}
+
+function renderScheda(u, condo) {
+  var stLabel = u.statoPag==='mora'?'⚠️ In mora':u.statoPag==='parziale'?'🟡 Parziale':'✅ In regola';
+  var stColor = u.statoPag==='mora'?'var(--accent)':u.statoPag==='parziale'?'var(--gold)':'var(--success)';
+
+  var html =
+    '<div class="scheda-header">'+
+    '<div>'+
+    '<div class="scheda-nome">'+esc(u.propNome||'— Unità senza nome —')+'</div>'+
+    '<div class="scheda-sub">'+esc(condo.nome)+' · '+esc(u.interno||'—')+' · '+esc(u.tipoUnita||'Abitazione')+'</div>'+
+    '</div>'+
+    '<div class="scheda-actions">'+
+    '<button class="btn btn-g btn-sm" onclick="openModal(\'edit\',\''+u.id+'\')">✏️ Modifica</button>'+
+    '<button class="btn btn-g btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent)" onclick="eliminaUnita(\''+u.id+'\')">🗑️ Elimina</button>'+
+    '</div></div>'+
+
+    // ANAGRAFICA
+    '<div class="sez"><div class="sez-title">👤 Proprietario</div>'+
+    '<div class="info-grid">'+
+    infoItem('Cognome e Nome', u.propNome)||''+
+    infoItem('Codice Fiscale', u.propCF, true)+
+    infoItem('Telefono', u.propTel)+
+    infoItem('Email', u.propEmail)+
+    infoItem('Indirizzo residenza', u.propIndirizzo)+
+    infoItem('Regime fiscale', regimeLabel(u.regimeFisc))+
+    '</div></div>'+
+
+    // INQUILINO
+    (u.inqNome ?
+    '<div class="sez"><div class="sez-title">🔑 Inquilino</div>'+
+    '<div class="info-grid">'+
+    infoItem('Cognome e Nome', u.inqNome)+
+    infoItem('Codice Fiscale', u.inqCF, true)+
+    infoItem('Telefono', u.inqTel)+
+    infoItem('Email', u.inqEmail)+
+    infoItem('Inizio locazione', u.inqDataInizio)+
+    '</div></div>' : '')+
+
+    // CATASTALE
+    '<div class="sez"><div class="sez-title">🏠 Dati Catastali</div>'+
+    '<div class="info-grid">'+
+    infoItem('Categoria catastale', u.catCat)+
+    infoItem('Subalterno', u.sub, true)+
+    infoItem('Foglio/Particella', u.foglio, true)+
+    infoItem('Millesimi proprietà', u.millProp)+
+    infoItem('Millesimi scala', u.millScala)+
+    infoItem('Millesimi riscaldamento', u.millRisc)+
+    infoItem('Superficie', u.superficie ? u.superficie+' mq' : null)+
+    infoItem('Rendita catastale', u.rendita ? fmt(parseFloat(u.rendita)) : null)+
+    '</div></div>'+
+
+    // PAGAMENTI
+    '<div class="sez"><div class="sez-title">💰 Situazione Pagamenti</div>'+
+    '<div class="pag-box">'+
+    '<div class="pag-stat"><div class="pag-stat-label">Quota mensile</div><div class="pag-stat-value" style="color:var(--ink)">'+fmt(parseFloat(u.quotaMens)||0)+'</div></div>'+
+    '<div class="pag-stat"><div class="pag-stat-label">Saldo attuale</div><div class="pag-stat-value" style="color:'+(parseFloat(u.saldoPag||0)<0?'var(--accent)':'var(--success)')+'">'+fmt(parseFloat(u.saldoPag)||0)+'</div></div>'+
+    '<div class="pag-stat"><div class="pag-stat-label">Stato</div><div class="pag-stat-value" style="font-size:1rem;color:'+stColor+'">'+stLabel+'</div></div>'+
+    '<div class="pag-stat"><div class="pag-stat-label">Ultima rata</div><div class="pag-stat-value" style="font-family:\'DM Mono\',monospace;font-size:1rem">'+esc(u.ultimaPag||'—')+'</div></div>'+
+    '</div>'+
+    (u.notePag?'<div class="nb" style="margin-top:0.75rem"><strong>Note</strong>'+esc(u.notePag)+'</div>':'')+
+    '</div>'+
+
+    // STORICO SUBENTRI
+    (u.subentri&&u.subentri.length ?
+    '<div class="sez"><div class="sez-title">🔄 Storico Subentri</div>'+
+    '<div class="timeline">'+
+    u.subentri.map(function(s){
+      var cls = s.tipo==='vendita'?'tl-vendita':s.tipo==='acquisto'?'tl-acquisto':'tl-subentro';
+      var lab = s.tipo==='vendita'?'Vendita':s.tipo==='acquisto'?'Acquisto':s.tipo==='subentro_inq'?'Subentro inquilino':'Fine locazione';
+      return '<div class="tl-item"><div class="tl-data">'+esc(s.data||'—')+'</div>'+
+        '<div class="tl-text"><span class="tl-type '+cls+'">'+lab+'</span>'+esc(s.sogg||'')+(s.note?' — '+esc(s.note):'')+'</div></div>';
+    }).join('')+
+    '</div></div>' : '')+
+
+    // NOTE FISCALI
+    (u.noteFisc ?
+    '<div class="sez"><div class="sez-title">📋 Note Fiscali</div>'+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;padding:1rem;font-size:0.85rem;line-height:1.6">'+esc(u.noteFisc)+'</div></div>' : '');
+
+  document.getElementById('schedaContent').innerHTML = html;
+}
+
+function infoItem(label, value, mono) {
+  if(!value) return '';
+  return '<div class="info-item"><div class="info-label">'+esc(label)+'</div>'+
+    '<div class="info-value'+(mono?' mono':'')+'">'+esc(String(value))+'</div></div>';
+}
+
+function regimeLabel(r) {
+  var map={ordinario:'IRPEF ordinaria',cedolare:'Cedolare secca 21%',cedolare_concordato:'Cedolare 10% concordato',esente:'Uso proprio'};
+  return map[r]||r||'IRPEF ordinaria';
+}
+
+// ══════════════════════════════════════════════
+// MODAL NUOVA/MODIFICA UNITÀ
+// ══════════════════════════════════════════════
+var MODAL_TABS=['anagrafe','catastale','fiscale','pagamenti','subentri'];
+
+function goMtab(name){
+  MODAL_TABS.forEach(function(n){
+    document.getElementById('mp-'+n).style.display=n===name?'block':'none';
+    document.getElementById('mt-'+n).className='mtab'+(n===name?' on':'');
+  });
+}
+
+function openModal(mode, unitaId) {
+  editingUnitaId = mode==='edit' ? unitaId : null;
+  subentriTemp = [];
+
+  // Reset campi
+  ['fInterno','fPiano','fPropNome','fPropCF','fPropTel','fPropEmail','fPropIndirizzo',
+   'fInqNome','fInqCF','fInqTel','fInqEmail','fInqDataInizio','fSub','fFoglio',
+   'fMillProp','fMillScala','fMillRisc','fSuperficie','fRendita','fClasse',
+   'fPIVA','fQuotaPropr','fCompropr','fNoteFisc','fQuotaMens','fSaldoPag',
+   'fUltimaPag','fProssimaPag','fNotePag','fSubData','fSubSogg','fSubNote'
+  ].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('fQuotaPropr').value='100';
+
+  if(mode==='edit' && unitaId) {
+    var condo=getCondoAttivo();
+    if(!condo) return;
+    var u=condo.unita.find(function(x){return x.id===unitaId;});
+    if(!u) return;
+    document.getElementById('modalTitle').textContent='Modifica Unità — '+u.interno;
+    // Popola campi
+    setVal('fInterno',u.interno); setVal('fPiano',u.piano); setVal('fTipoUnita',u.tipoUnita);
+    setVal('fPropNome',u.propNome); setVal('fPropCF',u.propCF); setVal('fPropTel',u.propTel);
+    setVal('fPropEmail',u.propEmail); setVal('fPropIndirizzo',u.propIndirizzo);
+    setVal('fInqNome',u.inqNome); setVal('fInqCF',u.inqCF); setVal('fInqTel',u.inqTel);
+    setVal('fInqEmail',u.inqEmail); setVal('fInqDataInizio',u.inqDataInizio);
+    setVal('fCatCat',u.catCat); setVal('fSub',u.sub); setVal('fFoglio',u.foglio);
+    setVal('fMillProp',u.millProp); setVal('fMillScala',u.millScala); setVal('fMillRisc',u.millRisc);
+    setVal('fSuperficie',u.superficie); setVal('fRendita',u.rendita); setVal('fClasse',u.classe);
+    setVal('fRegimeFisc',u.regimeFisc); setVal('fPIVA',u.piva); setVal('fQuotaPropr',u.quotaPropr||100);
+    setVal('fCompropr',u.compropr); setVal('fNoteFisc',u.noteFisc);
+    setVal('fQuotaMens',u.quotaMens); setVal('fStatoPag',u.statoPag||'ok'); setVal('fSaldoPag',u.saldoPag);
+    setVal('fUltimaPag',u.ultimaPag); setVal('fProssimaPag',u.prossimaPag); setVal('fNotePag',u.notePag);
+    subentriTemp = (u.subentri||[]).slice();
+  } else {
+    document.getElementById('modalTitle').textContent='Nuova Unità Immobiliare';
+  }
+
+  renderSubentriModal();
+  goMtab('anagrafe');
+  document.getElementById('modalUnita').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modalUnita').classList.remove('open'); }
+
+function setVal(id,v){ var el=document.getElementById(id); if(el&&v!==undefined&&v!==null) el.value=v; }
+function getVal(id){ var el=document.getElementById(id); return el?el.value:''; }
+
+function salvaUnita(){
+  var propNome=getVal('fPropNome').trim();
+  var interno=getVal('fInterno').trim();
+  if(!propNome&&!interno){alert('Inserisci almeno il nome del proprietario o l\'interno.');return;}
+  var condo=getCondoAttivo();
+  if(!condo){alert('Seleziona prima un condominio.');return;}
+
+  var unita={
+    id: editingUnitaId || 'u-'+Date.now(),
+    interno:interno, piano:getVal('fPiano'), tipoUnita:getVal('fTipoUnita'),
+    propNome:propNome, propCF:getVal('fPropCF'), propTel:getVal('fPropTel'),
+    propEmail:getVal('fPropEmail'), propIndirizzo:getVal('fPropIndirizzo'),
+    inqNome:getVal('fInqNome'), inqCF:getVal('fInqCF'), inqTel:getVal('fInqTel'),
+    inqEmail:getVal('fInqEmail'), inqDataInizio:getVal('fInqDataInizio'),
+    catCat:getVal('fCatCat'), sub:getVal('fSub'), foglio:getVal('fFoglio'),
+    millProp:getVal('fMillProp'), millScala:getVal('fMillScala'), millRisc:getVal('fMillRisc'),
+    superficie:getVal('fSuperficie'), rendita:getVal('fRendita'), classe:getVal('fClasse'),
+    regimeFisc:getVal('fRegimeFisc'), piva:getVal('fPIVA'), quotaPropr:getVal('fQuotaPropr'),
+    compropr:getVal('fCompropr'), noteFisc:getVal('fNoteFisc'),
+    quotaMens:getVal('fQuotaMens'), statoPag:getVal('fStatoPag'), saldoPag:getVal('fSaldoPag'),
+    ultimaPag:getVal('fUltimaPag'), prossimaPag:getVal('fProssimaPag'), notePag:getVal('fNotePag'),
+    subentri: subentriTemp.slice()
+  };
+
+  if(editingUnitaId){
+    var idx=condo.unita.findIndex(function(x){return x.id===editingUnitaId;});
+    if(idx>=0) condo.unita[idx]=unita;
+  } else {
+    condo.unita.push(unita);
+  }
+
+  closeModal();
+  renderUnitList();
+  aggiornaStats();
+  renderCondoCards();
+  selezionaUnita(unita.id);
+}
+
+function eliminaUnita(id){
+  if(!confirm('Eliminare questa unità dall\'anagrafe?')) return;
+  var condo=getCondoAttivo(); if(!condo) return;
+  condo.unita=condo.unita.filter(function(u){return u.id!==id;});
+  unitaSelezionataId=null;
+  renderUnitList();
+  aggiornaStats();
+  renderCondoCards();
+  document.getElementById('viewScheda').style.display='none';
+}
+
+// ══════════════════════════════════════════════
+// SUBENTRI MODAL
+// ══════════════════════════════════════════════
+function addSubentroModal(){
+  var tipo=getVal('fSubTipo');
+  var data=getVal('fSubData');
+  var sogg=getVal('fSubSogg').trim();
+  var note=getVal('fSubNote').trim();
+  if(!sogg&&!data){alert('Inserisci almeno il soggetto coinvolto.');return;}
+  subentriTemp.push({tipo:tipo,data:data,sogg:sogg,note:note});
+  setVal('fSubSogg',''); setVal('fSubNote',''); setVal('fSubData','');
+  renderSubentriModal();
+}
+
+function renderSubentriModal(){
+  var el=document.getElementById('subentriModalList');
+  if(!subentriTemp.length){el.innerHTML='<p style="font-size:0.82rem;color:var(--muted);font-style:italic">Nessun evento registrato.</p>';return;}
+  el.innerHTML=subentriTemp.map(function(s,i){
+    var lab={vendita:'Vendita',acquisto:'Acquisto',subentro_inq:'Subentro inquilino',fine_loc:'Fine locazione'}[s.tipo]||s.tipo;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:white;border:1px solid var(--border);border-radius:3px;margin-bottom:0.4rem;font-size:0.82rem">'+
+      '<span><strong>'+lab+'</strong> — '+esc(s.data||'—')+' — '+esc(s.sogg)+(s.note?' ('+esc(s.note)+')':'')+'</span>'+
+      '<button onclick="rmSub('+i+')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:0.9rem">✕</button>'+
+      '</div>';
+  }).join('');
+}
+
+function rmSub(i){subentriTemp.splice(i,1);renderSubentriModal();}
+
+// ══════════════════════════════════════════════
+// STATS E CARDS
+// ══════════════════════════════════════════════
+function aggiornaStats(){
+  var totUnita=condomini.reduce(function(s,c){return s+c.unita.length;},0);
+  var totInq=condomini.reduce(function(s,c){return s+c.unita.filter(function(u){return !!u.inqNome;}).length;},0);
+  document.getElementById('sgCond').textContent=condomini.length;
+  document.getElementById('sgUnita').textContent=totUnita;
+  document.getElementById('sgProp').textContent=totUnita;
+  document.getElementById('sgInq').textContent=totInq;
+}
+
+function renderCondoCards(){
+  var grid=document.getElementById('condoCardGrid');
+  if(!condomini.length){
+    grid.innerHTML='<div style="color:var(--muted);font-style:italic;font-size:0.875rem;grid-column:1/-1;padding:2rem 0;text-align:center">'+
+      'Nessun condominio ancora. Premi "+ Nuovo condominio" per iniziare.</div>';
+    return;
+  }
+  grid.innerHTML=condomini.map(function(c){
+    var morosi=c.unita.filter(function(u){return u.statoPag==='mora';}).length;
+    var inq=c.unita.filter(function(u){return !!u.inqNome;}).length;
+    return '<div class="condo-card" onclick="document.getElementById(\'condoSelect\').value=\''+c.id+'\';cambiaCondominio()">'+
+      '<div class="condo-card-nome">'+esc(c.nome)+'</div>'+
+      '<div class="condo-card-meta">'+(c.comune?esc(c.comune)+' · ':'')+esc(c.cf||'—')+'</div>'+
+      '<div class="condo-card-stats">'+
+      '<div class="condo-stat">Unità: <strong>'+c.unita.length+'</strong></div>'+
+      '<div class="condo-stat">Inquilini: <strong>'+inq+'</strong></div>'+
+      (morosi?'<div class="condo-stat" style="color:var(--accent)">Morosi: <strong>'+morosi+'</strong></div>':'')+
+      '</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// EXPORT EXCEL
+// ══════════════════════════════════════════════
+function expExcel(){
+  var condo=getCondoAttivo();
+  if(!condo||!condo.unita.length){alert('Nessuna unità da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+
+  var ws1=XLSX.utils.aoa_to_sheet(
+    [['ANAGRAFE CONDOMINIALE — '+condo.nome],[],
+     ['Interno','Tipo','Proprietario','CF Proprietario','Tel','Email','Inquilino','CF Inquilino',
+      'Cat.Catastale','Sub','Mill.Prop','Mill.Scala','Superficie','Rendita','Regime Fiscale',
+      'Quota Mens.','Stato Pag.','Saldo']].concat(
+    condo.unita.map(function(u){
+      return [u.interno,u.tipoUnita,u.propNome,u.propCF,u.propTel,u.propEmail,
+        u.inqNome,u.inqCF,u.catCat,u.sub,u.millProp,u.millScala,u.superficie,u.rendita,
+        regimeLabel(u.regimeFisc),u.quotaMens,u.statoPag,u.saldoPag];
+    })));
+  ws1['!cols']=[12,12,24,18,12,24,24,18,22,6,10,10,10,10,22,12,12,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'Anagrafe');
+
+  // Foglio morosi
+  var morosi=condo.unita.filter(function(u){return u.statoPag==='mora';});
+  if(morosi.length){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['Condomino','Interno','Quota Mensile','Saldo','Note']].concat(
+      morosi.map(function(u){return [u.propNome,u.interno,u.quotaMens,u.saldoPag,u.notePag||''];})));
+    ws2['!cols']=[24,12,14,12,30].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Morosi');
+  }
+
+  XLSX.writeFile(wb,'CondoKit_Anagrafe_'+condo.nome.replace(/\s/g,'_')+'.xlsx');
+}
+
+// ══════════════════════════════════════════════
+// IMPORT EXCEL
+// ══════════════════════════════════════════════
+function importExcel(event) {
+  var condo = getCondoAttivo();
+  if(!condo) { alert('Seleziona prima un condominio dalla sidebar.'); return; }
+  leggiFileExcel(event.target.files[0], function(unita) {
+    unita.forEach(function(u){ condo.unita.push(u); });
+    event.target.value = '';
+    renderUnitList(); aggiornaStats(); renderCondoCards();
+    alert('✅ Importate '+unita.length+' unità dal file Excel nel condominio "'+condo.nome+'".');
+  });
+}
+
+function importExcelHome(event) {
+  var file = event.target.files[0];
+  if(!file) return;
+  var nomeFile = file.name.replace(/\.[^.]+$/,'').replace(/_/g,' ');
+  var idNuovo  = 'condo-'+Date.now();
+  var nuovoCondo = {id:idNuovo, nome:nomeFile||'Condominio importato', cf:'', comune:'', nUnita:0, anno:'', unita:[]};
+  leggiFileExcel(file, function(unita) {
+    nuovoCondo.unita = unita;
+    condomini.push(nuovoCondo);
+    event.target.value = '';
+    aggiornaCondoSelect(); aggiornaStats(); renderCondoCards();
+    document.getElementById('condoSelect').value = idNuovo;
+    cambiaCondominio();
+    alert('✅ Importate '+unita.length+' unità.\nCondominio "'+nuovoCondo.nome+'" creato automaticamente.');
+  });
+}
+
+function leggiFileExcel(file, callback) {
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb   = XLSX.read(e.target.result, {type:'array'});
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      var unita = [];
+      // Salta la prima riga se è intestazione
+      var start = 0;
+      if(rows.length > 0) {
+        var prima = String(rows[0][0]||'').toLowerCase();
+        if(prima.includes('intern')||prima.includes('propr')||prima.includes('nome')||prima.includes('unit')) start=1;
+      }
+      for(var i=start; i<rows.length; i++) {
+        var r = rows[i];
+        if(!r||r.every(function(c){return !c;})) continue;
+        var u = {
+          id:        'u-xls-'+Date.now()+'-'+i,
+          interno:   String(r[0]||'').trim(),
+          tipoUnita: 'Abitazione',
+          propNome:  String(r[1]||'').trim(),
+          propCF:    String(r[2]||'').trim(),
+          propTel:   String(r[3]||'').trim(),
+          propEmail: String(r[4]||'').trim(),
+          inqNome:   String(r[5]||'').trim(),
+          inqCF:     String(r[6]||'').trim(),
+          millProp:  String(r[7]||'').trim(),
+          quotaMens: String(r[8]||'').trim(),
+          statoPag:  String(r[9]||'ok').trim().toLowerCase()||'ok',
+          saldoPag:  String(r[10]||'0').trim(),
+          subentri:  []
+        };
+        if(!u.propNome && !u.interno) continue;
+        unita.push(u);
+      }
+      callback(unita);
+    } catch(err) {
+      alert('Errore nella lettura del file.\nVerifica che sia un .xlsx o .xls valido.\n\nDettaglio: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ══════════════════════════════════════════════
+// TEMPLATE EXCEL/CSV
+// ══════════════════════════════════════════════
+function scaricaTemplateCSV() {
+  // Genera un file Excel template con SheetJS
+  var wb  = XLSX.utils.book_new();
+  var ws  = XLSX.utils.aoa_to_sheet([
+    ['Interno','Proprietario','CF Proprietario','Telefono','Email',
+     'Inquilino','CF Inquilino','Millesimi','Quota Mensile','Stato Pagamenti (ok/mora/parziale)','Saldo'],
+    ['Int.1 Sc.A','Rossi Mario','RSSMAR70A01H501Z','02 1234567','mario.rossi@email.it','','','95','150','ok','0'],
+    ['Int.2 Sc.A','Verdi Giuseppe','VRDGIU65M10H501X','02 9876543','giuseppe.verdi@email.it','Bianchi Marco','BNCMRC80B02H501Y','88','150','mora','-300'],
+    ['Int.3 Sc.A','Neri Anna','NRIANN75C41H501W','02 5556789','anna.neri@email.it','','','72','120','ok','0'],
+    ['Box 1','Rossi Mario','RSSMAR70A01H501Z','','','','','30','30','ok','0'],
+  ]);
+  ws['!cols']=[12,22,18,12,26,22,18,10,12,24,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Anagrafe');
+  XLSX.writeFile(wb,'CondoKit_Template_Anagrafe.xlsx');
+}
+// ══════════════════════════════════════════════
+// Formato CSV atteso (colonne):
+// Interno,Proprietario,CF Proprietario,Telefono,Email,Inquilino,CF Inquilino,Millesimi,Quota Mensile,Stato Pagamenti,Saldo
+// La prima riga è l'intestazione e viene ignorata.
+function importCSV(event) {
+  var condo = getCondoAttivo();
+  if(!condo) { alert('Seleziona prima un condominio dalla sidebar.'); return; }
+  var file = event.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var testo = e.target.result;
+    var righe = testo.split(/\r?\n/).filter(function(r){ return r.trim(); });
+    if(righe.length < 2) { alert('Il file CSV sembra vuoto o non valido.'); return; }
+    var importate = 0;
+    // Salta la prima riga (intestazione)
+    for(var i=1; i<righe.length; i++) {
+      var cols = parseCsvRow(righe[i]);
+      if(!cols || cols.length < 2) continue;
+      var u = {
+        id:         'u-csv-'+Date.now()+'-'+i,
+        interno:    (cols[0]||'').trim(),
+        tipoUnita:  'Abitazione',
+        propNome:   (cols[1]||'').trim(),
+        propCF:     (cols[2]||'').trim(),
+        propTel:    (cols[3]||'').trim(),
+        propEmail:  (cols[4]||'').trim(),
+        inqNome:    (cols[5]||'').trim(),
+        inqCF:      (cols[6]||'').trim(),
+        millProp:   (cols[7]||'').trim(),
+        quotaMens:  (cols[8]||'').trim(),
+        statoPag:   (cols[9]||'ok').trim().toLowerCase()||'ok',
+        saldoPag:   (cols[10]||'0').trim(),
+        subentri:   []
+      };
+      if(!u.propNome && !u.interno) continue;
+      condo.unita.push(u);
+      importate++;
+    }
+    // Reset input
+    event.target.value = '';
+    renderUnitList();
+    aggiornaStats();
+    renderCondoCards();
+    alert('✅ Importate '+importate+' unità dal file CSV.');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// Parser CSV semplice (gestisce virgolette e virgole nei campi)
+function parseCsvRow(row) {
+  var result = [], cur = '', inQ = false;
+  for(var i=0; i<row.length; i++) {
+    var c = row[i];
+    if(c==='"') { inQ=!inQ; continue; }
+    if(c===',' && !inQ) { result.push(cur); cur=''; continue; }
+    if(c===';' && !inQ) { result.push(cur); cur=''; continue; } // supporta anche il punto e virgola
+    cur+=c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

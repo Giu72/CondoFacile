@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Calcolo Maggioranze</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* SUMMARY */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}.cv.gn{color:var(--success);}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4060;}
+
+/* SCHEDE MAGGIORANZE */
+.mag-schede{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;margin-bottom:2rem;}
+.mag-scheda{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;box-shadow:0 2px 8px var(--shadow);border-top:4px solid var(--border);}
+.mag-scheda.verde{border-top-color:var(--success);}
+.mag-scheda.oro{border-top-color:var(--gold);}
+.mag-scheda.rosso{border-top-color:var(--accent);}
+.mag-scheda.blu{border-top-color:#2a5080;}
+.mag-scheda-title{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.3rem;}
+.mag-scheda-rif{font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem;}
+.mag-scheda-formula{background:var(--cream);border-radius:3px;padding:0.6rem 0.9rem;font-family:'DM Mono',monospace;font-size:0.78rem;margin-bottom:0.75rem;line-height:1.6;}
+.mag-scheda-esempio{font-size:0.8rem;color:var(--muted);line-height:1.5;}
+.mag-scheda-risultato{margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.82rem;}
+
+/* SIMULATORE */
+.sim-risultato{border-radius:4px;padding:1.5rem;text-align:center;margin-top:1.5rem;}
+.sim-risultato.pass{background:var(--success-light);border:2px solid var(--success);}
+.sim-risultato.fail{background:var(--accent-light);border:2px solid var(--accent);}
+.sim-risultato-title{font-family:'DM Serif Display',serif;font-size:1.8rem;margin-bottom:0.5rem;}
+.sim-risultato-sub{font-size:0.875rem;opacity:0.8;}
+
+/* BARRA PROGRESSO */
+.prog-wrap{margin-bottom:1rem;}
+.prog-label{display:flex;justify-content:space-between;margin-bottom:0.3rem;font-size:0.82rem;}
+.prog-bar{height:10px;background:var(--cream);border-radius:5px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:5px;transition:width 0.5s ease;}
+
+/* REGISTRO */
+.voto-item{background:white;border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;}
+.voto-item-left{flex:1;}
+.voto-desc{font-weight:500;margin-bottom:0.2rem;}
+.voto-meta{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+@media print{.navbar,.tab-bar,.brow,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <a class="nav-link" href="convocazione_assemblee.html">📨 Convocazione</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.2</div>
+  <h1>Calcolo<br><em>Maggioranze</em></h1>
+  <p class="header-sub">Calcola le maggioranze necessarie per ogni tipo di delibera, simula l'esito di una votazione e tieni il registro delle delibere approvate.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"     onclick="go('setup')">⚙️ 1 · Dati Assemblea</button>
+    <button class="tab-btn"   id="tb-tabella"    onclick="go('tabella')">📊 2 · Tabella Maggioranze</button>
+    <button class="tab-btn"   id="tb-schede"     onclick="go('schede')">📋 3 · Schede Delibere</button>
+    <button class="tab-btn"   id="tb-simulatore" onclick="go('simulatore')">🎯 4 · Simulatore Voto</button>
+    <button class="tab-btn"   id="tb-registro"   onclick="go('registro')">🗄️ 5 · Registro Delibere</button>
+  </div>
+
+  <!-- ══ TAB 1 — DATI ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati condominio e assemblea</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Data assemblea</label><input type="date" id="dataAssemblea"></div>
+        <div class="fg"><label>Convocazione</label>
+          <select id="tipoConv">
+            <option value="prima">Prima convocazione</option>
+            <option value="seconda" selected>Seconda convocazione</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">Condomini e millesimi</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">
+      Inserisci tutti i condomini con i rispettivi millesimi. Il sistema calcola automaticamente tutte le soglie di maggioranza. La somma deve fare <strong>1000</strong>.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Nome Condomino</th><th>Interno</th><th>Millesimi</th>
+          <th>Presente / Delega</th><th>Voto (sim.)</th><th></th>
+        </tr></thead>
+        <tbody id="condoBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addCondo()">＋ Aggiungi</button>
+      <button class="btn btn-g" onclick="loadDefault()">📋 Carica esempio</button>
+      <button class="btn btn-p" onclick="go('tabella')">📊 Calcola maggioranze</button>
+      <button class="btn btn-g" onclick="document.getElementById('condoBody').innerHTML='';condoCount=0;">↺ Azzera</button>
+    </div>
+    <div class="nb">
+      <strong>🔗 Collegamento con Convocazione Assemblee</strong>
+      Se hai già inserito i condomini nel modulo "Convocazione Assemblee", puoi ricopiare i dati da lì.
+      In futuro questo modulo leggerà i dati direttamente tramite il data layer condiviso.
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — TABELLA ══ -->
+  <div class="panel" id="p-tabella">
+    <div id="tabellaContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i condomini nella Tab 1 per calcolare le maggioranze.</p>
+        <button class="btn btn-g btn-sm" onclick="go('setup')">→ Inserisci dati</button>
+        &nbsp;<button class="btn btn-p btn-sm" onclick="loadDefault();go('tabella')">⚡ Esempio rapido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — SCHEDE ══ -->
+  <div class="panel" id="p-schede">
+    <div class="sl">Schede per tipo di delibera</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Ogni scheda mostra la formula di calcolo, il riferimento normativo e la soglia necessaria calcolata sul tuo condominio.
+    </p>
+    <div id="schedeContent"></div>
+  </div>
+
+  <!-- ══ TAB 4 — SIMULATORE ══ -->
+  <div class="panel" id="p-simulatore">
+    <div class="sl">Simulatore votazione</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+      Seleziona il tipo di delibera, inserisci i voti favorevoli/contrari/astenuti e il simulatore verifica istantaneamente se la delibera passa.
+    </p>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Tipo delibera</label>
+          <select id="simTipo" onchange="simulaVoto()">
+            <option value="validita2">Validità assemblea (2ª conv.) — Art.1136 c.3</option>
+            <option value="validita1">Validità assemblea (1ª conv.) — Art.1136 c.1</option>
+            <option value="ordinaria">Delibere ordinarie (2ª conv.) — Art.1136 c.3</option>
+            <option value="qualificata">Innovazioni e impianti — Art.1136 c.5</option>
+            <option value="regolamento">Regolamento condominiale — Art.1138 c.c.</option>
+            <option value="unanimita">Unanimità — Art.1138 c.c.</option>
+          </select>
+        </div>
+        <div class="fg"><label>Descrizione delibera (opz.)</label>
+          <input type="text" id="simDesc" placeholder="Es. Approvazione rendiconto 2024" oninput="simulaVoto()">
+        </div>
+      </div>
+      <div class="r4">
+        <div class="fg"><label>✅ Voti favorevoli (n°)</label>
+          <input type="number" id="simFavN" placeholder="0" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>✅ Millesimi favorevoli</label>
+          <input type="number" id="simFavM" placeholder="0" step="0.01" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>❌ Voti contrari (n°)</label>
+          <input type="number" id="simConN" placeholder="0" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>❌ Millesimi contrari</label>
+          <input type="number" id="simConM" placeholder="0" step="0.01" min="0" oninput="simulaVoto()">
+        </div>
+      </div>
+      <div class="r4">
+        <div class="fg"><label>🟡 Astenuti (n°)</label>
+          <input type="number" id="simAstN" placeholder="0" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>🟡 Millesimi astenuti</label>
+          <input type="number" id="simAstM" placeholder="0" step="0.01" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>📋 Assenti (n°)</label>
+          <input type="number" id="simAssN" placeholder="0" min="0" oninput="simulaVoto()">
+        </div>
+        <div class="fg"><label>📋 Millesimi assenti</label>
+          <input type="number" id="simAssM" placeholder="0" step="0.01" min="0" oninput="simulaVoto()">
+        </div>
+      </div>
+    </div>
+    <div id="simRisultato"></div>
+    <div class="brow">
+      <button class="btn btn-ok" onclick="registraDelibera()">✅ Registra delibera</button>
+      <button class="btn btn-g" onclick="resetSim()">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — REGISTRO ══ -->
+  <div class="panel" id="p-registro">
+    <div class="sl">Registro delibere assemblea</div>
+    <div id="registroContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">🗄️</div>
+        <p style="font-size:0.85rem;color:var(--muted)">Nessuna delibera registrata. Usa il simulatore per registrare le votazioni.</p>
+        <button class="btn btn-g btn-sm" style="margin-top:1rem" onclick="go('simulatore')">→ Vai al Simulatore</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Calcolo Maggioranze · Beta · Verificare sempre con il proprio consulente legale</div>
+
+<script>
+var PANELS = ['setup','tabella','schede','simulatore','registro'];
+var condoCount = 0;
+var delibere   = [];
+var delCount   = 0;
+
+// Definizione tutte le maggioranze art. 1136 c.c.
+var TIPI_MAGGIORANZA = [
+  {
+    id:'validita1', colore:'blu',
+    titolo:'Validità assemblea — 1ª convocazione',
+    riferimento:'Art. 1136 c. 1 c.c.',
+    formula:'Maggioranza degli intervenuti + almeno 2/3 del valore',
+    descr:'Per la prima convocazione serve più della metà dei condomini e almeno i 2/3 dei millesimi.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m*2/3); },
+    labelN:'Metà + 1 dei condomini', labelM:'2/3 dei millesimi'
+  },
+  {
+    id:'validita2', colore:'verde',
+    titolo:'Validità assemblea — 2ª convocazione',
+    riferimento:'Art. 1136 c. 3 c.c.',
+    formula:'Almeno 1/3 dei condomini + almeno 1/3 del valore',
+    descr:'Per la seconda convocazione bastano un terzo dei condomini e un terzo dei millesimi.',
+    sogliaN: function(n,m){ return Math.ceil(n/3); },
+    sogliaM: function(n,m){ return Math.ceil(m/3); },
+    labelN:'1/3 dei condomini', labelM:'1/3 dei millesimi'
+  },
+  {
+    id:'ordinaria', colore:'verde',
+    titolo:'Delibere ordinarie — 2ª convocazione',
+    riferimento:'Art. 1136 c. 3 c.c.',
+    formula:'Maggioranza degli intervenuti + almeno 1/3 del valore',
+    descr:'Le delibere ordinarie in seconda convocazione richiedono la maggioranza dei presenti e almeno 1/3 dei millesimi totali.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m/3); },
+    labelN:'Metà + 1 dei presenti', labelM:'1/3 dei millesimi totali'
+  },
+  {
+    id:'qualificata', colore:'oro',
+    titolo:'Innovazioni e impianti',
+    riferimento:'Art. 1136 c. 5 c.c.',
+    formula:'Maggioranza degli intervenuti + almeno 2/3 del valore',
+    descr:'Installazione impianti, innovazioni, rimozione barriere architettoniche: servono la maggioranza dei presenti e 2/3 dei millesimi.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m*2/3); },
+    labelN:'Metà + 1 dei presenti', labelM:'2/3 dei millesimi'
+  },
+  {
+    id:'speciale', colore:'oro',
+    titolo:'Lavori urgenti e straordinari',
+    riferimento:'Art. 1135 c.c.',
+    formula:'Maggioranza degli intervenuti + almeno metà del valore',
+    descr:'Per lavori straordinari di manutenzione e riparazione urgente serve la maggioranza dei presenti e almeno la metà dei millesimi.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m/2); },
+    labelN:'Metà + 1 dei presenti', labelM:'Metà dei millesimi'
+  },
+  {
+    id:'superbonus', colore:'oro',
+    titolo:'Interventi Superbonus / Sismabonus',
+    riferimento:'Art. 119 D.L. 34/2020',
+    formula:'Maggioranza degli intervenuti + almeno 1/3 del valore',
+    descr:'Per l\'adesione al Superbonus condominiale serve la maggioranza dei presenti e almeno 1/3 dei millesimi totali.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m/3); },
+    labelN:'Metà + 1 dei presenti', labelM:'1/3 dei millesimi totali'
+  },
+  {
+    id:'regolamento', colore:'rosso',
+    titolo:'Regolamento condominiale',
+    riferimento:'Art. 1138 c. 3 c.c.',
+    formula:'Maggioranza degli intervenuti + almeno metà del valore',
+    descr:'L\'approvazione e la modifica del regolamento condominiale richiedono la maggioranza dei presenti e almeno metà dei millesimi.',
+    sogliaN: function(n,m){ return Math.ceil(n/2)+1; },
+    sogliaM: function(n,m){ return Math.ceil(m/2); },
+    labelN:'Metà + 1 dei presenti', labelM:'Metà dei millesimi'
+  },
+  {
+    id:'unanimita', colore:'rosso',
+    titolo:'Clausole in deroga e unanimità',
+    riferimento:'Art. 1138 c. 4 c.c.',
+    formula:'Tutti i condomini + tutti i millesimi (1000)',
+    descr:'Alcune clausole del regolamento e modifiche ai diritti individuali richiedono il consenso unanime di tutti i condomini.',
+    sogliaN: function(n,m){ return n; },
+    sogliaM: function(n,m){ return m; },
+    labelN:'Tutti i condomini', labelM:'Tutti i millesimi (1000)'
+  },
+];
+
+// Requisiti simulatore per tipo
+var SIM_REQUISITI = {
+  validita1:   {id:'validita1'},
+  validita2:   {id:'validita2'},
+  ordinaria:   {id:'ordinaria'},
+  qualificata: {id:'qualificata'},
+  regolamento: {id:'regolamento'},
+  unanimita:   {id:'unanimita'},
+};
+
+// ══ TAB ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='tabella')    renderTabella();
+  if (name==='schede')     renderSchede();
+  if (name==='simulatore') simulaVoto();
+  if (name==='registro')   renderRegistro();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  document.getElementById('dataAssemblea').value = new Date().toISOString().split('T')[0];
+  addCondo(); addCondo(); addCondo();
+};
+
+// ══ CONDOMINI ══
+function addCondo(d) {
+  d = d||{};
+  condoCount++;
+  var id = condoCount;
+  var tr = document.createElement('tr');
+  tr.id = 'co-'+id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Rossi Mario"  value="'+(d.nome||'')+'"></td>'+
+    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1"             value="'+(d.interno||'')+'"></td>'+
+    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'" oninput="simulaVoto()"></td>'+
+    '<td><select class="ic" id="cp-'+id+'">'+
+      '<option value="presente"'+(d.presente==='presente'?' selected':'')+'>✅ Presente</option>'+
+      '<option value="delega"'+(d.presente==='delega'?' selected':'')+'>📋 Delega</option>'+
+      '<option value="assente"'+(d.presente==='assente'?' selected':'')+'>❌ Assente</option>'+
+    '</select></td>'+
+    '<td><select class="ic" id="cv-'+id+'">'+
+      '<option value="favorevole"'+(d.voto==='favorevole'?' selected':'')+'>✅ Favorevole</option>'+
+      '<option value="contrario"'+(d.voto==='contrario'?' selected':'')+'>❌ Contrario</option>'+
+      '<option value="astenuto"'+(d.voto==='astenuto'?' selected':'')+'>🟡 Astenuto</option>'+
+      '<option value="assente"'+(d.voto==='assente'?' selected':'')+'>📋 Assente</option>'+
+    '</select></td>'+
+    '<td><button onclick="rmCo('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('condoBody').appendChild(tr);
+}
+
+function rmCo(id) { var el=document.getElementById('co-'+id); if(el) el.remove(); }
+
+function loadDefault() {
+  document.getElementById('condoBody').innerHTML = '';
+  condoCount = 0;
+  document.getElementById('condoNome').value = 'Condominio Via Roma 10';
+  var def = [
+    {nome:'Rossi Mario',    interno:'Int.1 Sc.A', mill:95,  presente:'presente', voto:'favorevole'},
+    {nome:'Verdi Giuseppe', interno:'Int.2 Sc.A', mill:88,  presente:'presente', voto:'favorevole'},
+    {nome:'Neri Anna',      interno:'Int.3 Sc.A', mill:72,  presente:'assente',  voto:'assente'},
+    {nome:'Bianchi Laura',  interno:'Int.4 Sc.B', mill:105, presente:'delega',   voto:'favorevole'},
+    {nome:'Colombo Luca',   interno:'Int.5 Sc.B', mill:98,  presente:'presente', voto:'contrario'},
+    {nome:'Ferrari Anna',   interno:'Int.6 Sc.B', mill:80,  presente:'assente',  voto:'assente'},
+    {nome:'Russo Marco',    interno:'Box 1',       mill:30,  presente:'presente', voto:'astenuto'},
+    {nome:'Marino Carlo',   interno:'Int.7 Sc.A', mill:110, presente:'presente', voto:'favorevole'},
+    {nome:'Costa Elena',    interno:'Int.8 Sc.B', mill:92,  presente:'assente',  voto:'assente'},
+    {nome:'Bruno Lucia',    interno:'Int.9 Sc.A', mill:130, presente:'presente', voto:'favorevole'},
+  ];
+  def.forEach(function(d) { addCondo(d); });
+}
+
+function leggiCondo() {
+  var r = [];
+  document.querySelectorAll('#condoBody tr').forEach(function(tr) {
+    var id       = tr.id.replace('co-','');
+    var nome     = ((document.getElementById('cn-'+id)||{}).value||'').trim();
+    var interno  = ((document.getElementById('ci-'+id)||{}).value||'').trim();
+    var mill     = parseFloat((document.getElementById('cm-'+id)||{}).value)||0;
+    var presente = (document.getElementById('cp-'+id)||{}).value||'presente';
+    var voto     = (document.getElementById('cv-'+id)||{}).value||'favorevole';
+    if (nome) r.push({id:id, nome:nome, interno:interno, mill:mill, presente:presente, voto:voto});
+  });
+  return r;
+}
+
+// ══ TABELLA MAGGIORANZE ══
+function renderTabella() {
+  var condo = leggiCondo();
+  if (!condo.length) return;
+
+  var nTot     = condo.length;
+  var totMill  = condo.reduce(function(s,c){return s+c.mill;},0);
+  var presenti = condo.filter(function(c){return c.presente==='presente'||c.presente==='delega';});
+  var nPres    = presenti.length;
+  var millPres = presenti.reduce(function(s,c){return s+c.mill;},0);
+  var favN     = condo.filter(function(c){return c.voto==='favorevole';}).length;
+  var favM     = condo.filter(function(c){return c.voto==='favorevole';}).reduce(function(s,c){return s+c.mill;},0);
+
+  var html =
+    '<div class="sgrid">'+
+    '<div class="sc k"><div class="cl">Condomini totali</div><div class="cv">'+nTot+'</div></div>'+
+    '<div class="sc k"><div class="cl">Millesimi totali</div><div class="cv">'+totMill+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Presenti + deleghe</div><div class="cv gn">'+nPres+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Millesimi presenti</div><div class="cv gn">'+millPres+'</div></div>'+
+    '<div class="sc r"><div class="cl">Voti favorevoli</div><div class="cv a">'+favN+' ('+favM+' mill.)</div></div>'+
+    '</div>'+
+
+    // Barre di avanzamento
+    '<div class="sl">Confronto presenze con soglie</div>'+
+    '<div class="card">'+
+    progBarra('Presenti vs 1/3 (validità 2ª conv.)', nPres, Math.ceil(nTot/3), nTot, 'condomini')+
+    progBarra('Millesimi presenti vs 1/3', millPres, Math.ceil(totMill/3), totMill, 'millesimi')+
+    progBarra('Presenti vs metà+1 (delibere ordinarie)', nPres, Math.ceil(nTot/2)+1, nTot, 'condomini')+
+    progBarra('Millesimi presenti vs 2/3', millPres, Math.ceil(totMill*2/3), totMill, 'millesimi')+
+    '</div>'+
+
+    '<div class="sl">Tutte le soglie di maggioranza</div>'+
+    '<div class="tw"><table>'+
+    '<thead><tr>'+
+    '<th>Tipo delibera</th><th>Riferimento</th>'+
+    '<th style="text-align:right">Cond. richiesti</th><th style="text-align:right">Mill. richiesti</th>'+
+    '<th style="text-align:right">Cond. presenti</th><th style="text-align:right">Mill. presenti</th>'+
+    '<th>Validità assemblea</th>'+
+    '</tr></thead><tbody>'+
+    TIPI_MAGGIORANZA.map(function(t) {
+      var rN = t.sogliaN(nPres, totMill); // soglia sui presenti
+      var rM = t.sogliaM(nTot,  totMill);
+      var okN = nPres >= rN;
+      var okM = millPres >= rM;
+      var ok  = okN && okM;
+      return '<tr>'+
+        '<td><strong>'+t.titolo+'</strong></td>'+
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted)">'+t.riferimento+'</td>'+
+        '<td class="amt">'+rN+' '+(okN?'<span style="color:var(--success)">✓</span>':'<span style="color:var(--accent)">✗</span>')+'</td>'+
+        '<td class="amt">'+rM+' '+(okM?'<span style="color:var(--success)">✓</span>':'<span style="color:var(--accent)">✗</span>')+'</td>'+
+        '<td class="amt" style="font-weight:600">'+nPres+'</td>'+
+        '<td class="amt" style="font-weight:600">'+millPres+'</td>'+
+        '<td><span class="badge '+(ok?'b-ok':nPres>=rN&&!okM||!okN&&okM?'b-warn':'b-danger')+'">'+(ok?'✅ Valida':'⚠️ Non valida')+'</span></td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div>'+
+
+    '<div class="brow">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-p btn-sm" onclick="go(\'simulatore\')">🎯 Vai al simulatore</button>'+
+    '<button class="btn btn-g btn-sm" onclick="azzeraTabella()">↺ Azzera</button>'+
+    '</div>';
+
+  document.getElementById('tabellaContent').innerHTML = html;
+}
+
+function progBarra(label, val, soglia, tot, unit) {
+  var perc    = tot > 0 ? Math.min(100, (val/tot)*100) : 0;
+  var percSog = tot > 0 ? Math.min(100, (soglia/tot)*100) : 0;
+  var ok      = val >= soglia;
+  return '<div class="prog-wrap">'+
+    '<div class="prog-label">'+
+    '<span>'+label+'</span>'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.78rem;color:'+(ok?'var(--success)':'var(--accent)')+'">'+
+    val+' / '+soglia+' '+unit+' '+(ok?'✓':'✗')+'</span>'+
+    '</div>'+
+    '<div class="prog-bar" style="position:relative">'+
+    '<div class="prog-fill" style="width:'+perc+'%;background:'+(ok?'var(--success)':'var(--accent)')+'"></div>'+
+    '<div style="position:absolute;top:0;left:'+percSog+'%;width:2px;height:100%;background:rgba(0,0,0,0.3)"></div>'+
+    '</div>'+
+    '</div>';
+}
+
+// ══ SCHEDE ══
+function renderSchede() {
+  var condo   = leggiCondo();
+  var nTot    = condo.length || 10;
+  var totMill = condo.reduce(function(s,c){return s+c.mill;},0) || 1000;
+  var nPres   = condo.filter(function(c){return c.presente==='presente'||c.presente==='delega';}).length || 0;
+  var millP   = condo.filter(function(c){return c.presente==='presente'||c.presente==='delega';}).reduce(function(s,c){return s+c.mill;},0) || 0;
+
+  var html = '<div class="mag-schede">';
+  TIPI_MAGGIORANZA.forEach(function(t) {
+    var rN  = t.sogliaN(nTot, totMill);
+    var rM  = t.sogliaM(nTot, totMill);
+    var okN = nPres >= rN;
+    var okM = millP >= rM;
+    var ok  = okN && okM;
+    html += '<div class="mag-scheda '+t.colore+'">'+
+      '<div class="mag-scheda-title">'+t.titolo+'</div>'+
+      '<div class="mag-scheda-rif">'+t.riferimento+'</div>'+
+      '<div class="mag-scheda-formula">'+
+      '<strong>Formula:</strong> '+t.labelN+'<br>'+
+      '<strong>+ </strong>'+t.labelM+
+      '</div>'+
+      '<div class="mag-scheda-esempio">'+t.descr+'</div>'+
+      (condo.length ?
+      '<div class="mag-scheda-risultato">'+
+      'Sul tuo condominio ('+nTot+' cond., '+totMill+' mill.):<br>'+
+      '→ Condomini richiesti: <strong>'+rN+'</strong> '+(okN?'<span style="color:var(--success)">✓ ('+nPres+' presenti)</span>':'<span style="color:var(--accent)">✗ ('+nPres+' presenti)</span>')+'<br>'+
+      '→ Millesimi richiesti: <strong>'+rM+'</strong> '+(okM?'<span style="color:var(--success)">✓ ('+millP+' presenti)</span>':'<span style="color:var(--accent)">✗ ('+millP+' presenti)</span>')+'<br>'+
+      '<span style="margin-top:0.4rem;display:inline-block" class="badge '+(ok?'b-ok':'b-danger')+'">'+(ok?'✅ Valida con presenti attuali':'⚠️ Non valida con presenti attuali')+'</span>'+
+      '</div>' : '') +
+      '</div>';
+  });
+  html += '</div>';
+  document.getElementById('schedeContent').innerHTML = html;
+}
+
+// ══ SIMULATORE ══
+function simulaVoto() {
+  var tipo  = (document.getElementById('simTipo')||{}).value || 'ordinaria';
+  var desc  = (document.getElementById('simDesc')||{}).value || '';
+  var favN  = parseInt((document.getElementById('simFavN')||{}).value)||0;
+  var favM  = parseFloat((document.getElementById('simFavM')||{}).value)||0;
+  var conN  = parseInt((document.getElementById('simConN')||{}).value)||0;
+  var conM  = parseFloat((document.getElementById('simConM')||{}).value)||0;
+  var astN  = parseInt((document.getElementById('simAstN')||{}).value)||0;
+  var astM  = parseFloat((document.getElementById('simAstM')||{}).value)||0;
+  var assN  = parseInt((document.getElementById('simAssN')||{}).value)||0;
+  var assM  = parseFloat((document.getElementById('simAssM')||{}).value)||0;
+
+  var totN  = favN+conN+astN+assN;
+  var totM  = favM+conM+astM+assM;
+  var presN = favN+conN+astN;
+  var presM = favM+conM+astM;
+
+  // Se non ci sono dati prova a leggere dal tab condomini
+  var condo = leggiCondo();
+  if (!totN && condo.length) {
+    favN = condo.filter(function(c){return c.voto==='favorevole';}).length;
+    favM = condo.filter(function(c){return c.voto==='favorevole';}).reduce(function(s,c){return s+c.mill;},0);
+    conN = condo.filter(function(c){return c.voto==='contrario';}).length;
+    conM = condo.filter(function(c){return c.voto==='contrario';}).reduce(function(s,c){return s+c.mill;},0);
+    astN = condo.filter(function(c){return c.voto==='astenuto';}).length;
+    astM = condo.filter(function(c){return c.voto==='astenuto';}).reduce(function(s,c){return s+c.mill;},0);
+    assN = condo.filter(function(c){return c.voto==='assente';}).length;
+    assM = condo.filter(function(c){return c.voto==='assente';}).reduce(function(s,c){return s+c.mill;},0);
+    totN = condo.length;
+    totM = condo.reduce(function(s,c){return s+c.mill;},0);
+    presN = favN+conN+astN;
+    presM = favM+conM+astM;
+  }
+
+  var def = TIPI_MAGGIORANZA.find(function(t){return t.id===tipo;});
+  if (!def || !totN) {
+    document.getElementById('simRisultato').innerHTML='';
+    return;
+  }
+
+  var rN  = def.sogliaN(presN, totM);
+  var rM  = def.sogliaM(totN,  totM);
+  var okN = favN >= rN;
+  var okM = favM >= rM;
+  var ok  = okN && okM;
+
+  var html =
+    '<div class="sim-risultato '+(ok?'pass':'fail')+'">'+
+    '<div class="sim-risultato-title">'+(ok?'✅ DELIBERA APPROVATA':'❌ DELIBERA NON APPROVATA')+'</div>'+
+    '<div class="sim-risultato-sub">'+def.titolo+' · '+def.riferimento+'</div>'+
+    '</div>'+
+    '<div class="card" style="margin-top:1.5rem">'+
+    '<div class="sl">Dettaglio votazione</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">'+
+    '<div>'+
+    progBarra('✅ Favorevoli — soglia '+rN+' (n°)', favN, rN, presN, 'condomini')+
+    progBarra('✅ Millesimi favorevoli — soglia '+rM, favM, rM, totM, 'millesimi')+
+    '</div>'+
+    '<div style="font-size:0.875rem;line-height:2">'+
+    '<div><strong>Presenti:</strong> '+presN+' cond. / '+presM+' mill.</div>'+
+    '<div style="color:var(--success)"><strong>✅ Favorevoli:</strong> '+favN+' cond. / '+favM+' mill.</div>'+
+    '<div style="color:var(--accent)"><strong>❌ Contrari:</strong> '+conN+' cond. / '+conM+' mill.</div>'+
+    '<div style="color:var(--gold)"><strong>🟡 Astenuti:</strong> '+astN+' cond. / '+astM+' mill.</div>'+
+    '<div style="color:var(--muted)"><strong>📋 Assenti:</strong> '+assN+' cond. / '+assM+' mill.</div>'+
+    '</div>'+
+    '</div>'+
+    '<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--muted)">'+
+    '<strong>Soglie richieste:</strong> '+rN+' favorevoli (n°) '+(okN?'✓':'✗')+' · '+rM+' millesimi favorevoli '+(okM?'✓':'✗')+
+    '</div></div>';
+
+  document.getElementById('simRisultato').innerHTML = html;
+  window._simCorrente = {tipo:tipo, def:def, desc:desc, favN:favN, favM:favM, conN:conN, conM:conM, astN:astN, astM:astM, assN:assN, assM:assM, rN:rN, rM:rM, ok:ok, presN:presN, presM:presM, totN:totN, totM:totM};
+}
+
+function resetSim() {
+  ['simFavN','simFavM','simConN','simConM','simAstN','simAstM','simAssN','simAssM','simDesc'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('simRisultato').innerHTML='';
+  window._simCorrente = null;
+}
+
+function registraDelibera() {
+  var s = window._simCorrente;
+  if (!s) { alert('Esegui prima una simulazione di voto.'); return; }
+  delCount++;
+  var cNome = (document.getElementById('condoNome')||{}).value || 'Condominio';
+  var dAss  = (document.getElementById('dataAssemblea')||{}).value || new Date().toISOString().split('T')[0];
+  delibere.push({
+    id:    delCount,
+    desc:  s.desc || s.def.titolo,
+    tipo:  s.def.titolo,
+    rif:   s.def.riferimento,
+    ok:    s.ok,
+    favN:  s.favN,  favM:  s.favM,
+    conN:  s.conN,  conM:  s.conM,
+    astN:  s.astN,  astM:  s.astM,
+    rN:    s.rN,    rM:    s.rM,
+    presN: s.presN, presM: s.presM,
+    totN:  s.totN,  totM:  s.totM,
+    cNome: cNome,   data:  dAss,
+  });
+  alert('✅ Delibera n.'+delCount+' registrata!\n'+(s.ok?'APPROVATA':'NON APPROVATA')+' — '+s.def.titolo);
+  renderRegistro();
+}
+
+// ══ REGISTRO ══
+function renderRegistro() {
+  var el = document.getElementById('registroContent');
+  if (!delibere.length) {
+    el.innerHTML='<div class="card" style="text-align:center;padding:2.5rem">'+
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">🗄️</div>'+
+      '<p style="font-size:0.85rem;color:var(--muted)">Nessuna delibera registrata.</p>'+
+      '<button class="btn btn-g btn-sm" style="margin-top:1rem" onclick="go(\'simulatore\')">→ Vai al Simulatore</button></div>';
+    return;
+  }
+
+  var html =
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa registro</button>'+
+    '<button class="btn btn-g btn-sm" onclick="if(confirm(\'Cancellare tutto il registro?\'))delibere=[];renderRegistro()">↺ Azzera registro</button>'+
+    '</div>'+
+    delibere.map(function(d) {
+      return '<div class="voto-item">'+
+        '<div class="voto-item-left">'+
+        '<div class="voto-desc">Delibera n.'+d.id+': <strong>'+esc(d.desc)+'</strong></div>'+
+        '<div class="voto-meta">'+esc(d.tipo)+' · '+esc(d.rif)+' · '+esc(d.cNome)+' · '+esc(d.data)+'</div>'+
+        '<div class="voto-meta" style="margin-top:0.2rem">'+
+        '✅ '+d.favN+' fav. ('+d.favM+' mill.) · ❌ '+d.conN+' contr. · 🟡 '+d.astN+' ast. · '+
+        'Soglia: '+d.rN+' cond. + '+d.rM+' mill.</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:0.5rem;align-items:center">'+
+        '<span class="badge '+(d.ok?'b-ok':'b-danger')+'" style="font-size:0.75rem">'+
+        (d.ok?'✅ APPROVATA':'❌ NON APPROVATA')+'</span>'+
+        '<button onclick="rimuoviDelibera('+d.id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem">✕</button>'+
+        '</div>'+
+        '</div>';
+    }).join('');
+
+  el.innerHTML = html;
+}
+
+function rimuoviDelibera(id) {
+  delibere = delibere.filter(function(d){return d.id!==id;});
+  renderRegistro();
+}
+
+// ══ AZZERA TABELLA ══
+function azzeraTabella() {
+  document.getElementById('condoBody').innerHTML = '';
+  condoCount = 0;
+  document.getElementById('tabellaContent').innerHTML =
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+    '<div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>' +
+    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i condomini nella Tab 1 per calcolare le maggioranze.</p>' +
+    '<button class="btn btn-g btn-sm" onclick="go(\'setup\')">→ Inserisci dati</button>' +
+    '&nbsp;<button class="btn btn-p btn-sm" onclick="loadDefault();go(\'tabella\')">⚡ Esempio rapido</button>' +
+    '</div>';
+  go('setup');
+}
+
+// ══ UTILS ══
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

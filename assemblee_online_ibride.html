@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Assemblee Online e Ibride</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-zoom{background:#2D8CFF;color:white;}.btn-zoom:hover{background:#1a6fd8;}
+.btn-meet{background:#34A853;color:white;}.btn-meet:hover{background:#2d9247;}
+.btn-teams{background:#464775;color:white;}.btn-teams:hover{background:#363760;}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-online{background:#d0e8ff;color:#1a4080;}
+.b-presenza{background:var(--success-light);color:var(--success);}
+.b-ibrida{background:#e8d0f0;color:#601080;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* PIATTAFORMA CARD */
+.piatt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.piatt-card{border:2px solid var(--border);border-radius:6px;padding:1.25rem;cursor:pointer;transition:all 0.2s;text-align:center;}
+.piatt-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px var(--shadow);}
+.piatt-card.sel{border-color:var(--accent);background:var(--accent-light);}
+.piatt-logo{font-size:2.5rem;margin-bottom:0.5rem;}
+.piatt-nome{font-weight:600;font-size:0.9rem;}
+.piatt-desc{font-size:0.75rem;color:var(--muted);margin-top:0.25rem;}
+
+/* VOTO CARD */
+.voto-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px var(--shadow);}
+.voto-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.voto-titolo{font-family:'DM Serif Display',serif;font-size:1rem;}
+.voto-buttons{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.voto-btn{padding:0.4rem 0.9rem;border-radius:3px;border:2px solid transparent;font-size:0.82rem;cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.15s;}
+.voto-btn.fav{background:var(--success-light);color:var(--success);border-color:var(--success);}
+.voto-btn.con{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+.voto-btn.ast{background:var(--gold-light);color:var(--warning);border-color:var(--gold);}
+.voto-risultato{margin-top:0.75rem;padding:0.6rem 0.9rem;border-radius:3px;font-family:'DM Mono',monospace;font-size:0.8rem;}
+.voto-risultato.ok{background:var(--success-light);color:var(--success);}
+.voto-risultato.fail{background:var(--accent-light);color:var(--accent);}
+.voto-risultato.aperto{background:var(--cream);color:var(--muted);}
+
+/* ISTRUZIONI */
+.istr-box{background:var(--ink);color:var(--paper);border-radius:4px;padding:1.5rem 2rem;margin-bottom:1.5rem;font-size:0.875rem;line-height:1.8;}
+.istr-title{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:1rem;color:#e8b090;}
+.istr-step{display:flex;gap:0.75rem;margin-bottom:0.75rem;align-items:flex-start;}
+.istr-num{font-family:'DM Mono',monospace;font-size:0.75rem;background:rgba(255,255,255,0.15);padding:0.2rem 0.5rem;border-radius:2px;flex-shrink:0;margin-top:0.1rem;}
+
+/* LINK BOX */
+.link-box{background:var(--cream);border:2px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;}
+.link-url{font-family:'DM Mono',monospace;font-size:0.82rem;word-break:break-all;flex:1;}
+
+/* DOCUMENTO */
+.doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-st{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-an{font-family:'DM Mono',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;}
+.doc-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.7;}
+.doc-bd p{margin-bottom:0.75rem;}
+.doc-ogg{background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin:1.25rem 0;font-weight:500;}
+.firma-line{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2.5rem;}
+.doc-ft{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.lnav,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.doc{box-shadow:none;border:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="convocazione_assemblee.html">📨 Convocazione</a>
+    <a class="nav-link" href="presenze_millesimi.html">👥 Presenze</a>
+    <a class="nav-link" href="redazione_verbale.html">📄 Verbale</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.7</div>
+  <h1>Assemblee<br><em>Online e Ibride</em></h1>
+  <p class="header-sub">Configura la piattaforma, gestisci le presenze miste, registra i voti virtuali e genera le istruzioni per i condomini e il verbale specifico.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-config"    onclick="go('config')">⚙️ 1 · Configurazione</button>
+    <button class="tab-btn"   id="tb-presenze"   onclick="go('presenze')">👥 2 · Presenze Ibride</button>
+    <button class="tab-btn"   id="tb-voti"       onclick="go('voti')">🗳️ 3 · Voti Virtuali</button>
+    <button class="tab-btn"   id="tb-istruzioni" onclick="go('istruzioni')">📋 4 · Istruzioni Condomini</button>
+    <button class="tab-btn"   id="tb-verbale"    onclick="go('verbale')">📄 5 · Verbale Online</button>
+  </div>
+
+  <div class="panel on" id="p-config">   <div id="c-config"></div>   </div>
+  <div class="panel"    id="p-presenze"> <div id="c-presenze"></div> </div>
+  <div class="panel"    id="p-voti">     <div id="c-voti"></div>     </div>
+  <div class="panel"    id="p-istruzioni"><div id="c-istruzioni"></div></div>
+  <div class="panel"    id="p-verbale">  <div id="c-verbale"></div>  </div>
+</div>
+
+<div class="page-footer">CondoKit · Assemblee Online e Ibride · Beta · D.L. 18/2020 e art. 66 disp. att. c.c.</div>
+
+<script>
+var PANELS = ['config','presenze','voti','istruzioni','verbale'];
+
+// ══ STATO GLOBALE ══
+var cfg = {
+  condoNome:'', condoCF:'', studioNome:'',
+  dataAss:'', oraAss:'19:00', tipoAss:'ibrida',
+  piattaforma:'zoom', linkMeeting:'', password:'', idRiunione:'',
+  nVerbale:'', presidente:'', segretario:''
+};
+
+var condomini = [];  // {id, nome, interno, mill, email, modalita:'online'|'presenza'}
+var condoCount = 0;
+
+var puntiODG  = [];  // {id, titolo, voti:{favN,favM,conN,conM,astN,astM}, stato:'aperto'|'chiuso'}
+var odgCount  = 0;
+
+var PIATTAFORME = {
+  zoom:  {nome:'Zoom',      logo:'📹', colore:'#2D8CFF', desc:'Riunioni Zoom'},
+  meet:  {nome:'Google Meet',logo:'📱', colore:'#34A853', desc:'Google Meet'},
+  teams: {nome:'Teams',     logo:'💼', colore:'#464775', desc:'Microsoft Teams'},
+  altra: {nome:'Altra',     logo:'🌐', colore:'#7a7060', desc:'Altra piattaforma'},
+};
+
+// ══ TAB SYSTEM (pattern draw — tutto dentro il JS) ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='config')     drawConfig();
+  if (name==='presenze')   drawPresenze();
+  if (name==='voti')       drawVoti();
+  if (name==='istruzioni') drawIstruzioni();
+  if (name==='verbale')    drawVerbale();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  cfg.dataAss = new Date().toISOString().split('T')[0];
+  drawConfig();
+};
+
+function switchTo(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='config')     drawConfig();
+  if (name==='presenze')   drawPresenze();
+  if (name==='voti')       drawVoti();
+  if (name==='istruzioni') drawIstruzioni();
+  if (name==='verbale')    drawVerbale();
+}
+
+// ══ TAB 1 — CONFIGURAZIONE ══
+function drawConfig() {
+  var el = document.getElementById('c-config');
+  var piattCards = Object.keys(PIATTAFORME).map(function(k) {
+    var p = PIATTAFORME[k];
+    return '<div class="piatt-card'+(cfg.piattaforma===k?' sel':'')+'" onclick="setPiatt(\''+k+'\')" id="piatt-'+k+'">' +
+      '<div class="piatt-logo">'+p.logo+'</div>' +
+      '<div class="piatt-nome">'+p.nome+'</div>' +
+      '<div class="piatt-desc">'+p.desc+'</div>' +
+      '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="sl">Dati assemblea</div>' +
+    '<div class="card">' +
+      '<div class="r3">' +
+        fgi('condoNome','Nome Condominio',cfg.condoNome,'Es. Condominio Via Roma 10') +
+        fgi('condoCF','Codice Fiscale',cfg.condoCF,'Es. 80012340582') +
+        fgi('studioNome','Amministratore / Studio',cfg.studioNome,'Es. Studio Amm. Bianchi') +
+      '</div>' +
+      '<div class="r4">' +
+        fgd('dataAss','Data assemblea',cfg.dataAss) +
+        fgt('oraAss','Ora',cfg.oraAss) +
+        fgi('presidente','Presidente',cfg.presidente,'Es. Rossi Mario') +
+        fgi('segretario','Segretario',cfg.segretario,'Es. Verdi Giuseppe') +
+      '</div>' +
+      '<div class="r2">' +
+        fgi('nVerbale','N° verbale',cfg.nVerbale,'Es. 01/2025') +
+        fgsel('tipoAss','Tipo assemblea',cfg.tipoAss,[
+          {v:'online',l:'💻 Interamente online'},
+          {v:'ibrida',l:'🔀 Ibrida (online + presenza'},
+        ]) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="sl">Piattaforma videoconferenza</div>' +
+    '<div class="piatt-grid">'+piattCards+'</div>' +
+
+    '<div class="card">' +
+      '<div class="r3">' +
+        fgi('linkMeeting','Link riunione',cfg.linkMeeting,
+          cfg.piattaforma==='zoom'  ? 'https://zoom.us/j/123456789' :
+          cfg.piattaforma==='meet'  ? 'https://meet.google.com/abc-defg-hij' :
+          cfg.piattaforma==='teams' ? 'https://teams.microsoft.com/l/meetup-join/...' :
+          'https://...') +
+        fgi('idRiunione','ID riunione',cfg.idRiunione,
+          cfg.piattaforma==='zoom'  ? 'Es. 123 456 789' :
+          cfg.piattaforma==='teams' ? 'Es. ID riunione Teams' : 'Es. ID riunione') +
+        fgi('password','Password / Passcode',cfg.password,'Es. Condo2025') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaCfgEVai()">→ Gestisci presenze</button>' +
+      '<button class="btn btn-g" onclick="loadDefault()">📋 Carica esempio</button>' +
+      '<button class="btn btn-g" onclick="azzeraConfig()">↺ Azzera</button>' +
+    '</div>' +
+
+    '<div class="nb"><strong>⚖️ Riferimento normativo</strong>' +
+    'Le assemblee condominiali online e ibride sono ammesse dal D.L. 18/2020 (conv. L. 27/2020) e dalle norme successive. ' +
+    'Il regolamento condominiale può prevedere specifiche modalità. ' +
+    'È necessario garantire l\'identificazione dei partecipanti e la possibilità di deliberare in tempo reale.</div>';
+}
+
+function fgi(id, label, value, ph) {
+  return '<div class="fg"><label>'+label+'</label>' +
+    '<input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" onchange="cfg[\''+id+'\']=this.value"></div>';
+}
+function fgd(id, label, value) {
+  return '<div class="fg"><label>'+label+'</label>' +
+    '<input type="date" id="'+id+'" value="'+esc(value)+'" onchange="cfg[\''+id+'\']=this.value"></div>';
+}
+function fgt(id, label, value) {
+  return '<div class="fg"><label>'+label+'</label>' +
+    '<input type="time" id="'+id+'" value="'+esc(value)+'" onchange="cfg[\''+id+'\']=this.value"></div>';
+}
+function fgsel(id, label, value, opts) {
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'" onchange="cfg[\''+id+'\']=this.value">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('') +
+    '</select></div>';
+}
+
+function setPiatt(k) {
+  cfg.piattaforma = k;
+  // Se il link attuale è un esempio dell'altra piattaforma, lo pulisce
+  var esempi = {
+    zoom:  'https://zoom.us/j/123456789',
+    meet:  'https://meet.google.com/abc-defg-hij',
+    teams: 'https://teams.microsoft.com/l/meetup-join/...',
+    altra: '',
+  };
+  // Sostituisce il link solo se era un esempio preimpostato (non modificato dall'utente)
+  var valoriEsempio = Object.values(esempi);
+  if (!cfg.linkMeeting || valoriEsempio.indexOf(cfg.linkMeeting) !== -1) {
+    cfg.linkMeeting = esempi[k] || '';
+  }
+  // Aggiorna anche il campo visibile se esiste
+  var el = document.getElementById('linkMeeting');
+  if (el) el.value = cfg.linkMeeting;
+  drawConfig();
+}
+
+function salvaCfgEVai() {
+  var campi=['condoNome','condoCF','studioNome','dataAss','oraAss','presidente','segretario','nVerbale','tipoAss','linkMeeting','idRiunione','password'];
+  campi.forEach(function(id){var el=document.getElementById(id);if(el)cfg[id]=el.value;});
+  switchTo('presenze');
+}
+
+function loadDefault() {
+  cfg.condoNome   = 'Condominio Via Roma 10';
+  cfg.condoCF     = '80012340582';
+  cfg.studioNome  = 'Studio Amm. Bianchi';
+  cfg.dataAss     = new Date().toISOString().split('T')[0];
+  cfg.oraAss      = '19:00';
+  cfg.tipoAss     = 'ibrida';
+  cfg.piattaforma = 'zoom';
+  cfg.linkMeeting = 'https://zoom.us/j/123456789';
+  cfg.idRiunione  = '123 456 789';
+  cfg.password    = 'Condo2025';
+  cfg.nVerbale    = '01/2025';
+  cfg.presidente  = 'Rossi Mario';
+  cfg.segretario  = 'Verdi Giuseppe';
+  condomini=[]; condoCount=0;
+  var def=[
+    {nome:'Rossi Mario',    interno:'Int.1 Sc.A',mill:95,  email:'mario.rossi@email.it',   modalita:'presenza'},
+    {nome:'Verdi Giuseppe', interno:'Int.2 Sc.A',mill:88,  email:'giuseppe.verdi@email.it',modalita:'online'},
+    {nome:'Neri Anna',      interno:'Int.3 Sc.A',mill:72,  email:'anna.neri@email.it',     modalita:'online'},
+    {nome:'Bianchi Laura',  interno:'Int.4 Sc.B',mill:105, email:'laura.bianchi@email.it', modalita:'presenza'},
+    {nome:'Colombo Luca',   interno:'Int.5 Sc.B',mill:98,  email:'luca.colombo@email.it',  modalita:'online'},
+    {nome:'Ferrari Anna',   interno:'Int.6 Sc.B',mill:80,  email:'anna.ferrari@email.it',  modalita:'assente'},
+    {nome:'Russo Marco',    interno:'Box 1',      mill:30,  email:'marco.russo@email.it',   modalita:'presenza'},
+    {nome:'Marino Carlo',   interno:'Int.7 Sc.A', mill:110, email:'carlo.marino@email.it',  modalita:'online'},
+  ];
+  def.forEach(function(d){condoCount++;condomini.push({id:'c'+condoCount,nome:d.nome,interno:d.interno,mill:d.mill,email:d.email,modalita:d.modalita});});
+  puntiODG=[]; odgCount=0;
+  var odg=['Lettura e approvazione verbale precedente','Approvazione rendiconto consuntivo','Approvazione bilancio preventivo','Varie ed eventuali'];
+  odg.forEach(function(t){odgCount++;puntiODG.push({id:'o'+odgCount,titolo:t,voti:{favN:0,favM:0,conN:0,conM:0,astN:0,astM:0},stato:'aperto'});});
+  drawConfig();
+}
+
+function azzeraConfig() {
+  if(!confirm('Azzera tutti i dati di configurazione?')) return;
+  cfg={condoNome:'',condoCF:'',studioNome:'',dataAss:new Date().toISOString().split('T')[0],
+       oraAss:'19:00',tipoAss:'ibrida',piattaforma:'zoom',linkMeeting:'',password:'',
+       idRiunione:'',nVerbale:'',presidente:'',segretario:''};
+  condomini=[]; condoCount=0; puntiODG=[]; odgCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='config'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='config'?' on':'');
+  });
+  drawConfig();
+}
+
+// ══ TAB 2 — PRESENZE IBRIDE ══
+function drawPresenze() {
+  var el = document.getElementById('c-presenze');
+  var nTot   = condomini.length;
+  var online = condomini.filter(function(c){return c.modalita==='online';});
+  var pres   = condomini.filter(function(c){return c.modalita==='presenza';});
+  var ass    = condomini.filter(function(c){return c.modalita==='assente';});
+  var mOnline= online.reduce(function(s,c){return s+c.mill;},0);
+  var mPres  = pres.reduce(function(s,c){return s+c.mill;},0);
+  var totM   = condomini.reduce(function(s,c){return s+c.mill;},0);
+  var nPartecipanti = online.length+pres.length;
+  var mPartecipanti = mOnline+mPres;
+  var nlOk   = nPartecipanti>=Math.ceil(nTot/3) && mPartecipanti>=Math.ceil(totM/3);
+
+  var righe = condomini.map(function(c){
+    var bg = c.modalita==='online'?'background:#f0f8ff':c.modalita==='presenza'?'background:#f0fff4':'';
+    return '<tr style="'+bg+'">' +
+      '<td><input class="ic" type="text" value="'+esc(c.nome)+'" onchange="aggCondo(\''+c.id+'\',\'nome\',this.value)"></td>' +
+      '<td><input class="ic" type="text" value="'+esc(c.interno)+'" onchange="aggCondo(\''+c.id+'\',\'interno\',this.value)" style="max-width:90px"></td>' +
+      '<td><input class="ic" type="number" value="'+c.mill+'" min="0" step="0.01" onchange="aggCondo(\''+c.id+'\',\'mill\',parseFloat(this.value)||0);drawPresenze()" style="max-width:70px"></td>' +
+      '<td><input class="ic" type="email" value="'+esc(c.email)+'" onchange="aggCondo(\''+c.id+'\',\'email\',this.value)" placeholder="email@..."></td>' +
+      '<td>' +
+        '<select class="ic" onchange="aggCondo(\''+c.id+'\',\'modalita\',this.value);drawPresenze()">' +
+          '<option value="online"'+(c.modalita==='online'?' selected':'')+'>💻 Online</option>' +
+          '<option value="presenza"'+(c.modalita==='presenza'?' selected':'')+'>🏢 Presenza</option>' +
+          '<option value="assente"'+(c.modalita==='assente'?' selected':'')+'>❌ Assente</option>' +
+        '</select>' +
+      '</td>' +
+      '<td><button onclick="rmCondo(\''+c.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="'+(nlOk?'':'')+'sgrid">' +
+    '<div class="sc k"><div class="cl">Totale condomini</div><div class="cv">'+nTot+'</div></div>' +
+    '<div class="sc bl"><div class="cl">💻 Online</div><div class="cv" style="color:#2a5080">'+online.length+'</div></div>' +
+    '<div class="sc gn"><div class="cl">🏢 Presenza</div><div class="cv gn">'+pres.length+'</div></div>' +
+    '<div class="sc '+(nlOk?'gn':'r')+'"><div class="cl">N° legale (2ª conv.)</div><div class="cv '+(nlOk?'gn':'a')+'">'+(nlOk?'✅ OK':'⚠️ No')+'</div></div>' +
+    '</div>' +
+
+    '<div style="background:'+(nlOk?'var(--success-light)':'var(--accent-light)')+';border:1px solid '+(nlOk?'var(--success)':'var(--accent)')+';border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">' +
+    '<span style="font-size:0.875rem"><strong>'+(nlOk?'✅ Numero legale raggiunto':'⚠️ Numero legale non ancora raggiunto')+'</strong> — ' +
+    nPartecipanti+' partecipanti ('+mPartecipanti+' mill.) su '+nTot+' ('+totM+' mill.)</span>' +
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem">Soglia: '+Math.ceil(nTot/3)+' cond. + '+Math.ceil(totM/3)+' mill.</span>' +
+    '</div>' +
+
+    '<div class="tw"><table>' +
+    '<thead><tr><th>Nome</th><th>Interno</th><th>Millesimi</th><th>Email</th><th>Modalità</th><th></th></tr></thead>' +
+    '<tbody>'+(righe||'<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted);font-style:italic">Nessun condomino. Torna alla configurazione.</td></tr>')+'</tbody>' +
+    '</table></div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-g" onclick="addCondo()">＋ Aggiungi</button>' +
+      '<button class="btn btn-p" onclick="switchTo(\'voti\')">→ Vai ai voti</button>' +
+      '<button class="btn btn-g" onclick="azzeraPresenze()">↺ Azzera presenze</button>' +
+    '</div>' +
+
+    '<div class="nb"><strong>📌 Presenze ibride — come funziona</strong>' +
+    'I condomini Online partecipano via '+PIATTAFORME[cfg.piattaforma].nome+'. ' +
+    'Quelli in Presenza sono fisicamente presenti. ' +
+    'Entrambi concorrono al numero legale e alle maggioranze. ' +
+    'Assicurati che i partecipanti online siano identificati prima dell\'apertura dell\'assemblea.</div>';
+}
+
+function aggCondo(id, campo, val) {
+  var c=condomini.find(function(x){return x.id===id;}); if(c) c[campo]=val;
+}
+function addCondo() {
+  condoCount++;
+  condomini.push({id:'c'+condoCount,nome:'',interno:'',mill:0,email:'',modalita:'online'});
+  drawPresenze();
+}
+function rmCondo(id) {
+  condomini=condomini.filter(function(c){return c.id!==id;}); drawPresenze();
+}
+function azzeraPresenze() {
+  if(!confirm('Azzera la lista condomini?')) return;
+  condomini=[]; condoCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='presenze'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='presenze'?' on':'');
+  });
+  drawPresenze();
+}
+
+// ══ TAB 3 — VOTI VIRTUALI ══
+function drawVoti() {
+  var el = document.getElementById('c-voti');
+  var nTot = condomini.length;
+  var totM = condomini.reduce(function(s,c){return s+c.mill;},0);
+  var nPres= condomini.filter(function(c){return c.modalita!=='assente';}).length;
+  var mPres= condomini.filter(function(c){return c.modalita!=='assente';}).reduce(function(s,c){return s+c.mill;},0);
+
+  var puntiHtml = '';
+  if (!puntiODG.length) {
+    puntiHtml = '<div style="text-align:center;padding:2rem;color:var(--muted);font-style:italic;background:var(--cream);border:1px solid var(--border);border-radius:4px;margin-bottom:1.5rem">Nessun punto ODG. Aggiungili con il campo qui sotto.</div>';
+  } else {
+    puntiHtml = puntiODG.map(function(p) {
+      var sogN = Math.ceil(nPres/2)+1;
+      var sogM = Math.ceil(totM/3);
+      var okN  = p.voti.favN>=sogN;
+      var okM  = p.voti.favM>=sogM;
+      var approv= okN&&okM;
+      var statoClass = p.stato==='chiuso'?(approv?'ok':'fail'):'aperto';
+      var statoTxt   = p.stato==='chiuso'?(approv?'✅ Approvata':'❌ Respinta'):'⏳ Votazione aperta';
+
+      return '<div class="voto-card">' +
+        '<div class="voto-header">' +
+          '<div class="voto-titolo">'+esc(p.titolo)+'</div>' +
+          '<div>' +
+            (p.stato==='aperto' ?
+              '<button class="btn btn-g btn-sm" onclick="chiudiVoto(\''+p.id+'\')">🔒 Chiudi votazione</button>' :
+              '<button class="btn btn-g btn-sm" onclick="riapriVoto(\''+p.id+'\')">🔓 Riapri</button>') +
+            ' <button onclick="rmOdg(\''+p.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem;margin-left:0.5rem">✕</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.5rem;margin-bottom:0.75rem">' +
+          votoCella('✅ Fav. (n°)','favN',p.id,p.voti.favN,p.stato==='chiuso') +
+          votoCella('✅ Fav. mill.','favM',p.id,p.voti.favM,p.stato==='chiuso') +
+          votoCella('❌ Contr. (n°)','conN',p.id,p.voti.conN,p.stato==='chiuso') +
+          votoCella('❌ Contr. mill.','conM',p.id,p.voti.conM,p.stato==='chiuso') +
+          votoCella('🟡 Ast. (n°)','astN',p.id,p.voti.astN,p.stato==='chiuso') +
+          votoCella('🟡 Ast. mill.','astM',p.id,p.voti.astM,p.stato==='chiuso') +
+        '</div>' +
+
+        '<div class="voto-risultato '+statoClass+'">'+statoTxt+
+        (p.stato==='chiuso'?' — Soglia: '+sogN+' cond. '+(okN?'✓':'✗')+' + '+sogM+' mill. '+(okM?'✓':'✗'):'') +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  el.innerHTML =
+    puntiHtml +
+
+    '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">' +
+      '<input type="text" id="nuovoPunto" placeholder="Nuovo punto ODG..." ' +
+        'style="flex:1;min-width:220px;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:\'DM Sans\',sans-serif;font-size:0.875rem;outline:none;" ' +
+        'onkeydown="if(event.key===\'Enter\')addOdg()">' +
+      '<button class="btn btn-g" onclick="addOdg()">＋ Aggiungi</button>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="switchTo(\'istruzioni\')">→ Istruzioni condomini</button>' +
+      '<button class="btn btn-g" onclick="azzeraVoti()">↺ Azzera voti</button>' +
+    '</div>' +
+
+    '<div class="nb"><strong>🗳️ Come funziona il voto virtuale</strong>' +
+    'Per ogni punto ODG inserisci i voti favorevoli, contrari e astenuti sia come numero di condomini che come millesimi. ' +
+    'I condomini online possono comunicare il voto via chat, email o alzata di mano virtuale nella piattaforma. ' +
+    'Chiudi la votazione quando tutti hanno votato per registrare l\'esito.</div>';
+}
+
+function votoCella(label, campo, id, val, readonly) {
+  return '<div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.5rem 0.6rem">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem">'+label+'</div>' +
+    '<input type="number" min="0" step="0.01" value="'+(val||0)+'" '+(readonly?'disabled':'')+
+    ' onchange="setVoto(\''+id+'\',\''+campo+'\',parseFloat(this.value)||0);drawVoti()" ' +
+    'style="background:white;border:1px solid var(--border);border-radius:2px;padding:0.3rem 0.5rem;font-family:\'DM Mono\',monospace;font-size:0.85rem;width:100%;text-align:center;outline:none;'+(readonly?'opacity:0.6;':'')+'"></div>';
+}
+
+function addOdg() {
+  var inp=document.getElementById('nuovoPunto');
+  var txt=(inp&&inp.value||'').trim();
+  if(!txt){if(inp)inp.focus();return;}
+  odgCount++;
+  puntiODG.push({id:'o'+odgCount,titolo:txt,voti:{favN:0,favM:0,conN:0,conM:0,astN:0,astM:0},stato:'aperto'});
+  if(inp) inp.value='';
+  drawVoti();
+}
+function rmOdg(id){puntiODG=puntiODG.filter(function(p){return p.id!==id;});drawVoti();}
+function chiudiVoto(id){var p=puntiODG.find(function(x){return x.id===id;});if(p)p.stato='chiuso';drawVoti();}
+function riapriVoto(id){var p=puntiODG.find(function(x){return x.id===id;});if(p)p.stato='aperto';drawVoti();}
+function setVoto(id,campo,val){var p=puntiODG.find(function(x){return x.id===id;});if(p)p.voti[campo]=val;}
+
+function azzeraVoti() {
+  if(!confirm('Azzerare tutti i voti registrati?')) return;
+  puntiODG.forEach(function(p){p.voti={favN:0,favM:0,conN:0,conM:0,astN:0,astM:0};p.stato='aperto';});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='voti'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='voti'?' on':'');
+  });
+  drawVoti();
+}
+
+// ══ TAB 4 — ISTRUZIONI CONDOMINI ══
+function drawIstruzioni() {
+  var el = document.getElementById('c-istruzioni');
+  var piatt = PIATTAFORME[cfg.piattaforma]||PIATTAFORME.zoom;
+  var dAFmt = cfg.dataAss?new Date(cfg.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+
+  // Istruzioni specifiche per piattaforma
+  var passiPiatt = {
+    zoom:[
+      'Scarica l\'app Zoom dal sito zoom.us oppure dall\'App Store / Google Play',
+      'Clicca sul link della riunione oppure apri Zoom e inserisci l\'ID: <strong>'+esc(cfg.idRiunione||'___')+'</strong>',
+      'Inserisci il codice di accesso: <strong>'+esc(cfg.password||'___')+'</strong>',
+      'Assicurati che la fotocamera e il microfono funzionino prima dell\'orario stabilito',
+      'Per votare usa la funzione "Alza la mano" o scrivi in chat: FAV / CON / AST',
+    ],
+    meet:[
+      'Accedi con il tuo account Google (Gmail)',
+      'Clicca sul link della riunione: <strong>'+esc(cfg.linkMeeting||'___')+'</strong>',
+      'Verifica fotocamera e microfono nella schermata di anteprima',
+      'Per votare usa la chat di Google Meet: digita FAV / CON / AST',
+    ],
+    teams:[
+      'Scarica Microsoft Teams oppure accedi via browser su teams.microsoft.com',
+      'Clicca sul link della riunione: <strong>'+esc(cfg.linkMeeting||'___')+'</strong>',
+      'In alternativa, inserisci l\'ID riunione: <strong>'+esc(cfg.idRiunione||'___')+'</strong>',
+      'Per votare usa la funzione "Alza la mano" o la chat Teams',
+    ],
+    altra:[
+      'Accedi alla piattaforma indicata dall\'amministratore',
+      'Usa il link: <strong>'+esc(cfg.linkMeeting||'___')+'</strong>',
+      (cfg.password?'Inserisci il codice di accesso: <strong>'+esc(cfg.password)+'</strong>':''),
+      'Per votare segui le istruzioni dell\'amministratore',
+    ],
+  };
+  var passi = passiPiatt[cfg.piattaforma]||passiPiatt.altra;
+
+  // Navigazione lettere
+  var lnav = '';
+  if (condomini.length) {
+    lnav = '<div class="lnav"><span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Condomino:</span>';
+    condomini.filter(function(c){return c.modalita==='online';}).forEach(function(c,i) {
+      lnav += '<button class="btn btn-g btn-sm" onclick="copiaIstrCondomino(\''+esc(c.nome)+'\',\''+esc(c.email)+'\')">📧 '+esc(c.nome.split(' ')[0])+'</button>';
+    });
+    lnav += '</div>';
+  }
+
+  el.innerHTML =
+    '<div class="sl">Istruzioni per la partecipazione online</div>' +
+
+    '<div class="istr-box">' +
+      '<div class="istr-title">📋 Come partecipare all\'assemblea via '+piatt.nome+'</div>' +
+      '<div style="margin-bottom:0.75rem;opacity:0.7;font-size:0.82rem">'+
+        esc(cfg.condoNome||'Condominio')+' · Assemblea del '+dAFmt+' · ore '+esc(cfg.oraAss)+'</div>' +
+      passi.filter(Boolean).map(function(p,i){
+        return '<div class="istr-step"><span class="istr-num">'+(i+1)+'</span><span>'+p+'</span></div>';
+      }).join('') +
+    '</div>' +
+
+    (cfg.linkMeeting||cfg.idRiunione||cfg.password ?
+    '<div class="link-box">' +
+      '<div>' +
+        (cfg.linkMeeting?'<div style="margin-bottom:0.4rem"><strong>🔗 Link:</strong> <span class="link-url">'+esc(cfg.linkMeeting)+'</span></div>':'')+
+        (cfg.idRiunione?'<div style="margin-bottom:0.4rem"><strong>ID riunione:</strong> <span style="font-family:\'DM Mono\',monospace">'+esc(cfg.idRiunione)+'</span></div>':'')+
+        (cfg.password?'<div><strong>Password:</strong> <span style="font-family:\'DM Mono\',monospace;background:var(--cream);padding:0.15rem 0.4rem;border-radius:2px">'+esc(cfg.password)+'</span></div>':'') +
+      '</div>' +
+      '<button class="btn btn-g btn-sm" onclick="copiaCredenziali()">📋 Copia credenziali</button>' +
+    '</div>' : '') +
+
+    '<div class="nb"><strong>ℹ️ Come votare online</strong>' +
+    'Durante la votazione, l\'amministratore darà lettura di ogni punto ODG. ' +
+    'I partecipanti online potranno votare usando la <strong>funzione "Alza la mano"</strong> della piattaforma ' +
+    'o digitando in chat: <strong>FAV</strong> (favorevole) · <strong>CON</strong> (contrario) · <strong>AST</strong> (astenuto). ' +
+    'L\'amministratore raccoglierà i voti e darà lettura dell\'esito.</div>' +
+
+    (condomini.length ?
+    '<div class="sl" style="margin-top:2rem">Invia istruzioni ai condomini online</div>' +
+    lnav +
+    '<div class="brow">' +
+      '<button class="btn btn-g" onclick="copiaTestoCompleto()">📋 Copia istruzioni complete</button>' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>' +
+    '</div>' : '');
+}
+
+function copiaCredenziali() {
+  var testo = 'Dati di accesso assemblea:\n' +
+    (cfg.linkMeeting?'Link: '+cfg.linkMeeting+'\n':'') +
+    (cfg.idRiunione?'ID: '+cfg.idRiunione+'\n':'') +
+    (cfg.password?'Password: '+cfg.password:'');
+  navigator.clipboard.writeText(testo).then(function(){alert('✅ Credenziali copiate!');}).catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+function copiaIstrCondomino(nome, email) {
+  var dAFmt=cfg.dataAss?new Date(cfg.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var testo='Oggetto: Istruzioni partecipazione assemblea online — '+cfg.condoNome+'\n\n'+
+    'Gentile '+nome+',\n\n'+
+    'di seguito le istruzioni per partecipare all\'assemblea del '+dAFmt+' via '+PIATTAFORME[cfg.piattaforma].nome+':\n\n'+
+    (cfg.linkMeeting?'🔗 Link: '+cfg.linkMeeting+'\n':'')+
+    (cfg.idRiunione?'ID riunione: '+cfg.idRiunione+'\n':'')+
+    (cfg.password?'Password: '+cfg.password+'\n':'')+
+    '\nOra: '+cfg.oraAss+'\n\n'+
+    'Per votare durante l\'assemblea: digita in chat FAV (favorevole), CON (contrario) o AST (astenuto).\n\n'+
+    'Distinti saluti,\n'+cfg.studioNome;
+  navigator.clipboard.writeText(testo).then(function(){alert('✅ Istruzioni per '+nome+' copiate!');}).catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+function copiaTestoCompleto() {
+  var dAFmt=cfg.dataAss?new Date(cfg.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var testo='ISTRUZIONI ASSEMBLEA ONLINE — '+cfg.condoNome+'\n'+
+    'Data: '+dAFmt+' · Ora: '+cfg.oraAss+'\nPiattaforma: '+PIATTAFORME[cfg.piattaforma].nome+'\n\n'+
+    (cfg.linkMeeting?'Link: '+cfg.linkMeeting+'\n':'')+
+    (cfg.idRiunione?'ID: '+cfg.idRiunione+'\n':'')+
+    (cfg.password?'Password: '+cfg.password+'\n':'')+
+    '\nPer votare: digita in chat FAV / CON / AST\n\nAmministratore: '+cfg.studioNome;
+  navigator.clipboard.writeText(testo).then(function(){alert('✅ Istruzioni copiate!');}).catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+// ══ TAB 5 — VERBALE ONLINE ══
+function drawVerbale() {
+  var el = document.getElementById('c-verbale');
+  var piatt  = PIATTAFORME[cfg.piattaforma]||PIATTAFORME.zoom;
+  var dAFmt  = cfg.dataAss?new Date(cfg.dataAss).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi   = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var online = condomini.filter(function(c){return c.modalita==='online';});
+  var pres   = condomini.filter(function(c){return c.modalita==='presenza';});
+  var ass    = condomini.filter(function(c){return c.modalita==='assente';});
+  var totM   = condomini.reduce(function(s,c){return s+c.mill;},0);
+  var mPart  = condomini.filter(function(c){return c.modalita!=='assente';}).reduce(function(s,c){return s+c.mill;},0);
+  var nPart  = condomini.length - ass.length;
+  var tipoLabel = cfg.tipoAss==='online'?'Assemblea Interamente Online':'Assemblea Ibrida (Online + Presenza)';
+
+  var presTabella = condomini.length ?
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem">' +
+    '<thead><tr style="background:var(--cream)">' +
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Condomino</th>' +
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Unità</th>' +
+    '<th style="padding:0.5rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Millesimi</th>' +
+    '<th style="padding:0.5rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Modalità</th>' +
+    '</tr></thead><tbody>' +
+    condomini.map(function(c){
+      var badge = c.modalita==='online'?'<span class="badge b-online">💻 Online</span>':
+                  c.modalita==='presenza'?'<span class="badge b-presenza">🏢 Presenza</span>':
+                  '<span class="badge" style="background:var(--cream);color:var(--muted)">❌ Assente</span>';
+      return '<tr style="border-bottom:1px solid var(--cream)">' +
+        '<td style="padding:0.5rem;font-weight:500">'+esc(c.nome)+'</td>' +
+        '<td style="padding:0.5rem;font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+        '<td style="padding:0.5rem;font-family:\'DM Mono\',monospace;text-align:right">'+c.mill+'</td>' +
+        '<td style="padding:0.5rem">'+badge+'</td>' +
+        '</tr>';
+    }).join('') +
+    '<tr style="background:var(--cream);font-weight:600;font-family:\'DM Mono\',monospace">' +
+    '<td style="padding:0.5rem">TOTALE</td><td></td>' +
+    '<td style="padding:0.5rem;text-align:right">'+totM+'</td>' +
+    '<td style="padding:0.5rem;font-size:0.78rem">'+nPart+' part. ('+mPart+' mill.)</td>' +
+    '</tr></tbody></table>' : '<p style="color:var(--muted);font-style:italic">Nessun condomino inserito.</p>';
+
+  var delibereHtml = puntiODG.length ? puntiODG.map(function(p,i){
+    var totM2=totM; var nPres2=nPart;
+    var sogN=Math.ceil(nPres2/2)+1; var sogM=Math.ceil(totM2/3);
+    var approv=p.voti.favN>=sogN&&p.voti.favM>=sogM;
+    return '<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Punto '+(i+1)+'</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:1rem;margin-bottom:0.5rem">'+esc(p.titolo)+'</div>' +
+      '<div style="background:var(--cream);border-left:4px solid '+(p.stato==='chiuso'?(approv?'var(--success)':'var(--accent)'):'var(--gold)')+';padding:0.75rem 1rem;border-radius:0 3px 3px 0">' +
+        (p.stato==='chiuso' ?
+          '<strong>'+(approv?'✅ APPROVATA':'❌ RESPINTA')+'</strong><br>' :
+          '<em style="color:var(--muted)">Votazione ancora aperta</em><br>') +
+        '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:var(--muted)">'+
+        'Favorevoli: '+p.voti.favN+' cond. / '+p.voti.favM+' mill. · '+
+        'Contrari: '+p.voti.conN+' cond. / '+p.voti.conM+' mill. · '+
+        'Astenuti: '+p.voti.astN+' cond. / '+p.voti.astM+' mill.</span>' +
+      '</div></div>';
+  }).join('') : '<p style="color:var(--muted);font-style:italic">Nessun punto ODG registrato.</p>';
+
+  el.innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>' +
+      '<button class="btn btn-p btn-sm" onclick="drawVerbale()">↺ Aggiorna</button>' +
+    '</div>' +
+
+    '<div class="doc">' +
+    '<div class="doc-hs">' +
+      '<span class="doc-st">'+esc(cfg.studioNome||'Studio Amministrativo')+'</span>' +
+      '<span class="doc-an">Verbale n. '+esc(cfg.nVerbale||'—')+'</span>' +
+    '</div>' +
+    '<div class="doc-bd">' +
+
+    '<p style="font-family:\'DM Mono\',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">VERBALE N. '+esc(cfg.nVerbale||'___')+' — '+esc(tipoLabel.toUpperCase())+'</p>' +
+
+    '<p>In data <strong>'+dAFmt+'</strong>, alle ore <strong>'+esc(cfg.oraAss)+'</strong>, si è riunita in seconda convocazione la <strong>'+tipoLabel+'</strong> del condominio <strong>'+esc(cfg.condoNome||'Condominio')+'</strong>'+(cfg.condoCF?' (C.F. '+cfg.condoCF+')':'')+', amministrato da <strong>'+esc(cfg.studioNome||'Amministratore')+'</strong>.</p>' +
+
+    (cfg.tipoAss==='ibrida' ?
+    '<p>L\'assemblea si svolge in modalità ibrida: i condomini in presenza si trovano fisicamente riuniti, mentre i condomini online partecipano mediante la piattaforma <strong>'+piatt.nome+'</strong> (ID: '+esc(cfg.idRiunione||'—')+') ai sensi del D.L. 18/2020.</p>' :
+    '<p>L\'assemblea si svolge interamente in modalità telematica mediante la piattaforma <strong>'+piatt.nome+'</strong> (ID: '+esc(cfg.idRiunione||'—')+') ai sensi del D.L. 18/2020.</p>') +
+
+    '<p>Assume la presidenza il Sig./la Sig.ra <strong>'+esc(cfg.presidente||'___________________________')+'</strong>, che propone come segretario il Sig./la Sig.ra <strong>'+esc(cfg.segretario||'___________________________')+'</strong>. La proposta viene accettata all\'unanimità.</p>' +
+
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Partecipanti</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;font-size:0.85rem">' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">💻 Online</div><strong>'+online.length+'</strong> cond. ('+online.reduce(function(s,c){return s+c.mill;},0)+' mill.)</div>' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">🏢 Presenza</div><strong>'+pres.length+'</strong> cond. ('+pres.reduce(function(s,c){return s+c.mill;},0)+' mill.)</div>' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">Totale partecipanti</div><strong>'+nPart+'</strong> cond. ('+mPart+' mill.)</div>' +
+    '</div></div>' +
+
+    '<div style="margin:1rem 0">'+presTabella+'</div>' +
+
+    '<p>Il Presidente constata che l\'assemblea è <strong>regolarmente costituita in seconda convocazione</strong> con '+nPart+' partecipanti per un totale di '+mPart+' millesimi su '+totM+', superando il quorum di 1/3 richiesto dall\'art. 1136 c.3 c.c.</p>' +
+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">Delibere</div>' +
+    delibereHtml +
+
+    '<p>Non essendovi altri argomenti da trattare, il Presidente dichiara chiusa la seduta alle ore <strong>__:__</strong>.</p>' +
+    '<p>Il presente verbale, letto e approvato, viene sottoscritto come segue.</p>' +
+
+    '<div style="display:flex;gap:3rem;flex-wrap:wrap;margin-top:2rem">' +
+      '<div class="firma-line">Il Presidente<br><strong>'+esc(cfg.presidente||'___________________________')+'</strong></div>' +
+      '<div class="firma-line">Il Segretario<br><strong>'+esc(cfg.segretario||'___________________________')+'</strong></div>' +
+      '<div class="firma-line">L\'Amministratore<br><strong>'+esc(cfg.studioNome||'___________________________')+'</strong></div>' +
+    '</div>' +
+
+    '<div class="doc-ft"><span>'+esc(cfg.condoNome||'Condominio')+(cfg.condoCF?' · C.F. '+cfg.condoCF:'')+'</span><span>Generato il '+oggi+'</span></div>' +
+    '</div></div>' +
+
+    '<div class="nb"><strong>📌 Nota legale assemblea online</strong>' +
+    'Il verbale dell\'assemblea online deve specificare la piattaforma utilizzata, l\'ID della riunione e attestare che tutti i partecipanti erano identificabili e in grado di deliberare in tempo reale. ' +
+    'Va trasmesso a tutti i condomini entro 30 giorni (art. 1137 c.c.).</div>';
+}
+
+// ══ UTILS ══
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

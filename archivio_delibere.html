@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Archivio Delibere</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* DELIBERA CARD */
+.del-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px var(--shadow);border-left:4px solid var(--border);transition:box-shadow 0.15s;}
+.del-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.del-card.approvata{border-left-color:var(--success);}
+.del-card.respinta{border-left-color:var(--accent);}
+.del-card.ritirata{border-left-color:var(--gold);}
+.del-card.impugnata{border-left-color:#601080;}
+.del-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;}
+.del-num{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);}
+.del-titolo{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.2rem;}
+.del-meta{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);}
+.del-body{font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:0.75rem;}
+.del-footer{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;}
+
+/* FILTRI */
+.filtri-bar{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+.filtri-bar .fg{margin:0;min-width:140px;}
+
+/* SCADENZARIO */
+.scad-item{display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;border-left:4px solid var(--border);}
+.scad-item.scaduta{border-left-color:var(--accent);background:#fff5f5;}
+.scad-item.imminente{border-left-color:var(--gold);background:#fffdf0;}
+.scad-item.ok{border-left-color:var(--success);background:#f8fff9;}
+.scad-item.completata{border-left-color:var(--muted);opacity:0.6;}
+.scad-data{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted);white-space:nowrap;min-width:90px;}
+.scad-testo{flex:1;font-size:0.85rem;}
+.scad-delibera{font-size:0.72rem;color:var(--muted);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.6);z-index:300;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--paper);border:1px solid var(--border);border-radius:6px;width:90%;max-width:800px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(26,26,46,0.3);}
+.modal-header{background:var(--ink);color:var(--paper);padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.modal-header h3{font-family:'DM Serif Display',serif;font-size:1.1rem;font-weight:400;}
+.modal-close{background:none;border:none;color:var(--border);font-size:1.3rem;cursor:pointer;}
+.modal-close:hover{color:white;}
+.modal-body{padding:1.5rem;overflow-y:auto;flex:1;}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.75rem;justify-content:flex-end;background:var(--cream);}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.modal-overlay,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="redazione_verbale.html">📄 Verbale</a>
+    <a class="nav-link" href="calcolo_maggioranze.html">⚖️ Maggioranze</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.8</div>
+  <h1>Archivio<br><em>Delibere</em></h1>
+  <p class="header-sub">Archivia tutte le delibere assembleari, tieni lo scadenzario di attuazione, registra le impugnazioni e genera report annuali.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-archivio"   onclick="go('archivio')">🗄️ 1 · Archivio</button>
+    <button class="tab-btn"   id="tb-nuova"       onclick="go('nuova')">➕ 2 · Nuova Delibera</button>
+    <button class="tab-btn"   id="tb-scadenzario" onclick="go('scadenzario')">📅 3 · Scadenzario</button>
+    <button class="tab-btn"   id="tb-impugnazioni"onclick="go('impugnazioni')">⚖️ 4 · Impugnazioni</button>
+    <button class="tab-btn"   id="tb-report"      onclick="go('report')">📊 5 · Report Annuale</button>
+  </div>
+
+  <div class="panel on" id="p-archivio">    <div id="c-archivio"></div>    </div>
+  <div class="panel"    id="p-nuova">       <div id="c-nuova"></div>       </div>
+  <div class="panel"    id="p-scadenzario"> <div id="c-scadenzario"></div> </div>
+  <div class="panel"    id="p-impugnazioni"><div id="c-impugnazioni"></div></div>
+  <div class="panel"    id="p-report">      <div id="c-report"></div>      </div>
+</div>
+
+<!-- MODAL SCHEDA DELIBERA -->
+<div class="modal-overlay" id="modalScheda">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitolo">Scheda Delibera</h3>
+      <button class="modal-close" onclick="chiudiModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g btn-sm" onclick="chiudiModal()">Chiudi</button>
+      <button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa scheda</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">CondoKit · Archivio Delibere · Beta · Art. 1137 c.c. — impugnazione entro 30 giorni</div>
+
+<script>
+var PANELS = ['archivio','nuova','scadenzario','impugnazioni','report'];
+var delibere = [];
+var delCount = 0;
+var editingId = null;
+
+var TIPI = {
+  ordinaria:   'Delibera ordinaria',
+  innovazione: 'Innovazioni/Impianti',
+  regolamento: 'Regolamento',
+  lavori:      'Lavori straordinari',
+  nomina:      'Nomina amministratore',
+  bilancio:    'Bilancio/Rendiconto',
+  superbonus:  'Superbonus/Ecobonus',
+  altro:       'Altro',
+};
+var ESITI = {
+  approvata: {label:'✅ Approvata', cls:'approvata', badge:'b-ok'},
+  respinta:  {label:'❌ Respinta',  cls:'respinta',  badge:'b-danger'},
+  ritirata:  {label:'🟡 Ritirata',  cls:'ritirata',  badge:'b-warn'},
+  rinviata:  {label:'📅 Rinviata',  cls:'ritirata',  badge:'b-neu'},
+};
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='archivio')    drawArchivio();
+  if (name==='nuova')       drawNuova();
+  if (name==='scadenzario') drawScadenzario();
+  if (name==='impugnazioni')drawImpugnazioni();
+  if (name==='report')      drawReport();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  drawArchivio();
+};
+
+// ══ TAB 1 — ARCHIVIO ══
+function drawArchivio() {
+  var el    = document.getElementById('c-archivio');
+  var nApp  = delibere.filter(function(d){return d.esito==='approvata';}).length;
+  var nRes  = delibere.filter(function(d){return d.esito==='respinta';}).length;
+  var nImp  = delibere.filter(function(d){return d.impugnata;}).length;
+  var nScad = delibere.filter(function(d){
+    return d.esito==='approvata' && d.scadAttuazione && !d.attuata &&
+           new Date(d.scadAttuazione) < new Date();
+  }).length;
+
+  // Filtri attuali (legge da elementi precedenti se esistono)
+  var filtAnno  = (document.getElementById('filtAnno') ||{}).value  || 'tutti';
+  var filtTipo  = (document.getElementById('filtTipo') ||{}).value  || 'tutti';
+  var filtEsito = (document.getElementById('filtEsito')||{}).value  || 'tutti';
+  var filtTesto = ((document.getElementById('filtTesto')||{}).value||'').toLowerCase().trim();
+
+  var anni = [];
+  delibere.forEach(function(d){
+    var a = d.data ? d.data.substring(0,4) : '';
+    if (a && anni.indexOf(a)===-1) anni.push(a);
+  });
+  anni.sort().reverse();
+
+  var filtrate = delibere.filter(function(d) {
+    var a = d.data ? d.data.substring(0,4) : '';
+    if (filtAnno!=='tutti' && a!==filtAnno)         return false;
+    if (filtTipo!=='tutti' && d.tipo!==filtTipo)    return false;
+    if (filtEsito!=='tutti'&& d.esito!==filtEsito)  return false;
+    if (filtTesto && !(d.titolo||'').toLowerCase().includes(filtTesto) &&
+        !(d.verbale||'').toLowerCase().includes(filtTesto) &&
+        !(d.testo||'').toLowerCase().includes(filtTesto)) return false;
+    return true;
+  }).sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+
+  el.innerHTML =
+    // STATS
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Delibere totali</div><div class="cv">'+delibere.length+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Approvate</div><div class="cv gn">'+nApp+'</div></div>' +
+    '<div class="sc r"><div class="cl">Respinte</div><div class="cv a">'+nRes+'</div></div>' +
+    '<div class="sc g"><div class="cl">Impugnate</div><div class="cv go">'+nImp+'</div></div>' +
+    (nScad ? '<div class="sc r"><div class="cl">Scadute non attuate</div><div class="cv a">'+nScad+'</div></div>' : '') +
+    '</div>' +
+
+    // FILTRI
+    '<div class="filtri-bar">' +
+    '<div class="fg"><label>Anno</label><select id="filtAnno" onchange="drawArchivio()">' +
+      '<option value="tutti">Tutti gli anni</option>' +
+      anni.map(function(a){return '<option value="'+a+'"'+(filtAnno===a?' selected':'')+'>'+a+'</option>';}).join('') +
+    '</select></div>' +
+    '<div class="fg"><label>Tipo</label><select id="filtTipo" onchange="drawArchivio()">' +
+      '<option value="tutti">Tutti i tipi</option>' +
+      Object.keys(TIPI).map(function(k){return '<option value="'+k+'"'+(filtTipo===k?' selected':'')+'>'+TIPI[k]+'</option>';}).join('') +
+    '</select></div>' +
+    '<div class="fg"><label>Esito</label><select id="filtEsito" onchange="drawArchivio()">' +
+      '<option value="tutti">Tutti</option>' +
+      Object.keys(ESITI).map(function(k){return '<option value="'+k+'"'+(filtEsito===k?' selected':'')+'>'+ESITI[k].label+'</option>';}).join('') +
+    '</select></div>' +
+    '<div class="fg" style="min-width:200px"><label>Cerca</label>' +
+      '<input type="text" id="filtTesto" value="'+esc(filtTesto)+'" placeholder="Testo, verbale..." oninput="drawArchivio()">' +
+    '</div>' +
+    '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="resetFiltri()">↺ Reset filtri</button>' +
+    '</div>' +
+
+    // AZIONI
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-p btn-sm" onclick="switchTo(\'nuova\');editingId=null;drawNuova()">➕ Nuova delibera</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Carica esempi</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraArchivio()">↺ Azzera archivio</button>' +
+    '</div>' +
+
+    // LISTA
+    (filtrate.length ? filtrate.map(function(d) {
+      var esito = ESITI[d.esito]||ESITI.approvata;
+      var dFmt  = d.data ? new Date(d.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var scadOk = !d.scadAttuazione || d.attuata || new Date(d.scadAttuazione) >= new Date();
+      return '<div class="del-card '+(d.impugnata?'impugnata':esito.cls)+'">' +
+        '<div class="del-header">' +
+          '<div>' +
+            '<div class="del-num">Del. n. '+d.numero+' · '+dFmt+(d.verbale?' · Verbale '+esc(d.verbale):'')+'</div>' +
+            '<div class="del-titolo">'+esc(d.titolo)+'</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap">' +
+            '<span class="badge '+esito.badge+'">'+esito.label+'</span>' +
+            '<span class="badge b-info">'+esc(TIPI[d.tipo]||d.tipo)+'</span>' +
+            (d.impugnata?'<span class="badge" style="background:#e8d0f0;color:#601080">⚖️ Impugnata</span>':'') +
+            (!scadOk?'<span class="badge b-danger">⏰ Scaduta</span>':'') +
+            (d.attuata?'<span class="badge b-ok">✅ Attuata</span>':'') +
+          '</div>' +
+        '</div>' +
+        (d.testo?'<div class="del-body">'+esc(d.testo.substring(0,120))+(d.testo.length>120?'...':'')+'</div>':'') +
+        '<div class="del-footer">' +
+          '<button class="btn btn-g btn-sm" onclick="apriScheda(\''+d.id+'\')">📋 Scheda</button>' +
+          '<button class="btn btn-g btn-sm" onclick="modificaDelibera(\''+d.id+'\')">✏️ Modifica</button>' +
+          (!d.attuata && d.esito==='approvata' ? '<button class="btn btn-ok btn-sm" onclick="segnaAttuata(\''+d.id+'\')">✅ Segna attuata</button>' : '') +
+          (!d.impugnata ? '<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent)" onclick="aggiungiImpugnazione(\''+d.id+'\')">⚖️ Impugnata</button>' : '') +
+          '<button class="btn btn-sm" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaDelibera(\''+d.id+'\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') :
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">🗄️</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(delibere.length?'Nessun risultato con i filtri selezionati.':'Nessuna delibera ancora. Aggiungine una!')+'</p>' +
+      '<button class="btn btn-p btn-sm" onclick="switchTo(\'nuova\');editingId=null;drawNuova()">➕ Aggiungi delibera</button>' +
+    '</div>');
+}
+
+function resetFiltri() {
+  ['filtAnno','filtTipo','filtEsito'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='tutti';});
+  var t=document.getElementById('filtTesto');if(t)t.value='';
+  drawArchivio();
+}
+
+function switchTo(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+}
+
+// ══ TAB 2 — NUOVA/MODIFICA ══
+function drawNuova() {
+  var el = document.getElementById('c-nuova');
+  var d  = editingId ? delibere.find(function(x){return x.id===editingId;}) : null;
+  var v  = function(campo, def){ return d ? (d[campo]||def||'') : (def||''); };
+
+  el.innerHTML =
+    '<div class="sl">'+(editingId?'Modifica delibera':'Nuova delibera')+'</div>' +
+    '<div class="card">' +
+      '<div class="r4">' +
+        fgi('fNumero','N° delibera',v('numero'),'Es. 01/2025') +
+        fgd('fData','Data assemblea',v('data')) +
+        fgi('fVerbale','Rif. verbale',v('verbale'),'Es. Verbale n. 01/2025') +
+        fgsel('fEsito','Esito',v('esito','approvata'),Object.keys(ESITI).map(function(k){return {v:k,l:ESITI[k].label};})) +
+      '</div>' +
+      '<div class="r3">' +
+        fgsel('fTipo','Tipo delibera',v('tipo','ordinaria'),Object.keys(TIPI).map(function(k){return {v:k,l:TIPI[k]};})) +
+        fgi('fMaggioranza','Maggioranza applicata',v('maggioranza'),'Es. Art. 1136 c.3 c.c.') +
+        fgi('fFavM','Millesimi favorevoli',v('favM'),'Es. 456') +
+      '</div>' +
+      '<div class="fg"><label>Titolo delibera</label>' +
+        '<input type="text" id="fTitolo" value="'+esc(v('titolo'))+'" placeholder="Es. Approvazione rendiconto consuntivo 2024"></div>' +
+      '<div class="fg"><label>Testo delibera</label>' +
+        '<textarea id="fTesto" style="min-height:100px">'+esc(v('testo'))+'</textarea></div>' +
+      '<div class="r2">' +
+        fgd('fScadAttuazione','Scadenza attuazione',v('scadAttuazione')) +
+        fgi('fResponsabile','Responsabile attuazione',v('responsabile'),'Es. Amministratore / Impresa Bianchi') +
+      '</div>' +
+      '<div class="fg"><label>Note</label>' +
+        '<textarea id="fNote">'+esc(v('note'))+'</textarea></div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaDelibera()">💾 '+(editingId?'Aggiorna':'Salva delibera')+'</button>' +
+      '<button class="btn btn-g" onclick="editingId=null;switchTo(\'archivio\');drawArchivio()">← Torna all\'archivio</button>' +
+      '<button class="btn btn-g" onclick="azzeraNuova()">↺ Azzera form</button>' +
+    '</div>';
+}
+
+function fgi(id,label,value,ph){
+  return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';
+}
+function fgd(id,label,value){
+  return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';
+}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('') +
+    '</select></div>';
+}
+
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaDelibera() {
+  var titolo = gv('fTitolo').trim();
+  if (!titolo) { alert('Inserisci almeno il titolo della delibera.'); return; }
+  var obj = {
+    id:           editingId || 'd'+(++delCount),
+    numero:       gv('fNumero'),
+    data:         gv('fData'),
+    verbale:      gv('fVerbale'),
+    esito:        gv('fEsito'),
+    tipo:         gv('fTipo'),
+    maggioranza:  gv('fMaggioranza'),
+    favM:         gv('fFavM'),
+    titolo:       titolo,
+    testo:        gv('fTesto'),
+    scadAttuazione: gv('fScadAttuazione'),
+    responsabile: gv('fResponsabile'),
+    note:         gv('fNote'),
+    attuata:      editingId ? (delibere.find(function(x){return x.id===editingId;})||{}).attuata : false,
+    impugnata:    editingId ? (delibere.find(function(x){return x.id===editingId;})||{}).impugnata : false,
+    impugnazioni: editingId ? (delibere.find(function(x){return x.id===editingId;})||{}).impugnazioni||[] : [],
+  };
+  if (editingId) {
+    var idx = delibere.findIndex(function(x){return x.id===editingId;});
+    if (idx>=0) delibere[idx]=obj;
+  } else {
+    delibere.push(obj);
+  }
+  editingId=null;
+  switchTo('archivio');
+  drawArchivio();
+}
+
+function modificaDelibera(id) {
+  editingId=id;
+  switchTo('nuova');
+  drawNuova();
+}
+
+function eliminaDelibera(id) {
+  if(!confirm('Eliminare questa delibera dall\'archivio?')) return;
+  delibere=delibere.filter(function(d){return d.id!==id;});
+  drawArchivio();
+}
+
+function segnaAttuata(id) {
+  var d=delibere.find(function(x){return x.id===id;});
+  if(d){d.attuata=true;}
+  drawArchivio(); drawScadenzario();
+}
+
+function aggiungiImpugnazione(id) {
+  var d=delibere.find(function(x){return x.id===id;});
+  if(!d) return;
+  var chi  = prompt('Chi ha impugnato? (nome condomino)','');
+  if(!chi) return;
+  var data = prompt('Data impugnazione (AAAA-MM-GG):',new Date().toISOString().split('T')[0]);
+  d.impugnata=true;
+  if(!d.impugnazioni) d.impugnazioni=[];
+  d.impugnazioni.push({chi:chi,data:data,note:''});
+  drawArchivio(); drawImpugnazioni();
+}
+
+function azzeraNuova() {
+  editingId=null;
+  drawNuova();
+}
+
+function azzeraArchivio() {
+  if(!confirm('Eliminare tutte le delibere dall\'archivio?')) return;
+  delibere=[]; delCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='archivio'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='archivio'?' on':'');
+  });
+  drawArchivio();
+}
+
+// ══ TAB 3 — SCADENZARIO ══
+function drawScadenzario() {
+  var el = document.getElementById('c-scadenzario');
+  var oggi = new Date();
+  var conScad = delibere.filter(function(d){return d.esito==='approvata' && d.scadAttuazione;});
+
+  if (!conScad.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">📅</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Nessuna delibera con scadenza di attuazione. Aggiungila compilando il campo "Scadenza attuazione" nella scheda delibera.</p>' +
+      '<button class="btn btn-p btn-sm" onclick="switchTo(\'nuova\');editingId=null;drawNuova()">➕ Aggiungi delibera</button>' +
+    '</div>';
+    return;
+  }
+
+  var ordinate = conScad.slice().sort(function(a,b){return a.scadAttuazione.localeCompare(b.scadAttuazione);});
+
+  var nScad   = ordinate.filter(function(d){return !d.attuata && new Date(d.scadAttuazione)<oggi;}).length;
+  var nImm    = ordinate.filter(function(d){
+    if(d.attuata) return false;
+    var diff=(new Date(d.scadAttuazione)-oggi)/86400000;
+    return diff>=0 && diff<=30;
+  }).length;
+  var nOk     = ordinate.filter(function(d){return !d.attuata && new Date(d.scadAttuazione)>=oggi;}).length - nImm;
+  var nAtt    = ordinate.filter(function(d){return d.attuata;}).length;
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc r"><div class="cl">Scadute</div><div class="cv a">'+nScad+'</div></div>' +
+    '<div class="sc g"><div class="cl">Entro 30 giorni</div><div class="cv go">'+nImm+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Future</div><div class="cv gn">'+nOk+'</div></div>' +
+    '<div class="sc k"><div class="cl">Attuate</div><div class="cv">'+nAtt+'</div></div>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa scadenzario</button>' +
+    '</div>' +
+
+    ordinate.map(function(d) {
+      var scad  = new Date(d.scadAttuazione);
+      var diff  = Math.ceil((scad-oggi)/86400000);
+      var cls   = d.attuata ? 'completata' : diff<0 ? 'scaduta' : diff<=30 ? 'imminente' : 'ok';
+      var ico   = d.attuata ? '✅' : diff<0 ? '🚨' : diff<=30 ? '⚠️' : '📅';
+      var stato = d.attuata ? 'Attuata' : diff<0 ? 'Scaduta ('+Math.abs(diff)+' gg fa)' : diff===0 ? 'Scade oggi!' : 'Scade tra '+diff+' giorni';
+      var dFmt  = scad.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+      return '<div class="scad-item '+cls+'">' +
+        '<div class="scad-data">'+ico+' '+dFmt+'</div>' +
+        '<div>' +
+          '<div class="scad-testo"><strong>'+esc(d.titolo)+'</strong>' +
+          (d.responsabile?' <span style="font-size:0.78rem;color:var(--muted)">→ '+esc(d.responsabile)+'</span>':'')+
+          '</div>' +
+          '<div class="scad-delibera">Del. n. '+esc(d.numero)+(d.verbale?' · '+esc(d.verbale):'')+'</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:0.7rem;margin-top:0.2rem;color:'+(d.attuata?'var(--success)':diff<0?'var(--accent)':diff<=30?'var(--gold)':'var(--muted)')+'">'+stato+'</div>' +
+        '</div>' +
+        (!d.attuata ?
+          '<button class="btn btn-ok btn-sm" onclick="segnaAttuata(\''+d.id+'\');drawScadenzario()">✅ Attuata</button>' :
+          '<span class="badge b-ok">✅ Completata</span>') +
+      '</div>';
+    }).join('') +
+
+    '<div class="nb"><strong>📌 Attuazione delibere</strong>' +
+    'Le delibere approvate devono essere attuate nei tempi stabiliti. ' +
+    'Il mancato rispetto delle scadenze può esporre il condominio a responsabilità. ' +
+    'Segna ogni delibera come "Attuata" quando l\'intervento è completato.</div>';
+}
+
+// ══ TAB 4 — IMPUGNAZIONI ══
+function drawImpugnazioni() {
+  var el  = document.getElementById('c-impugnazioni');
+  var imp = delibere.filter(function(d){return d.impugnata;});
+
+  el.innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-g btn-sm" onclick="switchTo(\'archivio\');drawArchivio()">← Torna all\'archivio</button>' +
+    '</div>' +
+
+    (imp.length ? imp.map(function(d){
+      var dFmt=d.data?new Date(d.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var impHtml=(d.impugnazioni||[]).map(function(i){
+        var iFmt=i.data?new Date(i.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+        return '<div style="display:flex;gap:0.75rem;align-items:center;padding:0.5rem 0.75rem;background:var(--accent-light);border-radius:3px;margin-bottom:0.4rem;font-size:0.82rem">' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted);white-space:nowrap">'+iFmt+'</span>' +
+          '<strong>'+esc(i.chi)+'</strong>' +
+          (i.note?'<span style="color:var(--muted)"> — '+esc(i.note)+'</span>':'') +
+          '<button onclick="risolviImpugnazione(\''+d.id+'\');drawImpugnazioni();drawArchivio()" class="btn btn-ok btn-sm" style="margin-left:auto">✅ Risolta</button>' +
+          '</div>';
+      }).join('');
+
+      return '<div class="del-card impugnata">' +
+        '<div class="del-header">' +
+          '<div>' +
+            '<div class="del-num">Del. n. '+esc(d.numero)+' · '+dFmt+'</div>' +
+            '<div class="del-titolo">'+esc(d.titolo)+'</div>' +
+          '</div>' +
+          '<span class="badge" style="background:#e8d0f0;color:#601080">⚖️ Impugnata</span>' +
+        '</div>' +
+        '<div style="margin-top:0.5rem"><div style="font-family:\'DM Mono\',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Impugnazioni registrate</div>' +
+        impHtml + '</div>' +
+        '</div>';
+    }).join('') :
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">✅</div>' +
+      '<p style="font-size:0.85rem;color:var(--success);font-weight:500">Nessuna delibera impugnata!</p>' +
+    '</div>') +
+
+    '<div class="nb"><strong>⚖️ Art. 1137 c.c. — Impugnazione delibere</strong>' +
+    'I condomini assenti, dissenzienti o astenuti possono impugnare le delibere entro <strong>30 giorni</strong> dalla data di ricevimento del verbale. ' +
+    'Le delibere contrarie alla legge o al regolamento possono essere impugnate davanti all\'Autorità Giudiziaria. ' +
+    'Il ricorso non sospende l\'esecuzione della delibera, salvo ordinanza del giudice.</div>';
+}
+
+function risolviImpugnazione(id) {
+  var d=delibere.find(function(x){return x.id===id;});
+  if(d){d.impugnata=false;d.impugnazioni=[];}
+}
+
+// ══ SCHEDA DELIBERA (MODAL) ══
+function apriScheda(id) {
+  var d=delibere.find(function(x){return x.id===id;});
+  if(!d) return;
+  var esito=ESITI[d.esito]||ESITI.approvata;
+  var dFmt=d.data?new Date(d.data).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  var scFmt=d.scadAttuazione?new Date(d.scadAttuazione).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+
+  document.getElementById('modalTitolo').textContent = 'Del. n. '+d.numero+' — '+d.titolo;
+  document.getElementById('modalBody').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem">' +
+    iInfo('N° delibera',d.numero,true)+iInfo('Data assemblea',dFmt)+
+    iInfo('Riferimento verbale',d.verbale||'—',true)+iInfo('Tipo',TIPI[d.tipo]||d.tipo)+
+    iInfo('Esito',esito.label)+iInfo('Maggioranza applicata',d.maggioranza||'—',true)+
+    iInfo('Millesimi favorevoli',d.favM||'—',true)+iInfo('Responsabile attuazione',d.responsabile||'—')+
+    iInfo('Scadenza attuazione',scFmt)+iInfo('Stato attuazione',d.attuata?'✅ Attuata':'⏳ In attesa')+
+    '</div>' +
+    (d.testo?'<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem;margin-bottom:1rem;font-size:0.875rem;line-height:1.6"><strong>Testo delibera:</strong><br>'+esc(d.testo)+'</div>':'')+
+    (d.note?'<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1rem;font-size:0.82rem"><strong>Note:</strong> '+esc(d.note)+'</div>':'')+
+    (d.impugnata?'<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:4px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem"><strong>⚖️ Delibera impugnata</strong></div>':'');
+  document.getElementById('modalScheda').classList.add('open');
+}
+
+function iInfo(label,val,mono){
+  return '<div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem">'+label+'</div>' +
+    '<div style="font-size:0.875rem;font-weight:500'+(mono?';font-family:\'DM Mono\',monospace':'')+'">'+esc(String(val||'—'))+'</div>' +
+    '</div>';
+}
+
+function chiudiModal(){document.getElementById('modalScheda').classList.remove('open');}
+
+// ══ TAB 5 — REPORT ANNUALE ══
+function drawReport() {
+  var el = document.getElementById('c-report');
+  var anni=[];
+  delibere.forEach(function(d){var a=d.data?d.data.substring(0,4):'';if(a&&anni.indexOf(a)===-1)anni.push(a);});
+  anni.sort().reverse();
+  var annoSel = anni[0] || new Date().getFullYear().toString();
+
+  var annoEl = document.getElementById('reportAnno');
+  if (annoEl) annoSel = annoEl.value || annoSel;
+
+  var dAnno = delibere.filter(function(d){return d.data&&d.data.startsWith(annoSel);});
+  var nApp  = dAnno.filter(function(d){return d.esito==='approvata';}).length;
+  var nRes  = dAnno.filter(function(d){return d.esito==='respinta';});
+  var nImp  = dAnno.filter(function(d){return d.impugnata;}).length;
+  var nAtt  = dAnno.filter(function(d){return d.attuata;}).length;
+  var oggi  = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Per categoria
+  var perTipo={};
+  dAnno.forEach(function(d){perTipo[d.tipo]=(perTipo[d.tipo]||0)+1;});
+
+  el.innerHTML =
+    '<div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">' +
+      '<div class="fg" style="margin:0"><label>Anno di riferimento</label>' +
+        '<select id="reportAnno" onchange="drawReport()">' +
+          anni.map(function(a){return '<option value="'+a+'"'+(a===annoSel?' selected':'')+'>'+a+'</option>';}).join('') +
+        '</select></div>' +
+      '<button class="btn btn-ok btn-sm" style="align-self:flex-end" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-s btn-sm" style="align-self:flex-end" onclick="window.print()">🖨️ Stampa report</button>' +
+    '</div>' +
+
+    (!dAnno.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessuna delibera per l\'anno '+annoSel+'.</p></div>' :
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">' +
+    '<div style="background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center">' +
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report Delibere — Anno '+annoSel+'</span>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="padding:2rem">' +
+
+    '<div class="sgrid" style="margin-bottom:1.5rem">' +
+    '<div class="sc k"><div class="cl">Totale delibere</div><div class="cv">'+dAnno.length+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Approvate</div><div class="cv gn">'+nApp+'</div></div>' +
+    '<div class="sc r"><div class="cl">Respinte</div><div class="cv a">'+nRes.length+'</div></div>' +
+    '<div class="sc g"><div class="cl">Impugnate</div><div class="cv go">'+nImp+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Attuate</div><div class="cv gn">'+nAtt+'</div></div>' +
+    '</div>' +
+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Delibere per categoria</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1.5rem">' +
+    '<thead><tr style="background:var(--cream)"><th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Categoria</th><th style="padding:0.5rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">N°</th></tr></thead><tbody>' +
+    Object.keys(perTipo).map(function(k){return '<tr style="border-bottom:1px solid var(--cream)"><td style="padding:0.5rem 1rem">'+esc(TIPI[k]||k)+'</td><td style="padding:0.5rem 1rem;text-align:right;font-family:\'DM Mono\',monospace">'+perTipo[k]+'</td></tr>';}).join('') +
+    '</tbody></table>' +
+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Elenco delibere '+annoSel+'</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">' +
+    '<thead><tr style="background:var(--cream)">' +
+      '<th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">N°</th>' +
+      '<th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Data</th>' +
+      '<th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Delibera</th>' +
+      '<th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Tipo</th>' +
+      '<th style="padding:0.5rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Esito</th>' +
+      '<th style="padding:0.5rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Attuata</th>' +
+    '</tr></thead><tbody>' +
+    dAnno.map(function(d){
+      var esito=ESITI[d.esito]||ESITI.approvata;
+      var dFmt=d.data?new Date(d.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return '<tr style="border-bottom:1px solid var(--cream)">' +
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(d.numero)+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem;white-space:nowrap">'+dFmt+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-weight:500">'+esc(d.titolo)+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-size:0.78rem;color:var(--muted)">'+esc(TIPI[d.tipo]||d.tipo)+'</td>' +
+        '<td style="padding:0.5rem 1rem"><span class="badge '+esito.badge+'">'+esito.label+'</span>'+(d.impugnata?'<span class="badge" style="background:#e8d0f0;color:#601080;margin-left:0.3rem">⚖️</span>':'')+'</td>' +
+        '<td style="padding:0.5rem 1rem;text-align:center">'+(d.attuata?'✅':'—')+'</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>' +
+    '<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+'</div>' +
+    '</div></div>');
+}
+
+// ══ ESEMPI ══
+function caricaEsempi() {
+  delibere=[]; delCount=0;
+  var def=[
+    {numero:'01/2024',data:'2024-03-15',verbale:'Verbale n. 01/2024',esito:'approvata',tipo:'bilancio',titolo:'Approvazione rendiconto consuntivo 2023',testo:'L\'assemblea approva il rendiconto consuntivo dell\'anno 2023 con voti favorevoli pari a 712 millesimi.',maggioranza:'Art. 1136 c.3',favM:'712',scadAttuazione:'',responsabile:'Amministratore',note:'',attuata:true,impugnata:false,impugnazioni:[]},
+    {numero:'02/2024',data:'2024-03-15',verbale:'Verbale n. 01/2024',esito:'approvata',tipo:'bilancio',titolo:'Approvazione bilancio preventivo 2024',testo:'L\'assemblea approva il bilancio preventivo per l\'anno 2024 per un totale di € 28.500,00.',maggioranza:'Art. 1136 c.3',favM:'712',scadAttuazione:'',responsabile:'Amministratore',note:'',attuata:true,impugnata:false,impugnazioni:[]},
+    {numero:'03/2024',data:'2024-03-15',verbale:'Verbale n. 01/2024',esito:'approvata',tipo:'nomina',titolo:'Conferma amministratore e compenso',testo:'L\'assemblea conferma l\'incarico all\'amministratore per il periodo 2024-2025 con compenso annuo di € 2.400,00.',maggioranza:'Art. 1136 c.3',favM:'689',scadAttuazione:'',responsabile:'Amministratore',note:'',attuata:true,impugnata:false,impugnazioni:[]},
+    {numero:'04/2024',data:'2024-09-20',verbale:'Verbale n. 02/2024',esito:'approvata',tipo:'lavori',titolo:'Rifacimento facciata — approvazione lavori',testo:'L\'assemblea delibera l\'esecuzione del rifacimento della facciata principale per un importo di € 45.000,00.',maggioranza:'Art. 1136 c.5',favM:'780',scadAttuazione:'2025-06-30',responsabile:'Impresa Rossi Restauri',note:'Gara d\'appalto da espletare entro febbraio 2025.',attuata:false,impugnata:false,impugnazioni:[]},
+    {numero:'05/2024',data:'2024-09-20',verbale:'Verbale n. 02/2024',esito:'respinta',tipo:'innovazione',titolo:'Installazione pannelli fotovoltaici',testo:'La proposta di installazione di pannelli fotovoltaici non raggiunge la maggioranza necessaria.',maggioranza:'Art. 1136 c.5',favM:'312',scadAttuazione:'',responsabile:'',note:'Proposta rinviata alla prossima assemblea.',attuata:false,impugnata:false,impugnazioni:[]},
+    {numero:'01/2025',data:'2025-03-10',verbale:'Verbale n. 01/2025',esito:'approvata',tipo:'bilancio',titolo:'Approvazione rendiconto consuntivo 2024',testo:'L\'assemblea approva il rendiconto consuntivo dell\'anno 2024.',maggioranza:'Art. 1136 c.3',favM:'698',scadAttuazione:'',responsabile:'Amministratore',note:'',attuata:false,impugnata:true,impugnazioni:[{chi:'Bianchi Laura',data:'2025-03-28',note:'Contestazione sulla ripartizione spese scala B.'}]},
+  ];
+  def.forEach(function(d){delCount++;delibere.push(Object.assign({id:'d'+delCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='archivio'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='archivio'?' on':'');
+  });
+  drawArchivio();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel() {
+  if(!delibere.length){alert('Nessuna delibera da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['ARCHIVIO DELIBERE'],[],
+     ['N°','Data','Verbale','Tipo','Titolo','Esito','Maggioranza','Mill. Fav.','Scad. Attuazione','Responsabile','Attuata','Impugnata','Note']].concat(
+    delibere.map(function(d){
+      return [d.numero,d.data,d.verbale,TIPI[d.tipo]||d.tipo,d.titolo,
+              ESITI[d.esito]?ESITI[d.esito].label:d.esito,d.maggioranza,d.favM,
+              d.scadAttuazione,d.responsabile,d.attuata?'Sì':'No',d.impugnata?'Sì':'No',d.note];
+    }))
+  );
+  ws['!cols']=[8,10,14,18,36,12,16,10,14,22,8,10,30].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Delibere');
+  XLSX.writeFile(wb,'CondoKit_ArchivioDelibere_'+new Date().getFullYear()+'.xlsx');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

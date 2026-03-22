@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Report Finanziari</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TAB */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+
+/* COMMON */
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+
+/* SUMMARY */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.r::before{background:var(--accent);}.sc.g::before{background:var(--gold);}
+.sc.gn::before{background:var(--success);}.sc.k::before{background:var(--ink);}
+.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}.cv.gn{color:var(--success);}
+.cv-sub{font-size:0.72rem;color:var(--muted);margin-top:0.25rem;font-family:'DM Mono',monospace;}
+
+/* TABLE */
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.tr-tot td{background:var(--ink);color:var(--paper);font-weight:700;font-family:'DM Mono',monospace;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.pos{color:var(--success);font-weight:500;}
+.neg{color:var(--accent);font-weight:500;}
+
+/* CHART CONTAINERS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+@media(max-width:900px){.chart-grid,.chart-grid-3{grid-template-columns:1fr;}}
+.chart-box{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem;box-shadow:0 2px 8px var(--shadow);}
+.chart-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+.chart-wrap{position:relative;height:220px;}
+
+/* BADGE */
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+
+/* FILTRI BAR */
+.filtri-bar{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.2rem 1.5rem;margin-bottom:2rem;}
+.filtri-bar .fg{margin:0;min-width:150px;}
+
+/* RIEPILOGO ASSEMBLEA */
+.assemblea-doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.assemblea-hs{background:var(--ink);color:var(--paper);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.assemblea-title{font-family:'DM Serif Display',serif;font-size:1rem;}
+.assemblea-body{padding:2rem;}
+.ass-sezione{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.ass-sezione:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.ass-sezione-title{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;}
+.ass-row{display:flex;justify-content:space-between;padding:0.35rem 0;font-size:0.875rem;border-bottom:1px solid #f5f0e8;}
+.ass-row:last-child{border-bottom:none;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+
+/* PREVISIONE */
+.prev-bar{height:8px;background:var(--cream);border-radius:4px;overflow:hidden;margin-top:0.4rem;}
+.prev-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Contabile · Modulo 1.13</div>
+  <h1>Report<br><em>Finanziari</em></h1>
+  <p class="header-sub">Analizza entrate, uscite, morosità e andamento finanziario dei tuoi condomini. Grafici, tabelle e riepilogo pronto per l'assemblea.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-dati"      onclick="go('dati')">📥 1 · Inserisci Dati</button>
+    <button class="tab-btn"   id="tb-overview"   onclick="go('overview')">📊 2 · Panoramica</button>
+    <button class="tab-btn"   id="tb-andamento"  onclick="go('andamento')">📈 3 · Andamento</button>
+    <button class="tab-btn"   id="tb-morosita"   onclick="go('morosita')">⚠️ 4 · Morosità</button>
+    <button class="tab-btn"   id="tb-previsione" onclick="go('previsione')">🔮 5 · Previsione</button>
+    <button class="tab-btn"   id="tb-assemblea"  onclick="go('assemblea')">📄 6 · Report Assemblea</button>
+  </div>
+
+  <!-- ══ TAB 1 — INSERISCI DATI ══ -->
+  <div class="panel on" id="p-dati">
+
+    <div class="sl">Dati generali</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="dCondoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Anno di riferimento</label>
+          <select id="dAnno">
+            <option value="2025">2025</option><option value="2024" selected>2024</option>
+            <option value="2023">2023</option><option value="2022">2022</option>
+          </select>
+        </div>
+        <div class="fg"><label>Periodo</label>
+          <select id="dPeriodo">
+            <option value="annuale">Annuale</option>
+            <option value="semestrale">Semestrale</option>
+            <option value="trimestrale">Trimestrale</option>
+            <option value="mensile">Mensile</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">Entrate mensili (€)</div>
+    <div class="card">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Inserisci le quote condominiali incassate ogni mese.</p>
+      <div id="entrateGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.75rem;"></div>
+    </div>
+
+    <div class="sl">Uscite mensili (€)</div>
+    <div class="card">
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Inserisci le spese effettive sostenute ogni mese.</p>
+      <div id="usciteGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.75rem;"></div>
+    </div>
+
+    <div class="sl">Suddivisione spese per categoria</div>
+    <div class="card">
+      <div id="categGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div>
+    </div>
+
+    <div class="sl">Situazione morosità</div>
+    <div class="card">
+      <div class="r4">
+        <div class="fg"><label>N° condomini totali</label><input type="number" id="dNTot" placeholder="Es. 20" min="0"></div>
+        <div class="fg"><label>N° morosi</label><input type="number" id="dNMorosi" placeholder="Es. 3" min="0"></div>
+        <div class="fg"><label>Totale crediti (€)</label><input type="number" id="dCrediti" placeholder="Es. 1500" step="0.01" min="0"></div>
+        <div class="fg"><label>Crediti oltre 3 mesi (€)</label><input type="number" id="dCreditiVecchi" placeholder="Es. 600" step="0.01" min="0"></div>
+      </div>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-p" onclick="generaReport()">📊 Genera Report</button>
+      <button class="btn btn-g" onclick="caricaEsempio()">📋 Carica dati di esempio</button>
+      <button class="btn btn-g" onclick="resetDati()">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — PANORAMICA ══ -->
+  <div class="panel" id="p-overview">
+    <div id="overviewContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i dati nella Tab 1 e premi "Genera Report".</p>
+        <button class="btn btn-g btn-sm" onclick="go('dati')">→ Inserisci dati</button>
+        &nbsp;<button class="btn btn-p btn-sm" onclick="caricaEsempio();generaReport()">⚡ Esempio rapido</button>
+        &nbsp;<button class="btn btn-g btn-sm" onclick="azzera()">↺ Azzera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — ANDAMENTO ══ -->
+  <div class="panel" id="p-andamento">
+    <div id="andamentoContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📈</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per vedere l'andamento mensile.</p>
+        <button class="btn btn-g btn-sm" onclick="go('dati')">→ Inserisci dati</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — MOROSITÀ ══ -->
+  <div class="panel" id="p-morosita">
+    <div id="morositaContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">⚠️</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per analizzare la morosità.</p>
+        <button class="btn btn-g btn-sm" onclick="go('dati')">→ Inserisci dati</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — PREVISIONE ══ -->
+  <div class="panel" id="p-previsione">
+    <div id="previsioneContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">🔮</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per vedere le previsioni future.</p>
+        <button class="btn btn-g btn-sm" onclick="go('dati')">→ Inserisci dati</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 6 — REPORT ASSEMBLEA ══ -->
+  <div class="panel" id="p-assemblea">
+    <div id="assembleaContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per ottenere il riepilogo da presentare in assemblea.</p>
+        <button class="btn btn-g btn-sm" onclick="go('dati')">→ Inserisci dati</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Report Finanziari · Beta · Solo uso indicativo</div>
+
+<script>
+var PANELS = ['dati','overview','andamento','morosita','previsione','assemblea'];
+var MESI   = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+var MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+var CATEGORIE_SPESA = ['Manutenzione ordinaria','Manutenzione straordinaria','Utenze','Compensi professionisti','Assicurazione','Altro'];
+var COLORI = ['#c8402a','#b8860b','#2a6640','#2a5080','#7a4060','#5a5a5a'];
+var reportDati = null;
+var charts = {};
+
+// ══ TAB ══
+function go(name){
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n===name?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n===name?' on':'');
+  });
+  if(name==='overview'&&reportDati)   renderOverview();
+  if(name==='andamento'&&reportDati)  renderAndamento();
+  if(name==='morosita'&&reportDati)   renderMorosita();
+  if(name==='previsione'&&reportDati) renderPrevisione();
+  if(name==='assemblea'&&reportDati)  renderAssemblea();
+}
+
+window.onload=function(){
+  PANELS.forEach(function(n,i){
+    document.getElementById('p-'+n).style.display=i===0?'block':'none';
+  });
+  buildInputGrids();
+};
+
+// ══ BUILD INPUT GRIDS ══
+function buildInputGrids(){
+  var eg=document.getElementById('entrateGrid');
+  var ug=document.getElementById('usciteGrid');
+  var cg=document.getElementById('categGrid');
+  eg.innerHTML=''; ug.innerHTML=''; cg.innerHTML='';
+
+  MESI.forEach(function(m,i){
+    eg.innerHTML+='<div class="fg" style="margin:0"><label>'+m+'</label><input type="number" id="ent-'+i+'" placeholder="0" step="0.01" min="0" style="font-family:\'DM Mono\',monospace"></div>';
+    ug.innerHTML+='<div class="fg" style="margin:0"><label>'+m+'</label><input type="number" id="usc-'+i+'" placeholder="0" step="0.01" min="0" style="font-family:\'DM Mono\',monospace"></div>';
+  });
+
+  CATEGORIE_SPESA.forEach(function(c,i){
+    cg.innerHTML+='<div class="fg" style="margin:0"><label>'+c+'</label><input type="number" id="cat-'+i+'" placeholder="0" step="0.01" min="0" style="font-family:\'DM Mono\',monospace"></div>';
+  });
+}
+
+// ══ LEGGI DATI ══
+function leggiDati(){
+  var entrate=[], uscite=[], categorie=[];
+  for(var i=0;i<12;i++){
+    entrate.push(parseFloat((document.getElementById('ent-'+i)||{}).value)||0);
+    uscite.push(parseFloat((document.getElementById('usc-'+i)||{}).value)||0);
+  }
+  for(var j=0;j<CATEGORIE_SPESA.length;j++){
+    categorie.push(parseFloat((document.getElementById('cat-'+j)||{}).value)||0);
+  }
+  return {
+    condoNome: (document.getElementById('dCondoNome')||{}).value||'Condominio',
+    anno:      (document.getElementById('dAnno')||{}).value||'2024',
+    periodo:   (document.getElementById('dPeriodo')||{}).value||'annuale',
+    entrate:   entrate,
+    uscite:    uscite,
+    categorie: categorie,
+    nTot:      parseInt((document.getElementById('dNTot')||{}).value)||0,
+    nMorosi:   parseInt((document.getElementById('dNMorosi')||{}).value)||0,
+    crediti:   parseFloat((document.getElementById('dCrediti')||{}).value)||0,
+    creditiVecchi: parseFloat((document.getElementById('dCreditiVecchi')||{}).value)||0,
+  };
+}
+
+function generaReport(){
+  reportDati = leggiDati();
+  var totE = reportDati.entrate.reduce(function(s,v){return s+v;},0);
+  if(!totE && !reportDati.uscite.reduce(function(s,v){return s+v;},0)){
+    alert('Inserisci almeno qualche dato prima di generare il report.');
+    return;
+  }
+  go('overview');
+}
+
+function resetDati(){
+  for(var i=0;i<12;i++){
+    var e=document.getElementById('ent-'+i); if(e)e.value='';
+    var u=document.getElementById('usc-'+i); if(u)u.value='';
+  }
+  for(var j=0;j<CATEGORIE_SPESA.length;j++){
+    var c=document.getElementById('cat-'+j); if(c)c.value='';
+  }
+  ['dCondoNome','dNTot','dNMorosi','dCrediti','dCreditiVecchi'].forEach(function(id){
+    var el=document.getElementById(id); if(el)el.value='';
+  });
+  reportDati=null;
+}
+
+function caricaEsempio(){
+  document.getElementById('dCondoNome').value='Condominio Via Roma 10';
+  document.getElementById('dAnno').value='2024';
+  var ent=[2800,2850,2800,2900,2800,2750,2900,2800,2850,2900,2800,3100];
+  var usc=[1800,2200,1950,2100,1800,1650,1900,2400,2100,2200,1950,3200];
+  var cat=[3200,8000,2800,2400,1200,1400];
+  ent.forEach(function(v,i){var el=document.getElementById('ent-'+i);if(el)el.value=v;});
+  usc.forEach(function(v,i){var el=document.getElementById('usc-'+i);if(el)el.value=v;});
+  cat.forEach(function(v,i){var el=document.getElementById('cat-'+i);if(el)el.value=v;});
+  document.getElementById('dNTot').value=20;
+  document.getElementById('dNMorosi').value=3;
+  document.getElementById('dCrediti').value=1500;
+  document.getElementById('dCreditiVecchi').value=600;
+}
+
+// ══ DISTRUGGI CHART ══
+function destroyChart(id){
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+}
+
+// ══ TAB 2 — OVERVIEW ══
+function renderOverview(){
+  var d=reportDati;
+  var totE=d.entrate.reduce(function(s,v){return s+v;},0);
+  var totU=d.uscite.reduce(function(s,v){return s+v;},0);
+  var saldo=totE-totU;
+  var totCat=d.categorie.reduce(function(s,v){return s+v;},0);
+  var mesiBuoni=d.entrate.filter(function(e,i){return e>=d.uscite[i];}).length;
+
+  document.getElementById('overviewContent').innerHTML=
+    '<div class="sgrid">'+
+    '<div class="sc gn"><div class="cl">Entrate totali</div><div class="cv gn">'+fmt(totE)+'</div><div class="cv-sub">Anno '+d.anno+'</div></div>'+
+    '<div class="sc r"><div class="cl">Uscite totali</div><div class="cv a">'+fmt(totU)+'</div><div class="cv-sub">Anno '+d.anno+'</div></div>'+
+    '<div class="sc '+(saldo>=0?'gn':'r')+'"><div class="cl">'+(saldo>=0?'Avanzo':'Disavanzo')+'</div><div class="cv '+(saldo>=0?'gn':'a')+'">'+fmt(Math.abs(saldo))+'</div><div class="cv-sub">'+(saldo>=0?'Positivo':'Da recuperare')+'</div></div>'+
+    '<div class="sc g"><div class="cl">Mesi in attivo</div><div class="cv go">'+mesiBuoni+'/12</div><div class="cv-sub">Entrate > Uscite</div></div>'+
+    '<div class="sc k"><div class="cl">Media mensile entrate</div><div class="cv">'+fmt(totE/12)+'</div></div>'+
+    '<div class="sc bl"><div class="cl">Media mensile uscite</div><div class="cv" style="color:#2a5080">'+fmt(totU/12)+'</div></div>'+
+    '</div>'+
+
+    '<div class="chart-grid">'+
+    '<div class="chart-box"><div class="chart-title">Entrate vs Uscite — Anno '+d.anno+'</div><div class="chart-wrap"><canvas id="chBarOverview"></canvas></div></div>'+
+    '<div class="chart-box"><div class="chart-title">Suddivisione spese per categoria</div><div class="chart-wrap"><canvas id="chTorta"></canvas></div></div>'+
+    '</div>'+
+
+    '<div class="sl">Dettaglio mensile</div>'+
+    '<div class="tw"><table>'+
+    '<thead><tr><th>Mese</th><th style="text-align:right">Entrate</th><th style="text-align:right">Uscite</th><th style="text-align:right">Saldo</th><th>Stato</th></tr></thead>'+
+    '<tbody>'+
+    MESI_FULL.map(function(m,i){
+      var e=d.entrate[i], u=d.uscite[i], s=e-u;
+      return '<tr>'+
+        '<td><strong>'+m+'</strong></td>'+
+        '<td class="amt pos">'+fmt(e)+'</td>'+
+        '<td class="amt neg">'+fmt(u)+'</td>'+
+        '<td class="amt" style="font-weight:600;color:'+(s>=0?'var(--success)':'var(--accent)')+'">'+fmt(s)+'</td>'+
+        '<td><span class="badge '+(s>=0?'b-ok':s>-200?'b-warn':'b-danger')+'">'+(s>=0?'✅ Attivo':s>-200?'⚠️ Lieve deficit':'🔴 Deficit')+'</span></td>'+
+        '</tr>';
+    }).join('')+
+    '<tr class="tr-tot"><td>TOTALE ANNO</td><td class="amt">'+fmt(totE)+'</td><td class="amt">'+fmt(totU)+'</td><td class="amt">'+fmt(saldo)+'</td><td></td></tr>'+
+    '</tbody></table></div>'+
+
+    '<div class="brow">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '<button class="btn btn-g btn-sm" onclick="azzera()">↺ Azzera e ricomincia</button>'+
+    '</div>';
+
+  setTimeout(function(){
+    // Bar chart
+    destroyChart('barOverview');
+    var ctx1=document.getElementById('chBarOverview');
+    if(ctx1) charts['barOverview']=new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels:MESI,
+        datasets:[
+          {label:'Entrate',data:d.entrate,backgroundColor:'rgba(42,102,64,0.7)',borderColor:'#2a6640',borderWidth:1},
+          {label:'Uscite', data:d.uscite, backgroundColor:'rgba(200,64,42,0.7)',borderColor:'#c8402a',borderWidth:1}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans'}}}},scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString('it-IT');}}}}}
+    });
+    // Torta categorie
+    destroyChart('torta');
+    var ctx2=document.getElementById('chTorta');
+    var catNonZero=CATEGORIE_SPESA.filter(function(_,i){return d.categorie[i]>0;});
+    var catVal=d.categorie.filter(function(v){return v>0;});
+    if(ctx2&&catNonZero.length) charts['torta']=new Chart(ctx2,{
+      type:'doughnut',
+      data:{labels:catNonZero,datasets:[{data:catVal,backgroundColor:COLORI,borderWidth:2,borderColor:'white'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'DM Sans'},boxWidth:12}}}}
+    });
+  },100);
+}
+
+// ══ TAB 3 — ANDAMENTO ══
+function renderAndamento(){
+  var d=reportDati;
+  var saldi=d.entrate.map(function(e,i){return e-d.uscite[i];});
+  var saldoCum=[];
+  saldi.reduce(function(acc,v,i){saldoCum[i]=acc+v;return saldoCum[i];},0);
+
+  document.getElementById('andamentoContent').innerHTML=
+    '<div class="chart-grid">'+
+    '<div class="chart-box" style="grid-column:1/-1"><div class="chart-title">Andamento entrate e uscite — Mensile</div><div class="chart-wrap" style="height:260px"><canvas id="chLinea"></canvas></div></div>'+
+    '</div>'+
+    '<div class="chart-grid">'+
+    '<div class="chart-box"><div class="chart-title">Saldo mensile</div><div class="chart-wrap"><canvas id="chSaldo"></canvas></div></div>'+
+    '<div class="chart-box"><div class="chart-title">Saldo cumulativo (progressivo anno)</div><div class="chart-wrap"><canvas id="chCumul"></canvas></div></div>'+
+    '</div>'+
+
+    '<div class="sl">Analisi trimestrale</div>'+
+    '<div class="tw"><table>'+
+    '<thead><tr><th>Trimestre</th><th style="text-align:right">Entrate</th><th style="text-align:right">Uscite</th><th style="text-align:right">Saldo</th><th style="text-align:right">% Uscite/Entrate</th></tr></thead>'+
+    '<tbody>'+
+    [0,1,2,3].map(function(t){
+      var e=d.entrate.slice(t*3,t*3+3).reduce(function(s,v){return s+v;},0);
+      var u=d.uscite.slice(t*3,t*3+3).reduce(function(s,v){return s+v;},0);
+      var s=e-u;
+      var perc=e>0?((u/e)*100).toFixed(1)+'%':'—';
+      return '<tr>'+
+        '<td><strong>Q'+(t+1)+' ('+MESI[t*3]+'-'+MESI[t*3+2]+')</strong></td>'+
+        '<td class="amt pos">'+fmt(e)+'</td>'+
+        '<td class="amt neg">'+fmt(u)+'</td>'+
+        '<td class="amt" style="font-weight:600;color:'+(s>=0?'var(--success)':'var(--accent)')+'">'+fmt(s)+'</td>'+
+        '<td class="amt" style="color:'+(parseFloat(perc)>90?'var(--accent)':parseFloat(perc)>80?'var(--gold)':'var(--success)')+'">'+perc+'</td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div>';
+
+  setTimeout(function(){
+    destroyChart('linea');
+    var ctx1=document.getElementById('chLinea');
+    if(ctx1) charts['linea']=new Chart(ctx1,{
+      type:'line',
+      data:{labels:MESI,datasets:[
+        {label:'Entrate',data:d.entrate,borderColor:'#2a6640',backgroundColor:'rgba(42,102,64,0.08)',tension:0.3,fill:true,pointRadius:4},
+        {label:'Uscite', data:d.uscite, borderColor:'#c8402a',backgroundColor:'rgba(200,64,42,0.08)',tension:0.3,fill:true,pointRadius:4}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans'}}}},scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString('it-IT');}}}}}
+    });
+    destroyChart('saldo');
+    var ctx2=document.getElementById('chSaldo');
+    if(ctx2) charts['saldo']=new Chart(ctx2,{
+      type:'bar',
+      data:{labels:MESI,datasets:[{
+        label:'Saldo',data:saldi,
+        backgroundColor:saldi.map(function(v){return v>=0?'rgba(42,102,64,0.7)':'rgba(200,64,42,0.7)';}),
+        borderColor:saldi.map(function(v){return v>=0?'#2a6640':'#c8402a';}),
+        borderWidth:1
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString('it-IT');}}}}}
+    });
+    destroyChart('cumul');
+    var ctx3=document.getElementById('chCumul');
+    if(ctx3) charts['cumul']=new Chart(ctx3,{
+      type:'line',
+      data:{labels:MESI,datasets:[{
+        label:'Saldo cumulativo',data:saldoCum,
+        borderColor:'#b8860b',backgroundColor:'rgba(184,134,11,0.1)',tension:0.3,fill:true,pointRadius:4
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString('it-IT');}}}}}
+    });
+  },100);
+}
+
+// ══ TAB 4 — MOROSITÀ ══
+function renderMorosita(){
+  var d=reportDati;
+  var percMorosi=d.nTot>0?((d.nMorosi/d.nTot)*100).toFixed(1):0;
+  var percVecchi=d.crediti>0?((d.creditiVecchi/d.crediti)*100).toFixed(1):0;
+  var totEntrate=d.entrate.reduce(function(s,v){return s+v;},0);
+  var incidenza=totEntrate>0?((d.crediti/totEntrate)*100).toFixed(1):0;
+
+  document.getElementById('morositaContent').innerHTML=
+    '<div class="sgrid">'+
+    '<div class="sc k"><div class="cl">Condomini totali</div><div class="cv">'+d.nTot+'</div></div>'+
+    '<div class="sc r"><div class="cl">Morosi</div><div class="cv a">'+d.nMorosi+'</div><div class="cv-sub">'+percMorosi+'% del totale</div></div>'+
+    '<div class="sc g"><div class="cl">Crediti totali</div><div class="cv go">'+fmt(d.crediti)+'</div></div>'+
+    '<div class="sc '+(parseFloat(percVecchi)>40?'r':'gn')+'"><div class="cl">Crediti > 3 mesi</div><div class="cv '+(parseFloat(percVecchi)>40?'a':'gn')+'">'+fmt(d.creditiVecchi)+'</div><div class="cv-sub">'+percVecchi+'% dei crediti</div></div>'+
+    '</div>'+
+
+    '<div class="chart-grid">'+
+    '<div class="chart-box"><div class="chart-title">Condomini: in regola vs morosi</div><div class="chart-wrap"><canvas id="chMoroPie"></canvas></div></div>'+
+    '<div class="chart-box"><div class="chart-title">Crediti: recenti vs oltre 3 mesi</div><div class="chart-wrap"><canvas id="chCreditiPie"></canvas></div></div>'+
+    '</div>'+
+
+    '<div class="sl">Indicatori di rischio morosità</div>'+
+    '<div class="card">'+
+    indicatore('Tasso morosità (% morosi)',percMorosi+'%', parseFloat(percMorosi), 5, 15)+
+    indicatore('Incidenza crediti su entrate',incidenza+'%', parseFloat(incidenza), 5, 15)+
+    indicatore('Crediti cronici (% oltre 3 mesi)',percVecchi+'%', parseFloat(percVecchi), 20, 40)+
+    indicatore('Credito medio per moroso',d.nMorosi>0?fmt(d.crediti/d.nMorosi):'—', d.nMorosi>0?d.crediti/d.nMorosi:0, 300, 800)+
+    '</div>'+
+
+    '<div class="nb"><strong>📌 Soglie di attenzione</strong>'+
+    'Un tasso di morosità superiore al 15% richiede azioni immediate (solleciti, decreti ingiuntivi). '+
+    'I crediti oltre 3 mesi superiori al 40% del totale indicano difficoltà strutturali di riscossione. '+
+    'Usa il modulo <strong>Calcolatore More</strong> per calcolare gli interessi da richiedere ai morosi.'+
+    '</div>';
+
+  setTimeout(function(){
+    destroyChart('moroPie');
+    var ctx1=document.getElementById('chMoroPie');
+    if(ctx1&&d.nTot>0) charts['moroPie']=new Chart(ctx1,{
+      type:'doughnut',
+      data:{labels:['In regola','Morosi'],datasets:[{data:[d.nTot-d.nMorosi,d.nMorosi],backgroundColor:['rgba(42,102,64,0.8)','rgba(200,64,42,0.8)'],borderWidth:2,borderColor:'white'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans'}}}}}
+    });
+    destroyChart('creditiPie');
+    var ctx2=document.getElementById('chCreditiPie');
+    if(ctx2&&d.crediti>0) charts['creditiPie']=new Chart(ctx2,{
+      type:'doughnut',
+      data:{labels:['Recenti','Oltre 3 mesi'],datasets:[{data:[d.crediti-d.creditiVecchi,d.creditiVecchi],backgroundColor:['rgba(184,134,11,0.8)','rgba(200,64,42,0.8)'],borderWidth:2,borderColor:'white'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans'}}}}}
+    });
+  },100);
+}
+
+function indicatore(label,valore,num,soglia1,soglia2){
+  var perc=Math.min(100,(num/soglia2)*100);
+  var col=num<soglia1?'var(--success)':num<soglia2?'var(--gold)':'var(--accent)';
+  return '<div style="margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:0.3rem">'+
+    '<span style="font-size:0.82rem">'+label+'</span>'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.82rem;font-weight:600;color:'+col+'">'+valore+'</span>'+
+    '</div>'+
+    '<div class="prev-bar"><div class="prev-bar-fill" style="width:'+perc+'%;background:'+col+'"></div></div>'+
+    '</div>';
+}
+
+// ══ TAB 5 — PREVISIONE ══
+function renderPrevisione(){
+  var d=reportDati;
+  var totE=d.entrate.reduce(function(s,v){return s+v;},0);
+  var totU=d.uscite.reduce(function(s,v){return s+v;},0);
+  var mediaE=totE/12;
+  var mediaU=totU/12;
+  var crescita=0.02; // ipotesi crescita spese 2% annuo
+
+  var prevAnni=[1,2,3];
+  var prevE=prevAnni.map(function(a){return mediaE*12*Math.pow(1.01,a);});
+  var prevU=prevAnni.map(function(a){return mediaU*12*Math.pow(1+crescita,a);});
+  var prevS=prevE.map(function(e,i){return e-prevU[i];});
+
+  document.getElementById('previsioneContent').innerHTML=
+    '<div class="nb" style="margin-bottom:1.5rem"><strong>💡 Come funziona la previsione</strong>'+
+    'La previsione è calcolata sulla base della media mensile dell\'anno corrente, applicando una crescita stimata delle entrate dell\'1% annuo (adeguamento ISTAT) e delle spese del 2% annuo (inflazione e manutenzione crescente). Sono stime indicative.</div>'+
+
+    '<div class="chart-grid">'+
+    '<div class="chart-box" style="grid-column:1/-1"><div class="chart-title">Proiezione finanziaria — Prossimi 3 anni</div><div class="chart-wrap" style="height:260px"><canvas id="chPrev"></canvas></div></div>'+
+    '</div>'+
+
+    '<div class="sl">Tabella previsionale</div>'+
+    '<div class="tw"><table>'+
+    '<thead><tr><th>Anno</th><th style="text-align:right">Entrate previste</th><th style="text-align:right">Uscite previste</th><th style="text-align:right">Saldo previsto</th><th>Trend</th></tr></thead>'+
+    '<tbody>'+
+    '<tr><td><strong>'+d.anno+' (attuale)</strong></td><td class="amt pos">'+fmt(totE)+'</td><td class="amt neg">'+fmt(totU)+'</td><td class="amt" style="font-weight:600;color:'+(totE-totU>=0?'var(--success)':'var(--accent)')+'">'+fmt(totE-totU)+'</td><td>—</td></tr>'+
+    prevAnni.map(function(a,i){
+      var anno=parseInt(d.anno)+a;
+      return '<tr>'+
+        '<td><strong>'+anno+'</strong></td>'+
+        '<td class="amt pos">'+fmt(prevE[i])+'</td>'+
+        '<td class="amt neg">'+fmt(prevU[i])+'</td>'+
+        '<td class="amt" style="font-weight:600;color:'+(prevS[i]>=0?'var(--success)':'var(--accent)')+'">'+fmt(prevS[i])+'</td>'+
+        '<td><span class="badge '+(prevS[i]>=0?'b-ok':'b-danger')+'">'+(prevS[i]>=0?'📈 Positivo':'📉 Deficit')+'</span></td>'+
+        '</tr>';
+    }).join('')+
+    '</tbody></table></div>'+
+
+    '<div class="sl">Raccomandazioni operative</div>'+
+    '<div class="card">'+
+    raccomandazioni(d,totE,totU,prevS)+
+    '</div>';
+
+  setTimeout(function(){
+    destroyChart('prev');
+    var ctx=document.getElementById('chPrev');
+    if(ctx) charts['prev']=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:[d.anno,parseInt(d.anno)+1+'*',parseInt(d.anno)+2+'*',parseInt(d.anno)+3+'*'],
+        datasets:[
+          {label:'Entrate',data:[totE].concat(prevE),backgroundColor:'rgba(42,102,64,0.7)',borderColor:'#2a6640',borderWidth:1},
+          {label:'Uscite', data:[totU].concat(prevU), backgroundColor:'rgba(200,64,42,0.7)',borderColor:'#c8402a',borderWidth:1}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans'}}}},scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString('it-IT');}}}}}
+    });
+  },100);
+}
+
+function raccomandazioni(d,totE,totU,prevS){
+  var items=[];
+  var saldo=totE-totU;
+  if(saldo<0) items.push({c:'b-danger',t:'⚠️ Disavanzo attuale: valutare un aumento delle quote condominiali o una riduzione delle spese straordinarie.'});
+  if(d.nMorosi>0&&d.nTot>0&&(d.nMorosi/d.nTot)>0.1) items.push({c:'b-danger',t:'⚠️ Tasso morosità elevato ('+((d.nMorosi/d.nTot)*100).toFixed(0)+'%): attivare solleciti formali e valutare decreti ingiuntivi.'});
+  if(d.creditiVecchi>d.crediti*0.4) items.push({c:'b-warn',t:'📌 Crediti cronici significativi: valutare affidarli a un legale per il recupero forzoso.'});
+  if(prevS[1]<0) items.push({c:'b-warn',t:'🔮 Il saldo potrebbe diventare negativo nel '+( parseInt(d.anno)+2)+': pianificare un adeguamento preventivo delle quote.'});
+  if(saldo>0&&saldo>totE*0.1) items.push({c:'b-ok',t:'✅ Saldo positivo solido: considerare di destinare una parte all\'incremento del fondo di riserva.'});
+  if(!items.length) items.push({c:'b-ok',t:'✅ Situazione finanziaria equilibrata. Mantenere il monitoraggio mensile.'});
+  return items.map(function(it){
+    return '<div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid var(--cream)">'+
+      '<span class="badge '+it.c+'" style="flex-shrink:0;margin-top:0.1rem">!</span>'+
+      '<span style="font-size:0.85rem;line-height:1.5">'+it.t+'</span></div>';
+  }).join('');
+}
+
+// ══ TAB 6 — ASSEMBLEA ══
+function renderAssemblea(){
+  var d=reportDati;
+  var totE=d.entrate.reduce(function(s,v){return s+v;},0);
+  var totU=d.uscite.reduce(function(s,v){return s+v;},0);
+  var saldo=totE-totU;
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var totCat=d.categorie.reduce(function(s,v){return s+v;},0);
+
+  document.getElementById('assembleaContent').innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa per assemblea</button>'+
+    '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel completo</button>'+
+    '</div>'+
+
+    '<div class="assemblea-doc">'+
+    '<div class="assemblea-hs">'+
+    '<span class="assemblea-title">Report Finanziario — '+esc(d.condoNome)+'</span>'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.62rem;background:rgba(255,255,255,0.12);padding:0.25rem 0.6rem;border-radius:2px">Anno '+d.anno+' · '+oggi+'</span>'+
+    '</div>'+
+    '<div class="assemblea-body">'+
+
+    '<div class="ass-sezione">'+
+    '<div class="ass-sezione-title">1. Riepilogo finanziario anno '+d.anno+'</div>'+
+    '<div class="ass-row"><span>Totale entrate (quote incassate)</span><span style="font-family:\'DM Mono\',monospace;font-weight:600;color:var(--success)">'+fmt(totE)+'</span></div>'+
+    '<div class="ass-row"><span>Totale uscite (spese sostenute)</span><span style="font-family:\'DM Mono\',monospace;font-weight:600;color:var(--accent)">'+fmt(totU)+'</span></div>'+
+    '<div class="ass-row" style="background:var(--cream);padding:0.5rem;border-radius:3px;margin-top:0.5rem"><span><strong>'+(saldo>=0?'Avanzo di gestione':'Disavanzo di gestione')+'</strong></span><span style="font-family:\'DM Mono\',monospace;font-weight:700;font-size:1.1rem;color:'+(saldo>=0?'var(--success)':'var(--accent)')+'">'+fmt(Math.abs(saldo))+'</span></div>'+
+    '</div>'+
+
+    (totCat>0?
+    '<div class="ass-sezione">'+
+    '<div class="ass-sezione-title">2. Dettaglio spese per categoria</div>'+
+    CATEGORIE_SPESA.map(function(c,i){
+      if(!d.categorie[i]) return '';
+      return '<div class="ass-row"><span>'+c+'</span><span style="font-family:\'DM Mono\',monospace">'+fmt(d.categorie[i])+'</span></div>';
+    }).join('')+
+    '<div class="ass-row" style="font-weight:600"><span>Totale spese classificate</span><span style="font-family:\'DM Mono\',monospace">'+fmt(totCat)+'</span></div>'+
+    '</div>':'') +
+
+    (d.nTot>0?
+    '<div class="ass-sezione">'+
+    '<div class="ass-sezione-title">3. Situazione morosità</div>'+
+    '<div class="ass-row"><span>Condomini totali</span><span style="font-family:\'DM Mono\',monospace">'+d.nTot+'</span></div>'+
+    '<div class="ass-row"><span>Condomini morosi</span><span style="font-family:\'DM Mono\',monospace;color:var(--accent)">'+d.nMorosi+' ('+((d.nMorosi/d.nTot)*100).toFixed(1)+'%)</span></div>'+
+    '<div class="ass-row"><span>Crediti da riscuotere</span><span style="font-family:\'DM Mono\',monospace;color:var(--accent)">'+fmt(d.crediti)+'</span></div>'+
+    (d.creditiVecchi?'<div class="ass-row"><span>Di cui oltre 3 mesi</span><span style="font-family:\'DM Mono\',monospace;color:var(--accent)">'+fmt(d.creditiVecchi)+'</span></div>':'')+
+    '</div>':'') +
+
+    '<div class="ass-sezione">'+
+    '<div class="ass-sezione-title">4. Andamento trimestrale</div>'+
+    [0,1,2,3].map(function(t){
+      var e=d.entrate.slice(t*3,t*3+3).reduce(function(s,v){return s+v;},0);
+      var u=d.uscite.slice(t*3,t*3+3).reduce(function(s,v){return s+v;},0);
+      return '<div class="ass-row"><span>Q'+(t+1)+' — '+MESI_FULL[t*3]+' / '+MESI_FULL[t*3+2]+'</span>'+
+        '<span style="font-family:\'DM Mono\',monospace">Entr. '+fmt(e)+' · Usc. '+fmt(u)+' · <strong style="color:'+(e-u>=0?'var(--success)':'var(--accent)')+'">Saldo '+fmt(e-u)+'</strong></span></div>';
+    }).join('')+
+    '</div>'+
+
+    '<div class="ass-sezione">'+
+    '<div class="ass-sezione-title">5. Nota dell\'amministratore</div>'+
+    '<p style="font-size:0.85rem;line-height:1.7;color:var(--muted)">'+
+    'Il presente report è stato predisposto dall\'amministratore ai sensi dell\'art. 1130 c.c. e sottoposto all\'approvazione dell\'assemblea condominiale. '+
+    (saldo>=0?'La gestione dell\'anno '+d.anno+' si chiude con un avanzo di '+fmt(saldo)+', che l\'assemblea potrà deliberare di destinare al fondo di riserva o in riduzione delle quote future.':
+    'La gestione dell\'anno '+d.anno+' evidenzia un disavanzo di '+fmt(Math.abs(saldo))+'. L\'assemblea è chiamata a deliberare le modalità di copertura.')+
+    '</p>'+
+    '<div style="display:flex;gap:3rem;margin-top:2rem">'+
+    '<div style="border-top:1px solid var(--border);width:200px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted)">L\'Amministratore</div>'+
+    '<div style="border-top:1px solid var(--border);width:200px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted)">Il Presidente dell\'Assemblea</div>'+
+    '</div>'+
+    '</div>'+
+
+    '</div></div>';
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  if(!reportDati){alert('Genera prima il report.');return;}
+  var d=reportDati;
+  var wb=XLSX.utils.book_new();
+  var totE=d.entrate.reduce(function(s,v){return s+v;},0);
+  var totU=d.uscite.reduce(function(s,v){return s+v;},0);
+
+  // Foglio 1: Mensile
+  var ws1=XLSX.utils.aoa_to_sheet(
+    [['REPORT FINANZIARIO — '+d.condoNome+' — Anno '+d.anno],[],
+     ['Mese','Entrate','Uscite','Saldo']].concat(
+    MESI_FULL.map(function(m,i){return [m,d.entrate[i],d.uscite[i],d.entrate[i]-d.uscite[i]];})).concat([
+    [],[' ','TOTALE',totE,totU,totE-totU]
+    ]));
+  ws1['!cols']=[14,14,14,14].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'Report Mensile');
+
+  // Foglio 2: Categorie
+  if(d.categorie.some(function(v){return v>0;})){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['Categoria','Importo']].concat(
+      CATEGORIE_SPESA.map(function(c,i){return [c,d.categorie[i]];})));
+    ws2['!cols']=[28,14].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Spese per Categoria');
+  }
+
+  // Foglio 3: Morosità
+  if(d.nTot>0){
+    var ws3=XLSX.utils.aoa_to_sheet([
+      ['Indicatore','Valore'],
+      ['Condomini totali',d.nTot],
+      ['Condomini morosi',d.nMorosi],
+      ['Tasso morosità %',d.nTot>0?((d.nMorosi/d.nTot)*100).toFixed(1):'0'],
+      ['Crediti totali',d.crediti],
+      ['Crediti oltre 3 mesi',d.creditiVecchi],
+    ]);
+    ws3['!cols']=[24,14].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws3,'Morosità');
+  }
+
+  XLSX.writeFile(wb,'CondoKit_Report_'+d.condoNome.replace(/\s/g,'_')+'_'+d.anno+'.xlsx');
+}
+
+function azzera(){
+  // Distruggi tutti i grafici attivi
+  Object.keys(charts).forEach(function(k){ destroyChart(k); });
+  // Azzera i dati
+  resetDati();
+  reportDati = null;
+  // Ripristina lo stato vuoto in tutte le tab
+  var vuotiStato = {
+    overview:   '<div class="card" style="text-align:center;padding:2.5rem"><div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div><p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i dati nella Tab 1 e premi "Genera Report".</p><button class="btn btn-g btn-sm" onclick="go(\'dati\')">→ Inserisci dati</button>&nbsp;<button class="btn btn-p btn-sm" onclick="caricaEsempio();generaReport()">⚡ Esempio rapido</button>&nbsp;<button class="btn btn-g btn-sm" onclick="azzera()">↺ Azzera</button></div>',
+    andamento:  '<div class="card" style="text-align:center;padding:2.5rem"><div style="font-size:2.5rem;margin-bottom:0.75rem">📈</div><p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per vedere l\'andamento mensile.</p><button class="btn btn-g btn-sm" onclick="go(\'dati\')">→ Inserisci dati</button></div>',
+    morosita:   '<div class="card" style="text-align:center;padding:2.5rem"><div style="font-size:2.5rem;margin-bottom:0.75rem">⚠️</div><p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per analizzare la morosità.</p><button class="btn btn-g btn-sm" onclick="go(\'dati\')">→ Inserisci dati</button></div>',
+    previsione: '<div class="card" style="text-align:center;padding:2.5rem"><div style="font-size:2.5rem;margin-bottom:0.75rem">🔮</div><p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per vedere le previsioni future.</p><button class="btn btn-g btn-sm" onclick="go(\'dati\')">→ Inserisci dati</button></div>',
+    assemblea:  '<div class="card" style="text-align:center;padding:2.5rem"><div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div><p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Genera il report per ottenere il riepilogo da presentare in assemblea.</p><button class="btn btn-g btn-sm" onclick="go(\'dati\')">→ Inserisci dati</button></div>',
+  };
+  Object.keys(vuotiStato).forEach(function(k){
+    var el = document.getElementById(k+'Content');
+    if(el) el.innerHTML = vuotiStato[k];
+  });
+  // Torna alla tab dati
+  go('dati');
+}
+function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

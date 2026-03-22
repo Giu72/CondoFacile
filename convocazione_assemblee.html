@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Convocazione Assemblee</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--warning-light:#fce8cc;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,background 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.55rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.ic{background:transparent;border:1px solid transparent;border-radius:3px;padding:0.35rem 0.5rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;}
+.ic:focus{outline:none;border-color:var(--accent);background:white;}
+.ic::placeholder{color:#bbb;font-style:italic;}
+.amt{font-family:'DM Mono',monospace;text-align:right;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-info{background:#d0e8f0;color:#1a4060;}
+.odg-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.9rem;background:var(--cream);border:1px solid var(--border);border-radius:3px;margin-bottom:0.5rem;}
+.odg-num{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);min-width:22px;}
+.odg-text{flex:1;font-size:0.875rem;}
+.odg-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:0.9rem;padding:0 0.25rem;transition:color 0.15s;}
+.odg-del:hover{color:var(--accent);}
+.mag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.mag-card{background:white;border:1px solid var(--border);border-left:4px solid var(--border);border-radius:4px;padding:1rem 1.25rem;}
+.mag-card.ok{border-left-color:var(--success);}
+.mag-card.warn{border-left-color:var(--gold);}
+.mag-label{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;}
+.mag-value{font-family:'DM Serif Display',serif;font-size:1.3rem;}
+.mag-sub{font-size:0.72rem;color:var(--muted);margin-top:0.2rem;}
+.doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-st{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-an{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;}
+.doc-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.7;}
+.doc-bd p{margin-bottom:0.75rem;}
+.doc-oggetto{background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin:1.25rem 0;font-weight:500;}
+.firma-line{border-top:1px solid var(--border);width:220px;padding-top:0.4rem;font-size:0.75rem;color:var(--muted);margin-top:2.5rem;}
+.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);}
+.lnav{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.lnav,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}.doc{box-shadow:none;border:none;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Assemblee · Modulo 2.1</div>
+  <h1>Convocazione<br><em>Assemblee</em></h1>
+  <p class="header-sub">Configura l'assemblea, gestisci l'ordine del giorno, calcola le maggioranze e genera lettere di convocazione e verbale pre-compilato.</p>
+</div>
+
+<div class="main">
+
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-setup"      onclick="go('setup')">⚙️ 1 · Dati Assemblea</button>
+    <button class="tab-btn"   id="tb-odg"         onclick="go('odg')">📋 2 · Ordine del Giorno</button>
+    <button class="tab-btn"   id="tb-condomini"   onclick="go('condomini')">👥 3 · Condomini</button>
+    <button class="tab-btn"   id="tb-maggioranze" onclick="go('maggioranze')">⚖️ 4 · Maggioranze</button>
+    <button class="tab-btn"   id="tb-lettere"     onclick="go('lettere')">✉️ 5 · Lettere</button>
+    <button class="tab-btn"   id="tb-verbale"     onclick="go('verbale')">📄 6 · Verbale</button>
+  </div>
+
+  <!-- ══ TAB 1 — DATI ASSEMBLEA ══ -->
+  <div class="panel on" id="p-setup">
+    <div class="sl">Dati del condominio</div>
+    <div class="card">
+      <div class="r2">
+        <div class="fg"><label>Nome Condominio</label><input type="text" id="condoNome" placeholder="Es. Condominio Via Roma 10"></div>
+        <div class="fg"><label>Codice Fiscale</label><input type="text" id="condoCF" placeholder="Es. 80012340582"></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>Nome Amministratore / Studio</label><input type="text" id="studioNome" placeholder="Es. Studio Amm. Bianchi"></div>
+        <div class="fg"><label>Contatti studio</label><input type="text" id="studioContatti" placeholder="Es. Via Milano 5 · Tel. 02 1234567"></div>
+      </div>
+    </div>
+
+    <div class="sl">Tipo assemblea</div>
+    <div class="card">
+      <div class="r3">
+        <div class="fg"><label>Tipo</label>
+          <select id="tipoAssemblea">
+            <option value="ordinaria">📅 Ordinaria annuale</option>
+            <option value="straordinaria">⚡ Straordinaria</option>
+            <option value="online">💻 Online / Ibrida</option>
+          </select>
+        </div>
+        <div class="fg"><label>Motivo (per straordinaria)</label>
+          <input type="text" id="motivoStr" placeholder="Es. Approvazione lavori urgenti">
+        </div>
+        <div class="fg"><label>Link piattaforma (per online)</label>
+          <input type="text" id="linkOnline" placeholder="Es. https://zoom.us/j/123456">
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">Prima convocazione</div>
+    <div class="card">
+      <div class="r4">
+        <div class="fg"><label>Data</label><input type="date" id="data1"></div>
+        <div class="fg"><label>Ora</label><input type="time" id="ora1" value="18:00"></div>
+        <div class="fg"><label>Luogo</label><input type="text" id="luogo1" placeholder="Es. Sala riunioni c/o condominio"></div>
+        <div class="fg"><label>Piano / indicazioni</label><input type="text" id="piano1" placeholder="Es. Piano terra, Scala A"></div>
+      </div>
+    </div>
+
+    <div class="sl">Seconda convocazione</div>
+    <div class="card">
+      <div class="r4">
+        <div class="fg"><label>Data</label><input type="date" id="data2"></div>
+        <div class="fg"><label>Ora</label><input type="time" id="ora2" value="19:00"></div>
+        <div class="fg"><label>Luogo</label><input type="text" id="luogo2" placeholder="Es. Stesso luogo"></div>
+        <div class="fg"><label>Nota aggiuntiva</label><input type="text" id="nota2" placeholder="Es. In difetto del numero legale"></div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-p" onclick="go('odg')">→ Ordine del Giorno</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — ORDINE DEL GIORNO ══ -->
+  <div class="panel" id="p-odg">
+    <div class="sl">Punti all'ordine del giorno</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">Aggiungi i punti dell'ODG. Saranno riportati nella lettera di convocazione e nel verbale.</p>
+    <div id="odgList"></div>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">
+      <input type="text" id="nuovoPunto" placeholder="Es. Approvazione rendiconto consuntivo 2024"
+        style="flex:1;min-width:260px;background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);outline:none;"
+        onkeydown="if(event.key==='Enter')aggiungiPunto()">
+      <button class="btn btn-g" onclick="aggiungiPunto()">＋ Aggiungi</button>
+    </div>
+    <div class="sl">Punti tipici — clic per aggiungere</div>
+    <div id="puntiTipiciContainer" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem"></div>
+    <div class="brow">
+      <button class="btn btn-p" onclick="go('condomini')">→ Vai ai Condomini</button>
+      <button class="btn btn-g" onclick="resetODG()">↺ Azzera ODG</button>
+    </div>
+    <div class="nb">
+      <strong>⚖️ Nota legale — Art. 66 disp. att. c.c.</strong>
+      I punti non indicati nella convocazione non possono essere deliberati in assemblea, salvo che tutti i condomini siano presenti e consenzienti. La convocazione deve essere inviata almeno 5 giorni prima.
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — CONDOMINI ══ -->
+  <div class="panel" id="p-condomini">
+    <div class="sl">Lista condomini e millesimi</div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">
+      La somma dei millesimi deve fare <strong>1000</strong>. Indica le deleghe conferite e lo stato di partecipazione.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Nome Condomino</th><th>Interno</th><th>Millesimi</th>
+          <th>Email</th><th>Delega a</th><th>Stato</th><th></th>
+        </tr></thead>
+        <tbody id="condoBody"></tbody>
+      </table>
+    </div>
+    <div class="brow">
+      <button class="btn btn-g" onclick="addCondo()">＋ Aggiungi</button>
+      <button class="btn btn-g" onclick="loadDefaultCondo()">📋 Esempio</button>
+      <button class="btn btn-p" onclick="go('maggioranze')">⚖️ Calcola maggioranze</button>
+      <button class="btn btn-g" onclick="document.getElementById('condoBody').innerHTML='';condoCount=0;">↺ Azzera</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4 — MAGGIORANZE ══ -->
+  <div class="panel" id="p-maggioranze">
+    <div id="maggioranzeContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">⚖️</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Inserisci i condomini con millesimi per calcolare le maggioranze.</p>
+        <button class="btn btn-g btn-sm" onclick="go('condomini')">→ Vai ai Condomini</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5 — LETTERE ══ -->
+  <div class="panel" id="p-lettere">
+    <div id="lettereContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">✉️</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Compila i dati nelle tab precedenti per generare le lettere.</p>
+        <button class="btn btn-p btn-sm" onclick="generaLettere()">📄 Genera lettere</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 6 — VERBALE ══ -->
+  <div class="panel" id="p-verbale">
+    <div id="verbaleContent">
+      <div class="card" style="text-align:center;padding:2.5rem">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📄</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Compila i dati nelle tab precedenti per generare il verbale pre-compilato.</p>
+        <button class="btn btn-p btn-sm" onclick="generaVerbale()">📄 Genera verbale</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="page-footer">CondoKit · Convocazione Assemblee · Beta · Verificare sempre la conformità normativa con il proprio consulente</div>
+
+<script>
+var PANELS = ['setup','odg','condomini','maggioranze','lettere','verbale'];
+var condoCount = 0;
+var puntiODG   = [];
+var odgCount   = 0;
+
+var PUNTI_TIPICI = [
+  'Approvazione rendiconto consuntivo',
+  'Approvazione bilancio preventivo',
+  'Nomina / conferma amministratore',
+  'Determinazione compenso amministratore',
+  'Approvazione lavori straordinari',
+  'Approvazione regolamento condominiale',
+  'Gestione morosità condomini',
+  'Rinnovo polizza assicurativa fabbricato',
+  'Varie ed eventuali'
+];
+
+var TIPI_LABEL = {
+  ordinaria:    'Assemblea Ordinaria Annuale',
+  straordinaria:'Assemblea Straordinaria',
+  online:       'Assemblea Online/Ibrida'
+};
+
+// ══ TAB ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='maggioranze') calcolaMaggioranze();
+  if (name==='lettere')     generaLettere();
+  if (name==='verbale')     generaVerbale();
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  // Date default: +15 e +16 giorni
+  var oggi = new Date();
+  var d1 = new Date(oggi.getTime()+15*86400000);
+  var d2 = new Date(oggi.getTime()+16*86400000);
+  document.getElementById('data1').value = d1.toISOString().split('T')[0];
+  document.getElementById('data2').value = d2.toISOString().split('T')[0];
+  // Pulsanti tipici ODG
+  buildPuntiTipici();
+  renderODG();
+  // Righe condomini default
+  addCondo(); addCondo(); addCondo();
+};
+
+// ══ PULSANTI TIPICI ODG ══
+function buildPuntiTipici() {
+  var cont = document.getElementById('puntiTipiciContainer');
+  if (!cont) return;
+  cont.innerHTML = '';
+  PUNTI_TIPICI.forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-g btn-sm';
+    btn.textContent = '+ ' + p;
+    btn.onclick = function() { aggiungiPuntoTipico(p); };
+    cont.appendChild(btn);
+  });
+}
+
+// ══ ODG ══
+function aggiungiPunto() {
+  var inp = document.getElementById('nuovoPunto');
+  var txt = inp.value.trim();
+  if (!txt) { inp.focus(); return; }
+  odgCount++;
+  puntiODG.push({id: odgCount, testo: txt});
+  inp.value = '';
+  renderODG();
+}
+
+function aggiungiPuntoTipico(txt) {
+  odgCount++;
+  puntiODG.push({id: odgCount, testo: txt});
+  renderODG();
+}
+
+function rimuoviPunto(id) {
+  puntiODG = puntiODG.filter(function(p) { return p.id !== id; });
+  renderODG();
+}
+
+function resetODG() {
+  puntiODG = [];
+  renderODG();
+}
+
+function renderODG() {
+  var el = document.getElementById('odgList');
+  if (!puntiODG.length) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-style:italic;background:var(--cream);border:1px solid var(--border);border-radius:4px;margin-bottom:1rem">Nessun punto aggiunto. Usa il campo qui sotto o i punti tipici.</div>';
+    return;
+  }
+  var html = '';
+  puntiODG.forEach(function(p, i) {
+    html += '<div class="odg-item">' +
+      '<span class="odg-num">' + (i+1) + '.</span>' +
+      '<span class="odg-text">' + esc(p.testo) + '</span>' +
+      '<button class="odg-del" onclick="rimuoviPunto(' + p.id + ')" title="Rimuovi">✕</button>' +
+      '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ══ CONDOMINI ══
+function addCondo(d) {
+  d = d || {};
+  condoCount++;
+  var id = condoCount;
+  var tr = document.createElement('tr');
+  tr.id = 'co-' + id;
+  tr.innerHTML =
+    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Rossi Mario"   value="'+(d.nome||'')+'"></td>' +
+    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1 Sc.A"         value="'+(d.interno||'')+'"></td>' +
+    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'"></td>' +
+    '<td><input class="ic" type="email"  id="ce-'+id+'" placeholder="mario@email.it"     value="'+(d.email||'')+'"></td>' +
+    '<td><input class="ic" type="text"   id="cd-'+id+'" placeholder="Es. Verdi Giuseppe" value="'+(d.delega||'')+'"></td>' +
+    '<td><select class="ic" id="cs-'+id+'">' +
+      '<option value="invitato"'+(d.stato==='invitato'?' selected':'')+'>📬 Invitato</option>' +
+      '<option value="confermato"'+(d.stato==='confermato'?' selected':'')+'>✅ Confermato</option>' +
+      '<option value="assente"'+(d.stato==='assente'?' selected':'')+'>❌ Assente</option>' +
+    '</select></td>' +
+    '<td><button onclick="rmCo('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+  document.getElementById('condoBody').appendChild(tr);
+}
+
+function rmCo(id) { var el=document.getElementById('co-'+id); if(el) el.remove(); }
+
+function loadDefaultCondo() {
+  document.getElementById('condoBody').innerHTML = '';
+  condoCount = 0;
+  var def = [
+    {nome:'Rossi Mario',    interno:'Int.1 Sc.A', mill:95,  email:'mario.rossi@email.it',    delega:'',            stato:'confermato'},
+    {nome:'Verdi Giuseppe', interno:'Int.2 Sc.A', mill:88,  email:'giuseppe.verdi@email.it', delega:'',            stato:'confermato'},
+    {nome:'Neri Anna',      interno:'Int.3 Sc.A', mill:72,  email:'anna.neri@email.it',      delega:'',            stato:'invitato'},
+    {nome:'Bianchi Laura',  interno:'Int.4 Sc.B', mill:105, email:'laura.bianchi@email.it',  delega:'Rossi Mario', stato:'assente'},
+    {nome:'Colombo Luca',   interno:'Int.5 Sc.B', mill:98,  email:'luca.colombo@email.it',   delega:'',            stato:'confermato'},
+    {nome:'Ferrari Anna',   interno:'Int.6 Sc.B', mill:80,  email:'anna.ferrari@email.it',   delega:'',            stato:'invitato'},
+    {nome:'Russo Marco',    interno:'Box 1',       mill:30,  email:'marco.russo@email.it',    delega:'',            stato:'invitato'},
+    {nome:'Marino Carlo',   interno:'Int.7 Sc.A', mill:110, email:'carlo.marino@email.it',   delega:'',            stato:'confermato'},
+    {nome:'Costa Elena',    interno:'Int.8 Sc.B', mill:92,  email:'elena.costa@email.it',    delega:'',            stato:'invitato'},
+    {nome:'Bruno Lucia',    interno:'Int.9 Sc.A', mill:130, email:'lucia.bruno@email.it',    delega:'',            stato:'confermato'},
+  ];
+  def.forEach(function(d) { addCondo(d); });
+}
+
+function leggiCondo() {
+  var r = [];
+  document.querySelectorAll('#condoBody tr').forEach(function(tr) {
+    var id      = tr.id.replace('co-','');
+    var nome    = ((document.getElementById('cn-'+id)||{}).value||'').trim();
+    var interno = ((document.getElementById('ci-'+id)||{}).value||'').trim();
+    var mill    = parseFloat((document.getElementById('cm-'+id)||{}).value)||0;
+    var email   = ((document.getElementById('ce-'+id)||{}).value||'').trim();
+    var delega  = ((document.getElementById('cd-'+id)||{}).value||'').trim();
+    var stato   = (document.getElementById('cs-'+id)||{}).value||'invitato';
+    if (nome) r.push({id:id, nome:nome, interno:interno, mill:mill, email:email, delega:delega, stato:stato});
+  });
+  return r;
+}
+
+// ══ MAGGIORANZE ══
+function calcolaMaggioranze() {
+  var condo = leggiCondo();
+  if (!condo.length) return;
+
+  var nTot      = condo.length;
+  var totMill   = condo.reduce(function(s,c){return s+c.mill;},0);
+  var presenti  = condo.filter(function(c){return c.stato==='confermato';});
+  var deleganti = condo.filter(function(c){return c.delega && c.stato==='assente';});
+  var nPres     = presenti.length + deleganti.length;
+  var millPres  = presenti.reduce(function(s,c){return s+c.mill;},0) +
+                  deleganti.reduce(function(s,c){return s+c.mill;},0);
+
+  // Soglie art. 1136 c.c.
+  var req = {
+    p1c: Math.ceil(nTot/2)+1,    p1m: Math.ceil(totMill*2/3),
+    p2c: Math.ceil(nTot/3),      p2m: Math.ceil(totMill/3),
+    s1c: Math.ceil(nTot/2)+1,    s1m: Math.ceil(totMill/2),
+    q4c: Math.ceil(nTot*4/5),    q4m: Math.ceil(totMill*4/5),
+    unc: nTot,                   unm: totMill
+  };
+
+  var html =
+    '<div class="sl">Situazione presenze</div>' +
+    '<div class="mag-grid">' +
+    mCard('Condomini totali', nTot, '', '') +
+    mCard('Millesimi totali', totMill, 'su 1000', '') +
+    mCard('Presenti + deleghe', nPres+'/'+nTot, 'condomini', nPres>=req.p2c?'ok':'warn') +
+    mCard('Millesimi presenti', millPres, 'su '+totMill, millPres>=req.p2m?'ok':'warn') +
+    '</div>' +
+    '<div class="sl">Maggioranze necessarie (art. 1136 c.c.)</div>' +
+    '<div class="tw"><table>' +
+    '<thead><tr>' +
+    '<th>Tipo delibera</th><th>Riferimento</th>' +
+    '<th style="text-align:right">Condomini richiesti</th>' +
+    '<th style="text-align:right">Millesimi richiesti</th>' +
+    '<th>Raggiunta?</th>' +
+    '</tr></thead><tbody>' +
+    mRiga('Validità 1ª convocazione',      'Art.1136 c.1', req.p1c, req.p1m, nPres, millPres) +
+    mRiga('Validità 2ª convocazione',      'Art.1136 c.3', req.p2c, req.p2m, nPres, millPres) +
+    mRiga('Delibere ordinarie (2ª conv.)', 'Art.1136 c.3', req.s1c, req.s1m, nPres, millPres) +
+    mRiga('Innovazioni (>1/5 valore)',     'Art.1136 c.5', req.q4c, req.q4m, nPres, millPres) +
+    mRiga('Unanimità',                     'Art.1138 c.c.', req.unc, req.unm, nPres, millPres) +
+    '</tbody></table></div>' +
+    '<div class="sl">Dettaglio partecipanti</div>' +
+    '<div class="tw"><table>' +
+    '<thead><tr><th>Condomino</th><th>Interno</th><th class="amt">Millesimi</th><th>Delega a</th><th>Stato</th></tr></thead>' +
+    '<tbody>' +
+    condo.map(function(c) {
+      var badge = c.stato==='confermato' ?
+        '<span class="badge b-ok">✅ Confermato</span>' :
+        c.stato==='assente' ?
+        '<span class="badge b-warn">'+(c.delega ? '📋 Delega a '+esc(c.delega) : '❌ Assente')+'</span>' :
+        '<span class="badge b-info">📬 Invitato</span>';
+      return '<tr>' +
+        '<td><strong>'+esc(c.nome)+'</strong></td>' +
+        '<td style="font-size:0.78rem;color:var(--muted)">'+esc(c.interno)+'</td>' +
+        '<td class="amt">'+c.mill+'</td>' +
+        '<td style="font-size:0.78rem;color:var(--muted)">'+esc(c.delega||'—')+'</td>' +
+        '<td>'+badge+'</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table></div>' +
+    '<div class="nb"><strong>⚖️ Come leggere la tabella</strong>' +
+    'Le maggioranze richiedono simultaneamente il raggiungimento della soglia sia per numero di condomini sia per millesimi. ' +
+    'In seconda convocazione bastano 1/3 dei millesimi per la validità. Le innovazioni e il regolamento richiedono maggioranze qualificate.' +
+    '</div>';
+
+  document.getElementById('maggioranzeContent').innerHTML = html;
+}
+
+function mCard(label, val, sub, cls) {
+  return '<div class="mag-card '+(cls||'')+'">'+
+    '<div class="mag-label">'+label+'</div>'+
+    '<div class="mag-value">'+val+'</div>'+
+    (sub ? '<div class="mag-sub">'+sub+'</div>' : '')+
+    '</div>';
+}
+
+function mRiga(tipo, rif, nC, nM, presN, presM) {
+  var okC = presN >= nC, okM = presM >= nM, ok = okC && okM;
+  return '<tr>'+
+    '<td><strong>'+tipo+'</strong></td>'+
+    '<td style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">'+rif+'</td>'+
+    '<td class="amt">'+nC+' '+(okC?'<span style="color:var(--success)">✓</span>':'<span style="color:var(--accent)">✗</span>')+'</td>'+
+    '<td class="amt">'+nM+' '+(okM?'<span style="color:var(--success)">✓</span>':'<span style="color:var(--accent)">✗</span>')+'</td>'+
+    '<td><span class="badge '+(ok?'b-ok':'b-warn')+'">'+(ok?'✅ Raggiunta':'⚠️ Non ancora')+'</span></td>'+
+    '</tr>';
+}
+
+// ══ LETTERE DI CONVOCAZIONE ══
+function generaLettere() {
+  var condo = leggiCondo();
+  if (!condo.length) {
+    document.getElementById('lettereContent').innerHTML =
+      '<div class="card" style="text-align:center;padding:2rem">'+
+      '<p style="color:var(--muted);margin-bottom:1rem">Inserisci prima i condomini nella Tab 3.</p>'+
+      '<button class="btn btn-g btn-sm" onclick="go(\'condomini\')">→ Vai ai Condomini</button></div>';
+    return;
+  }
+  var html = '<div class="lnav">' +
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Condomino:</span>';
+  condo.forEach(function(c, i) {
+    html += '<button class="btn btn-g btn-sm" id="lb-'+i+'" onclick="mostraLettera('+i+')">'+esc(c.nome.split(' ')[0])+'</button>';
+  });
+  html += '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>';
+  html += '<button class="btn btn-g btn-sm" onclick="copiaEmail()">📧 Copia email</button>';
+  html += '</div><div id="letteraEl"></div>';
+  document.getElementById('lettereContent').innerHTML = html;
+  mostraLettera(0);
+}
+
+function mostraLettera(idx) {
+  var condo = leggiCondo();
+  document.querySelectorAll('[id^="lb-"]').forEach(function(b, i) {
+    b.className = 'btn btn-sm ' + (i===idx ? 'btn-p' : 'btn-g');
+  });
+  var c = condo[idx];
+  if (!c) return;
+
+  var tipo      = (document.getElementById('tipoAssemblea')||{}).value || 'ordinaria';
+  var cNome     = (document.getElementById('condoNome')||{}).value || 'Condominio';
+  var cCF       = (document.getElementById('condoCF')||{}).value || '';
+  var studio    = (document.getElementById('studioNome')||{}).value || 'Studio Amministrativo';
+  var studioC   = (document.getElementById('studioContatti')||{}).value || '';
+  var data1     = (document.getElementById('data1')||{}).value || '';
+  var ora1      = (document.getElementById('ora1')||{}).value || '';
+  var luogo1    = (document.getElementById('luogo1')||{}).value || '';
+  var piano1    = (document.getElementById('piano1')||{}).value || '';
+  var data2     = (document.getElementById('data2')||{}).value || '';
+  var ora2      = (document.getElementById('ora2')||{}).value || '';
+  var luogo2    = (document.getElementById('luogo2')||{}).value || '';
+  var nota2     = (document.getElementById('nota2')||{}).value || '';
+  var linkOnl   = (document.getElementById('linkOnline')||{}).value || '';
+  var motivoStr = (document.getElementById('motivoStr')||{}).value || '';
+  var oggi      = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var d1f       = data1 ? new Date(data1).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var d2f       = data2 ? new Date(data2).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var tipoL     = TIPI_LABEL[tipo] || 'Assemblea';
+  var oggetto   = 'Convocazione ' + tipoL + (motivoStr ? ' — '+motivoStr : '');
+
+  var odgHtml = '';
+  if (puntiODG.length) {
+    puntiODG.forEach(function(p, i) {
+      odgHtml += '<div style="padding:0.3rem 0;border-bottom:1px solid var(--cream);font-size:0.875rem"><strong>'+(i+1)+'.</strong> '+esc(p.testo)+'</div>';
+    });
+  } else {
+    odgHtml = '<span style="color:var(--muted);font-style:italic">Nessun punto inserito</span>';
+  }
+
+  var html =
+    '<div class="doc">' +
+    '<div class="doc-hs"><span class="doc-st">'+esc(studio)+'</span>' +
+    '<span class="doc-an">'+esc(tipoL)+'</span></div>' +
+    '<div class="doc-bd">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+    '<div>' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Mittente</div>' +
+    '<strong>'+esc(studio)+'</strong>'+(studioC?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(studioC)+'</span>':'')+
+    '<br><span style="font-size:0.78rem;color:var(--muted)">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="text-align:right">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Destinatario</div>' +
+    '<strong>'+esc(c.nome)+'</strong>'+(c.interno?'<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(c.interno)+'</span>':'')+
+    '<br><span style="font-size:0.82rem;color:var(--muted)">'+esc(cNome)+'</span>' +
+    '</div></div>' +
+    '<div class="doc-oggetto">Oggetto: '+esc(oggetto)+' — '+esc(cNome)+'</div>' +
+    '<p>Gentile <strong>'+esc(c.nome)+'</strong>,</p>' +
+    '<p>La invitiamo a partecipare alla <strong>'+esc(tipoL)+'</strong> del condominio <strong>'+esc(cNome)+'</strong>'+(cCF?' (C.F. '+cCF+')':'')+', convocata come segue:</p>' +
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">' +
+    '<div style="margin-bottom:0.75rem"><strong>📅 Prima convocazione</strong><br>' +
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.85rem">'+esc(d1f)+' — ore '+esc(ora1)+'</span>' +
+    (luogo1 ? '<br>📍 '+esc(luogo1)+(piano1?' — '+esc(piano1):'') : '') +
+    (linkOnl && tipo==='online' ? '<br>🔗 '+esc(linkOnl) : '') +
+    '</div>' +
+    '<div><strong>📅 Seconda convocazione</strong><br>' +
+    '<span style="font-family:\'DM Mono\',monospace;font-size:0.85rem">'+esc(d2f)+' — ore '+esc(ora2)+'</span>' +
+    (luogo2 ? '<br>📍 '+esc(luogo2) : '') +
+    (nota2 ? '<br><em style="font-size:0.8rem;color:var(--muted)">'+esc(nota2)+'</em>' : '') +
+    '</div></div>' +
+    '<p><strong>Ordine del giorno:</strong></p>' +
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">'+odgHtml+'</div>' +
+    (c.delega ?
+      '<p style="background:var(--gold-light);border:1px solid var(--gold);border-radius:3px;padding:0.75rem 1rem">📋 <strong>Delega registrata:</strong> Ha già conferito delega a <strong>'+esc(c.delega)+'</strong>.</p>' :
+      '<p>In caso di impossibilità a partecipare, è possibile conferire delega scritta a un altro condomino ai sensi dell\'art. 67 disp. att. c.c.</p>'
+    ) +
+    '<p>La presente convocazione è trasmessa ai sensi dell\'art. 66 disp. att. c.c., almeno 5 giorni prima della data dell\'assemblea.</p>' +
+    '<p>Distinti saluti,</p>' +
+    '<div class="firma-line">'+esc(studio)+'<br><span style="color:var(--muted)">Amministratore di Condominio</span></div>' +
+    '<div class="doc-footer"><span>'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</span><span>'+oggi+'</span></div>' +
+    '</div></div>';
+
+  document.getElementById('letteraEl').innerHTML = html;
+
+  // Salva per copia email
+  window._emailData = {nome:c.nome, oggetto:oggetto, cNome:cNome, d1f:d1f, ora1:ora1, luogo1:luogo1, d2f:d2f, ora2:ora2, studio:studio, punti:puntiODG};
+}
+
+function copiaEmail() {
+  if (!window._emailData) { alert('Genera prima le lettere.'); return; }
+  var e = window._emailData;
+  var testo = 'Oggetto: ' + e.oggetto + ' — ' + e.cNome + '\n\n' +
+    'Gentile ' + e.nome + ',\n\n' +
+    'La invitiamo all\'assemblea del condominio ' + e.cNome + ':\n\n' +
+    '📅 Prima convocazione: ' + e.d1f + ' ore ' + e.ora1 + (e.luogo1 ? '\n📍 ' + e.luogo1 : '') + '\n' +
+    '📅 Seconda convocazione: ' + e.d2f + ' ore ' + e.ora2 + '\n\n' +
+    'Ordine del giorno:\n' +
+    (e.punti.length ? e.punti.map(function(p,i){return (i+1)+'. '+p.testo;}).join('\n') : '(nessun punto)') +
+    '\n\nIn caso di impossibilità a partecipare, è possibile conferire delega scritta a un altro condomino.\n\n' +
+    'Distinti saluti,\n' + e.studio;
+  navigator.clipboard.writeText(testo)
+    .then(function() { alert('✅ Testo email copiato negli appunti!'); })
+    .catch(function() { alert('Seleziona il testo manualmente e copia con Ctrl+C.'); });
+}
+
+// ══ VERBALE PRE-COMPILATO ══
+function generaVerbale() {
+  var condo    = leggiCondo();
+  var cNome    = (document.getElementById('condoNome')||{}).value || 'Condominio';
+  var cCF      = (document.getElementById('condoCF')||{}).value || '';
+  var studio   = (document.getElementById('studioNome')||{}).value || 'Studio Amministrativo';
+  var tipo     = (document.getElementById('tipoAssemblea')||{}).value || 'ordinaria';
+  var data2    = (document.getElementById('data2')||{}).value || '';
+  var ora2     = (document.getElementById('ora2')||{}).value || '';
+  var luogo2   = (document.getElementById('luogo2')||{}).value || '';
+  var d2f      = data2 ? new Date(data2).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '——';
+  var tipoL    = TIPI_LABEL[tipo] || 'Assemblea';
+  var nTot     = condo.length;
+  var totMill  = condo.reduce(function(s,c){return s+c.mill;},0);
+  var presenti = condo.filter(function(c){return c.stato==='confermato';});
+  var deleghe  = condo.filter(function(c){return c.delega && c.stato==='assente';});
+  var nPres    = presenti.length + deleghe.length;
+  var millPres = presenti.reduce(function(s,c){return s+c.mill;},0) + deleghe.reduce(function(s,c){return s+c.mill;},0);
+  var valido   = millPres >= Math.ceil(totMill/3);
+
+  var odgHtml = '';
+  puntiODG.forEach(function(p, i) {
+    odgHtml += '<div style="padding:0.4rem 0;border-bottom:1px solid var(--cream);font-size:0.875rem"><strong>'+(i+1)+'.</strong> '+esc(p.testo)+'</div>';
+  });
+
+  var puntiVerbale = '';
+  puntiODG.forEach(function(p, i) {
+    puntiVerbale +=
+      '<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Punto '+(i+1)+' — '+esc(p.testo)+'</div>' +
+      '<p style="color:var(--muted);font-style:italic;font-size:0.85rem">[ Il presidente illustra il punto. Si apre la discussione. ]</p>' +
+      '<p><strong>Delibera n. '+(i+1)+':</strong> _______________________________________________________</p>' +
+      '<p style="font-size:0.82rem">Voti favorevoli: _______ &nbsp;·&nbsp; Contrari: _______ &nbsp;·&nbsp; Astenuti: _______</p>' +
+      '<p style="font-size:0.82rem">Millesimi favorevoli: _______ su '+totMill+'</p>' +
+      '</div>';
+  });
+
+  var html =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa verbale</button>' +
+    '</div>' +
+    '<div class="doc">' +
+    '<div class="doc-hs"><span class="doc-st">Verbale — '+esc(tipoL)+'</span>' +
+    '<span class="doc-an">'+esc(cNome)+'</span></div>' +
+    '<div class="doc-bd">' +
+    '<p style="font-family:\'DM Mono\',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">VERBALE N. ___ / ____</p>' +
+    '<p>In data <strong>'+esc(d2f)+'</strong>, alle ore <strong>'+esc(ora2)+'</strong>, presso <strong>'+(luogo2?esc(luogo2):'_______________')+'</strong>, si è riunita in '+esc(tipoL.toLowerCase())+' l\'assemblea del condominio <strong>'+esc(cNome)+'</strong>'+(cCF?', C.F. '+cCF:'')+', amministrato dallo <strong>'+esc(studio)+'</strong>.</p>' +
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Verifica del numero legale</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;font-size:0.85rem">' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">Condomini totali</div><strong>'+nTot+'</strong> ('+totMill+' mill.)</div>' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">Presenti + deleghe</div><strong>'+nPres+'</strong> ('+millPres+' mill.)</div>' +
+    '<div><div style="color:var(--muted);font-size:0.75rem">Numero legale</div><strong style="color:'+(valido?'var(--success)':'var(--accent)')+'">'+(valido?'✅ Raggiunto':'⚠️ Verificare')+'</strong></div>' +
+    '</div></div>' +
+    '<p>Assume la presidenza il Sig./la Sig.ra <strong>___________________________</strong>, che propone come segretario il Sig./la Sig.ra <strong>___________________________</strong>. La proposta viene accettata all\'unanimità.</p>' +
+    '<p>Il Presidente dà lettura dell\'ordine del giorno:</p>' +
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">' +
+    (odgHtml || '<span style="color:var(--muted);font-style:italic">Nessun punto ODG inserito</span>') +
+    '</div>' +
+    puntiVerbale +
+    '<p>Non essendovi altri argomenti da trattare, il Presidente dichiara chiusa la seduta alle ore <strong>__:__</strong>.</p>' +
+    '<p>Il presente verbale, letto e approvato, viene sottoscritto come segue:</p>' +
+    '<div style="display:flex;gap:3rem;margin-top:2rem">' +
+    '<div class="firma-line">Il Presidente<br>___________________________</div>' +
+    '<div class="firma-line">Il Segretario<br>___________________________</div>' +
+    '<div class="firma-line">L\'Amministratore<br>'+esc(studio)+'</div>' +
+    '</div>' +
+    '<div class="doc-footer"><span>'+esc(cNome)+(cCF?' · C.F. '+cCF:'')+'</span><span>'+esc(d2f)+'</span></div>' +
+    '</div></div>' +
+    '<div class="nb"><strong>📌 Note sul verbale</strong>' +
+    'Questo verbale è pre-compilato con i dati inseriti. I campi con ___ vanno completati durante l\'assemblea. ' +
+    'Il verbale deve essere trascritto nel registro dei verbali (art. 1130 c.c.) e inviato a tutti i condomini entro 30 giorni dalla data dell\'assemblea.' +
+    '</div>';
+
+  document.getElementById('verbaleContent').innerHTML = html;
+}
+
+// ══ UTILS ══
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
