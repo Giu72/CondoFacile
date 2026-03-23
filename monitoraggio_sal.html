@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Monitoraggio SAL</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.b-purple{background:#e8d0f0;color:#601080;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* CANTIERE CARD */
+.cant-card{background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1.5rem;box-shadow:0 2px 12px var(--shadow);overflow:hidden;}
+.cant-header{background:var(--ink);color:var(--paper);padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;}
+.cant-titolo{font-family:'DM Serif Display',serif;font-size:1rem;}
+.cant-fornitore{font-family:'DM Mono',monospace;font-size:0.7rem;opacity:0.7;}
+.cant-body{padding:1.25rem 1.5rem;}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:0.75rem;}
+.prog-label{display:flex;justify-content:space-between;margin-bottom:0.3rem;font-size:0.82rem;}
+.prog-bar{height:14px;background:var(--cream);border-radius:7px;overflow:hidden;position:relative;}
+.prog-fill{height:100%;border-radius:7px;transition:width 0.6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.prog-pct{font-family:'DM Mono',monospace;font-size:0.6rem;color:white;font-weight:600;}
+
+/* SAL ITEM */
+.sal-item{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin-bottom:0.75rem;}
+.sal-item.approvato{background:var(--success-light);border-color:var(--success);}
+.sal-item.in_verifica{background:var(--gold-light);border-color:var(--gold);}
+.sal-item.contestato{background:var(--accent-light);border-color:var(--accent);}
+.sal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.4rem;}
+.sal-num{font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:600;}
+.sal-importo{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.sal-nota{font-size:0.82rem;color:var(--muted);margin-top:0.3rem;font-style:italic;}
+
+/* DOCUMENTO SAL */
+.doc-sal{background:white;border:2px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-sal-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.doc-sal-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.doc-sal-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.75;}
+.doc-sal-bd p{margin-bottom:0.75rem;}
+.info-box{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem;}
+.info-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.info-val{font-weight:600;}
+.firma-box{border:1px solid var(--border);border-radius:3px;min-height:60px;background:var(--paper);}
+.firma-label{font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.doc-sal,.cant-card{box-shadow:none;border:1px solid #ccc;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="ordini_di_lavoro.html">🔧 Ordini lavoro</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Bonifici</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Fornitori e Manutenzioni · Modulo 3.3</div>
+  <h1>Monitoraggio<br><em>SAL</em></h1>
+  <p class="header-sub">Registra gli stati di avanzamento lavori, calcola gli importi maturati, approva i SAL e sblocca i pagamenti ai fornitori.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-cantieri"  onclick="go('cantieri')">🏗️ 1 · Cantieri</button>
+    <button class="tab-btn"   id="tb-nuovo-sal"  onclick="go('nuovo-sal')">➕ 2 · Nuovo SAL</button>
+    <button class="tab-btn"   id="tb-documento"  onclick="go('documento')">📄 3 · Scheda SAL</button>
+    <button class="tab-btn"   id="tb-pagamenti"  onclick="go('pagamenti')">💰 4 · Pagamenti</button>
+    <button class="tab-btn"   id="tb-report"     onclick="go('report')">📊 5 · Report</button>
+  </div>
+
+  <div class="panel on" id="p-cantieri">  <div id="c-cantieri"></div>  </div>
+  <div class="panel"    id="p-nuovo-sal"> <div id="c-nuovo-sal"></div> </div>
+  <div class="panel"    id="p-documento"> <div id="c-documento"></div> </div>
+  <div class="panel"    id="p-pagamenti"> <div id="c-pagamenti"></div> </div>
+  <div class="panel"    id="p-report">    <div id="c-report"></div>    </div>
+</div>
+
+<div class="page-footer">CondoKit · Monitoraggio SAL · Beta · Modulo 3.3</div>
+
+<script>
+var PANELS  = ['cantieri','nuovo-sal','documento','pagamenti','report'];
+var cantieri = []; // [{id, odl, titolo, fornitore, importoContr, dataInizio, dataFine, condominio, admin, delibera, sals:[]}]
+var cantCount = 0;
+var salGlobCount = 0;
+var editingCantId = null;
+var docSalId      = null; // {cantId, salId}
+
+var STATI_SAL = {
+  bozza:      {label:'📝 Bozza',       badge:'b-neu'},
+  in_verifica:{label:'🔍 In verifica',  badge:'b-warn'},
+  approvato:  {label:'✅ Approvato',   badge:'b-ok'},
+  contestato: {label:'⚠️ Contestato',  badge:'b-danger'},
+  pagato:     {label:'💰 Pagato',      badge:'b-purple'},
+};
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='cantieri')  drawCantieri();
+  if (name==='nuovo-sal') drawNuovoSal();
+  if (name==='documento') drawDocumento();
+  if (name==='pagamenti') drawPagamenti();
+  if (name==='report')    drawReport();
+}
+function switchTo(name){go(name);}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  drawCantieri();
+};
+
+// ══ HELPER: percentuale avanzamento cantiere ══
+function percCantiere(c) {
+  if (!c.sals||!c.sals.length) return 0;
+  var approvati = c.sals.filter(function(s){return s.stato==='approvato'||s.stato==='pagato';});
+  if (!approvati.length) return 0;
+  return approvati[approvati.length-1].percCumulata||0;
+}
+
+function importoMaturato(c) {
+  return (c.importoContr||0) * percCantiere(c) / 100;
+}
+
+function importoPagato(c) {
+  if (!c.sals) return 0;
+  return c.sals.filter(function(s){return s.stato==='pagato';}).reduce(function(acc,s){return acc+(s.importoSal||0);},0);
+}
+
+function importoDaLiquidare(c) {
+  return importoMaturato(c) - importoPagato(c);
+}
+
+// ══ TAB 1 — CANTIERI ══
+function drawCantieri() {
+  var el = document.getElementById('c-cantieri');
+
+  var totContr   = cantieri.reduce(function(s,c){return s+(c.importoContr||0);},0);
+  var totMaturato= cantieri.reduce(function(s,c){return s+importoMaturato(c);},0);
+  var totPagato  = cantieri.reduce(function(s,c){return s+importoPagato(c);},0);
+  var totDaLiq   = cantieri.reduce(function(s,c){return s+importoDaLiquidare(c);},0);
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Cantieri attivi</div><div class="cv">'+cantieri.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Importo contrattuale</div><div class="cv" style="font-size:1.1rem">€ '+fmt(totContr)+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Importo maturato</div><div class="cv gn" style="font-size:1.1rem">€ '+fmt(totMaturato)+'</div></div>' +
+    '<div class="sc g"><div class="cl">Da liquidare</div><div class="cv go" style="font-size:1.1rem">€ '+fmt(totDaLiq)+'</div></div>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-p btn-sm" onclick="editingCantId=null;switchTo(\'nuovo-sal\')">➕ Nuovo cantiere / SAL</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Esempi</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraCantieri()">↺ Azzera</button>' +
+    '</div>' +
+
+    (!cantieri.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">🏗️</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">Nessun cantiere. Aggiungine uno!</p>' +
+      '<button class="btn btn-p btn-sm" onclick="editingCantId=null;switchTo(\'nuovo-sal\')">➕ Nuovo cantiere</button>' +
+    '</div>' :
+    cantieri.map(function(c) {
+      var perc    = percCantiere(c);
+      var matur   = importoMaturato(c);
+      var pagato  = importoPagato(c);
+      var daLiq   = importoDaLiquidare(c);
+      var nSal    = (c.sals||[]).length;
+      var ultSal  = nSal ? c.sals[nSal-1] : null;
+      var statoBadge = ultSal ? STATI_SAL[ultSal.stato]||STATI_SAL.bozza : null;
+
+      return '<div class="cant-card">' +
+        '<div class="cant-header">' +
+          '<div>' +
+            '<div class="cant-titolo">'+esc(c.titolo)+'</div>' +
+            '<div class="cant-fornitore">'+esc(c.fornitore)+(c.odl?' · OdL '+esc(c.odl):'')+(c.delibera?' · '+esc(c.delibera):'')+'</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:0.8rem;background:rgba(255,255,255,0.15);padding:0.2rem 0.6rem;border-radius:2px">€ '+fmt(c.importoContr)+'</span>' +
+            (statoBadge?'<span class="badge '+statoBadge.badge+'">Ult. SAL: '+statoBadge.label+'</span>':'') +
+          '</div>' +
+        '</div>' +
+        '<div class="cant-body">' +
+          // BARRA AVANZAMENTO
+          '<div class="prog-wrap">' +
+            '<div class="prog-label">' +
+              '<span><strong>Avanzamento lavori</strong></span>' +
+              '<span style="font-family:\'DM Mono\',monospace;font-weight:600">'+perc+'%</span>' +
+            '</div>' +
+            '<div class="prog-bar">' +
+              '<div class="prog-fill" style="width:'+perc+'%;background:var(--'+(perc>=100?'success':perc>=50?'ink':'gold')+')">' +
+                (perc>10?'<span class="prog-pct">'+perc+'%</span>':'') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          // BARRA PAGAMENTI
+          (c.importoContr>0 ?
+          '<div class="prog-wrap">' +
+            '<div class="prog-label">' +
+              '<span>Pagamenti</span>' +
+              '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem">€ '+fmt(pagato)+' / € '+fmt(matur)+'</span>' +
+            '</div>' +
+            '<div class="prog-bar">' +
+              '<div class="prog-fill" style="width:'+Math.min(100,matur>0?pagato/matur*100:0)+'%;background:var(--success)"></div>' +
+            '</div>' +
+          '</div>' : '') +
+          // IMPORTI
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:0.75rem 0">' +
+            miniBox('Contrattuale','€ '+fmt(c.importoContr),'k') +
+            miniBox('Maturato','€ '+fmt(matur),'gn') +
+            miniBox('Da liquidare','€ '+fmt(daLiq),daLiq>0?'g':'gn') +
+          '</div>' +
+          // SAL LIST
+          (c.sals&&c.sals.length ?
+          '<div style="margin-top:0.75rem">'+
+            c.sals.map(function(s){
+              var ss=STATI_SAL[s.stato]||STATI_SAL.bozza;
+              var dFmt=s.data?new Date(s.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+              return '<div class="sal-item '+(s.stato==='approvato'||s.stato==='pagato'?'approvato':s.stato==='in_verifica'?'in_verifica':s.stato==='contestato'?'contestato':'')+'">' +
+                '<div class="sal-header">' +
+                  '<span class="sal-num">SAL n. '+s.numero+' · '+dFmt+'</span>' +
+                  '<div style="display:flex;gap:0.4rem;align-items:center">' +
+                    '<span class="sal-importo">€ '+fmt(s.importoSal)+'</span>' +
+                    '<span class="badge '+ss.badge+'">'+ss.label+'</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="font-size:0.78rem;color:var(--muted)">'+
+                  'Avanz. '+s.percSal+'% → Cumulata '+s.percCumulata+'% · '+
+                  (s.nota?esc(s.nota.substring(0,60)):'')+
+                '</div>' +
+                '<div style="display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap">' +
+                  '<button class="btn btn-g btn-sm" onclick="apriDocSal(\''+c.id+'\',\''+s.id+'\')">📄 Scheda</button>' +
+                  (s.stato==='bozza'?'<button class="btn btn-g btn-sm" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'in_verifica\')">→ Invia in verifica</button>':'') +
+                  (s.stato==='in_verifica'?'<button class="btn btn-ok btn-sm" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'approvato\')">✅ Approva</button>':'') +
+                  (s.stato==='in_verifica'?'<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent)" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'contestato\')">⚠️ Contesta</button>':'') +
+                  (s.stato==='approvato'?'<button class="btn btn-sm" style="background:#e8d0f0;color:#601080;border:1px solid #c0a0e0" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'pagato\')">💰 Segna pagato</button>':'') +
+                  (s.stato==='contestato'?'<button class="btn btn-g btn-sm" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'in_verifica\')">↺ Reinvia</button>':'') +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>' : '<div style="text-align:center;padding:0.75rem;color:var(--muted);font-style:italic;font-size:0.82rem">Nessun SAL registrato. Aggiungine uno.</div>') +
+
+          // AZIONI CANTIERE
+          '<div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">' +
+            '<button class="btn btn-p btn-sm" onclick="aggiungiSalPer(\''+c.id+'\')">➕ Aggiungi SAL</button>' +
+            '<button class="btn btn-g btn-sm" onclick="editingCantId=\''+c.id+'\';switchTo(\'nuovo-sal\')">✏️ Modifica cantiere</button>' +
+            '<button class="btn btn-sm" style="background:none;border:none;cursor:pointer;color:var(--border)" onclick="eliminaCantiere(\''+c.id+'\')">✕ Elimina</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join(''));
+}
+
+function miniBox(label,val,color){
+  var bg={k:'background:var(--ink);color:var(--paper)',gn:'background:var(--success-light);color:var(--success)',g:'background:var(--gold-light);color:var(--warning)'};
+  return '<div style="'+bg[color]+';border-radius:3px;padding:0.6rem 0.9rem">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;opacity:0.7;margin-bottom:0.25rem">'+label+'</div>' +
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:1rem">'+val+'</div></div>';
+}
+
+function setStatoSal(cantId,salId,stato){
+  var c=cantieri.find(function(x){return x.id===cantId;});
+  if(!c) return;
+  var s=c.sals.find(function(x){return x.id===salId;});
+  if(s) s.stato=stato;
+  drawCantieri();
+}
+
+function apriDocSal(cantId,salId){
+  docSalId={cantId:cantId,salId:salId};
+  switchTo('documento');
+}
+
+function aggiungiSalPer(cantId){
+  editingCantId=cantId;
+  switchTo('nuovo-sal');
+}
+
+function eliminaCantiere(id){
+  if(!confirm('Eliminare questo cantiere e tutti i suoi SAL?')) return;
+  cantieri=cantieri.filter(function(c){return c.id!==id;});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='cantieri'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='cantieri'?' on':'');
+  });
+  drawCantieri();
+}
+
+function azzeraCantieri(){
+  if(!confirm('Eliminare tutti i cantieri e i SAL?')) return;
+  cantieri=[]; cantCount=0; salGlobCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='cantieri'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='cantieri'?' on':'');
+  });
+  drawCantieri();
+}
+
+// ══ TAB 2 — NUOVO CANTIERE / SAL ══
+function drawNuovoSal() {
+  var el  = document.getElementById('c-nuovo-sal');
+  var c   = editingCantId ? cantieri.find(function(x){return x.id===editingCantId;}) : null;
+  var v   = function(k,def){return c?(c[k]||def||''):(def||'');};
+  var percAtt = c ? percCantiere(c) : 0;
+
+  el.innerHTML =
+    '<div class="sl">'+(c?'Aggiungi SAL a: '+esc(c.titolo):'Nuovo cantiere')+'</div>' +
+
+    // FORM CANTIERE (nascosto se si sta aggiungendo SAL a cantiere esistente)
+    (c && editingCantId && cantieri.find(function(x){return x.id===editingCantId;}) ?
+    '<div class="card" style="border-left:4px solid var(--success)">' +
+      '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Cantiere di riferimento</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:0.25rem">'+esc(c.titolo)+'</div>' +
+      '<div style="font-size:0.85rem;color:var(--muted)">'+esc(c.fornitore)+' · € '+fmt(c.importoContr)+' · Avanz. attuale: <strong>'+percAtt+'%</strong></div>' +
+    '</div>' :
+    '<div class="card">' +
+      '<div class="sl" style="margin-bottom:0.75rem">Dati cantiere</div>' +
+      '<div class="r3">' +
+        fgi('cTitolo','Titolo lavori',v('titolo'),'Es. Rifacimento facciata') +
+        fgi('cFornitore','Fornitore',v('fornitore'),'Es. Impresa Rossi Srl') +
+        fgi('cOdl','Rif. ordine di lavoro',v('odl'),'Es. OdL-001-2025') +
+      '</div>' +
+      '<div class="r4">' +
+        fgn('cImporto','Importo contrattuale (€)',v('importoContr'),'Es. 42500') +
+        fgd('cDataInizio','Data inizio',v('dataInizio')) +
+        fgd('cDataFine','Data fine prevista',v('dataFine')) +
+        fgi('cDelibera','Rif. delibera',v('delibera'),'Es. Del. n. 04/2024') +
+      '</div>' +
+      '<div class="r2">' +
+        fgi('cCondominio','Condominio',v('condominio'),'Es. Condominio Via Roma 10') +
+        fgi('cAdmin','Amministratore',v('admin'),'Es. Studio Amm. Bianchi') +
+      '</div>' +
+    '</div>') +
+
+    // FORM SAL
+    '<div class="card">' +
+      '<div class="sl" style="margin-bottom:0.75rem">Nuovo SAL</div>' +
+      '<div class="r4">' +
+        fgi('sNumero','N° SAL','','Es. 1') +
+        fgd('sData','Data SAL','') +
+        fgn('sPercSal','Avanzamento questo SAL (%)',0,'Es. 30') +
+        fgn('sPercCum','Avanzamento cumulato (%)',percAtt,'Es. 30') +
+      '</div>' +
+      '<div class="r3">' +
+        fgn('sImportoSal','Importo questo SAL (€)',0,'Calcolato auto o manuale') +
+        fgi('sRifFattura','Rif. fattura fornitore','','Es. FT-2025-001') +
+        fgsel('sStato','Stato SAL','bozza',Object.keys(STATI_SAL).map(function(k){return {v:k,l:STATI_SAL[k].label};})) +
+      '</div>' +
+      '<div class="fg"><label>Note di cantiere</label>' +
+        '<textarea id="sNota" placeholder="Es. Completata demolizione intonaco vecchio. Iniziata posa ponteggi primo piano. Condizioni meteo favorevoli."></textarea></div>' +
+      '<div class="fg"><label>Rilievi / contestazioni</label>' +
+        '<textarea id="sRilievi" placeholder="Es. Lieve ritardo sulla posa ponteggi 2° piano. Concordato con impresa recupero entro fine settimana."></textarea></div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaSal()">💾 Salva SAL</button>' +
+      (c?'':'<button class="btn btn-g btn-sm" onclick="salvaSoloCantiere()">💾 Salva solo cantiere</button>') +
+      '<button class="btn btn-g" onclick="editingCantId=null;switchTo(\'cantieri\')">← Cantieri</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraNuovoSal()">↺ Azzera form</button>' +
+    '</div>';
+
+  // Auto-calcolo importo SAL
+  setTimeout(function(){
+    var percSalEl=document.getElementById('sPercSal');
+    var impEl=document.getElementById('sImportoSal');
+    var percCumEl=document.getElementById('sPercCum');
+    if(percSalEl&&impEl){
+      percSalEl.addEventListener('input',function(){
+        var importoC = c ? c.importoContr : parseFloat((document.getElementById('cImporto')||{}).value)||0;
+        var perc=parseFloat(this.value)||0;
+        if(importoC&&perc) impEl.value=(importoC*perc/100).toFixed(2);
+        // Aggiorna cumulato
+        if(percCumEl) percCumEl.value=Math.min(100,percAtt+perc);
+      });
+    }
+  },100);
+}
+
+function fgi(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="number" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,label,value){return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaSal(){
+  var cantiere = editingCantId ? cantieri.find(function(x){return x.id===editingCantId;}) : null;
+
+  // Se non c'è cantiere, crealo prima
+  if(!cantiere){
+    var titolo=gv('cTitolo').trim();
+    if(!titolo){alert('Inserisci almeno il titolo dei lavori.');return;}
+    cantCount++;
+    cantiere={
+      id:'c'+cantCount, titolo:titolo, fornitore:gv('cFornitore'),
+      odl:gv('cOdl'), importoContr:parseFloat(gv('cImporto'))||0,
+      dataInizio:gv('cDataInizio'), dataFine:gv('cDataFine'),
+      delibera:gv('cDelibera'), condominio:gv('cCondominio'),
+      admin:gv('cAdmin'), sals:[]
+    };
+    cantieri.push(cantiere);
+  }
+
+  // Aggiunge SAL
+  var percSal=parseFloat(gv('sPercSal'))||0;
+  var percCum=parseFloat(gv('sPercCum'))||0;
+  var impSal =parseFloat(gv('sImportoSal'))||0;
+  // Auto-calcola importo se non inserito
+  if(!impSal && cantiere.importoContr && percSal){
+    impSal=cantiere.importoContr*percSal/100;
+  }
+  salGlobCount++;
+  var sal={
+    id:'s'+salGlobCount,
+    numero:gv('sNumero')||(cantiere.sals.length+1).toString(),
+    data:gv('sData'), percSal:percSal, percCumulata:percCum,
+    importoSal:impSal, rifFattura:gv('sRifFattura'),
+    stato:gv('sStato'), nota:gv('sNota'), rilievi:gv('sRilievi'),
+  };
+  cantiere.sals.push(sal);
+  editingCantId=null;
+  switchTo('cantieri');
+}
+
+function salvaSoloCantiere(){
+  var titolo=gv('cTitolo').trim();
+  if(!titolo){alert('Inserisci almeno il titolo.');return;}
+  cantCount++;
+  cantieri.push({
+    id:'c'+cantCount, titolo:titolo, fornitore:gv('cFornitore'),
+    odl:gv('cOdl'), importoContr:parseFloat(gv('cImporto'))||0,
+    dataInizio:gv('cDataInizio'), dataFine:gv('cDataFine'),
+    delibera:gv('cDelibera'), condominio:gv('cCondominio'),
+    admin:gv('cAdmin'), sals:[]
+  });
+  editingCantId=null;
+  switchTo('cantieri');
+}
+
+function azzeraNuovoSal(){editingCantId=null;drawNuovoSal();}
+
+// ══ TAB 3 — DOCUMENTO SAL ══
+function drawDocumento(){
+  var el=document.getElementById('c-documento');
+
+  // Selettore cantiere/SAL
+  var opzioni='';
+  cantieri.forEach(function(c){
+    (c.sals||[]).forEach(function(s){
+      var selected=docSalId&&docSalId.cantId===c.id&&docSalId.salId===s.id?' selected':'';
+      opzioni+='<option value="'+c.id+'__'+s.id+'"'+selected+'>'+esc(c.titolo)+' · SAL n. '+s.numero+'</option>';
+    });
+  });
+
+  if(!opzioni){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun SAL registrato. Aggiungine uno.</p>' +
+      '<button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="editingCantId=null;switchTo(\'nuovo-sal\')">➕ Nuovo cantiere/SAL</button></div>';
+    return;
+  }
+
+  // Se non selezionato, prendi il primo
+  if(!docSalId){
+    var parts=(opzioni.match(/value="([^"]+)"/)||[])[1]||'';
+    var pp=parts.split('__');
+    if(pp.length===2) docSalId={cantId:pp[0],salId:pp[1]};
+  }
+
+  var selVal=docSalId?docSalId.cantId+'__'+docSalId.salId:'';
+  var c=docSalId?cantieri.find(function(x){return x.id===docSalId.cantId;}):null;
+  var s=c&&docSalId?c.sals.find(function(x){return x.id===docSalId.salId;}):null;
+
+  el.innerHTML=
+    '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">' +
+      '<div class="fg" style="margin:0;flex:1;min-width:260px"><label>SAL</label>' +
+        '<select id="docSalSel" onchange="var p=this.value.split(\'__\');docSalId={cantId:p[0],salId:p[1]};drawDocumento()">' +
+          opzioni+'</select></div>' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>' +
+    '</div>' +
+    (c&&s ? renderDocSAL(c,s) : '');
+}
+
+function renderDocSAL(c,s){
+  var ss=STATI_SAL[s.stato]||STATI_SAL.bozza;
+  var dFmt=s.data?new Date(s.data).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var importoContr=c.importoContr||0;
+  var maturPre=importoContr*(s.percCumulata-s.percSal)/100;
+  var maturAtt=importoContr*s.percCumulata/100;
+  var daLiqTot=importoPagato(c);
+
+  return '<div class="doc-sal">' +
+    '<div class="doc-sal-hs">' +
+      '<div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;opacity:0.6;margin-bottom:0.3rem">Stato di Avanzamento Lavori</div>' +
+        '<div class="doc-sal-title">SAL n. '+esc(s.numero)+' — '+esc(c.titolo)+'</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.7rem;opacity:0.7">'+dFmt+'</div>' +
+        '<span class="badge '+ss.badge+'" style="margin-top:0.4rem;display:inline-block">'+ss.label+'</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="doc-sal-bd">' +
+
+    // PARTI
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Committente</div>' +
+        '<strong>'+esc(c.condominio||'Condominio')+'</strong>'+(c.admin?'<br><span style="font-size:0.85rem;color:var(--muted)">Amm. '+esc(c.admin)+'</span>':'')+'</div>' +
+      '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">Appaltatore</div>' +
+        '<strong>'+esc(c.fornitore)+'</strong>'+(c.odl?'<br><span style="font-size:0.82rem;color:var(--muted)">OdL '+esc(c.odl)+'</span>':'')+'</div>' +
+    '</div>' +
+
+    // AVANZAMENTO
+    '<div class="prog-wrap" style="margin-bottom:1.5rem">' +
+      '<div class="prog-label"><strong>Avanzamento cumulato</strong><strong style="font-family:\'DM Mono\',monospace">'+s.percCumulata+'%</strong></div>' +
+      '<div class="prog-bar" style="height:20px">' +
+        '<div class="prog-fill" style="width:'+s.percCumulata+'%;background:var(--'+(s.percCumulata>=100?'success':'ink')+')">' +
+          '<span class="prog-pct" style="font-size:0.75rem">'+s.percCumulata+'%</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // IMPORTI
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem">' +
+      iBox('Importo contrattuale','€ '+fmt(importoContr)) +
+      iBox('Maturato precedente','€ '+fmt(maturPre)) +
+      iBox('Maturato questo SAL','€ '+fmt(s.importoSal)) +
+      iBox('Totale maturato','€ '+fmt(maturAtt)) +
+    '</div>' +
+
+    '<p><strong>Avanzamento lavori questo SAL:</strong> '+s.percSal+'% — da '+Math.max(0,s.percCumulata-s.percSal)+'% a <strong>'+s.percCumulata+'%</strong></p>' +
+
+    (s.nota?'<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:0.75rem 1.25rem;margin:1rem 0"><strong>Note di cantiere:</strong><br>'+esc(s.nota)+'</div>':'') +
+    (s.rilievi?'<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1.25rem;margin:1rem 0"><strong>Rilievi:</strong><br>'+esc(s.rilievi)+'</div>':'') +
+    (s.rifFattura?'<p><strong>Riferimento fattura:</strong> '+esc(s.rifFattura)+'</p>':'') +
+
+    '<p style="margin-top:1.25rem">Il presente stato di avanzamento lavori viene approvato dalle parti come segue.</p>' +
+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-top:1.5rem">' +
+      firmaBox('Il Direttore Lavori / DL','') +
+      firmaBox('Per l\'appaltatore',esc(c.fornitore)) +
+      firmaBox('L\'Amministratore',esc(c.admin||'Amministratore')) +
+    '</div>' +
+
+    '<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">' +
+      '<span>'+esc(c.condominio||'Condominio')+(c.delibera?' · '+esc(c.delibera):'')+'</span>' +
+      '<span>SAL n. '+esc(s.numero)+' · '+oggi+'</span>' +
+    '</div>' +
+    '</div></div>';
+}
+
+function iBox(label,val){
+  return '<div class="info-box"><div class="info-label">'+label+'</div><div class="info-val" style="font-family:\'DM Mono\',monospace">'+val+'</div></div>';
+}
+function firmaBox(label,nome){
+  return '<div><div class="firma-label">'+label+'</div>'+(nome?'<div style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem">'+nome+'</div>':'')+
+    '<div class="firma-box"></div><div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem">Data: _______________</div></div>';
+}
+
+// ══ TAB 4 — PAGAMENTI ══
+function drawPagamenti(){
+  var el=document.getElementById('c-pagamenti');
+
+  var totContr =cantieri.reduce(function(s,c){return s+(c.importoContr||0);},0);
+  var totMatur =cantieri.reduce(function(s,c){return s+importoMaturato(c);},0);
+  var totPag   =cantieri.reduce(function(s,c){return s+importoPagato(c);},0);
+  var totDaLiq =cantieri.reduce(function(s,c){return s+importoDaLiquidare(c);},0);
+
+  el.innerHTML=
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Importo totale contratti</div><div class="cv" style="font-size:1.1rem">€ '+fmt(totContr)+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Totale maturato</div><div class="cv gn" style="font-size:1.1rem">€ '+fmt(totMatur)+'</div></div>' +
+    '<div class="sc k"><div class="cl">Già pagato</div><div class="cv" style="font-size:1.1rem">€ '+fmt(totPag)+'</div></div>' +
+    '<div class="sc '+(totDaLiq>0?'g':'gn')+'"><div class="cl">Da liquidare</div><div class="cv '+(totDaLiq>0?'go':'gn')+'" style="font-size:1.1rem">€ '+fmt(totDaLiq)+'</div></div>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-g btn-sm" onclick="switchTo(\'report\')">📊 Vai al report</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+    '</div>' +
+
+    (!cantieri.length ?
+    '<div class="card" style="text-align:center;padding:2rem"><p style="color:var(--muted)">Nessun cantiere registrato.</p></div>' :
+    '<div class="tw"><table>' +
+    '<thead><tr>' +
+      '<th>Cantiere</th><th>Fornitore</th>' +
+      '<th style="text-align:right">Contratto</th>' +
+      '<th style="text-align:right">Maturato</th>' +
+      '<th style="text-align:right">Pagato</th>' +
+      '<th style="text-align:right">Da liquidare</th>' +
+      '<th style="text-align:center">Avanz.</th>' +
+      '<th>SAL da pagare</th>' +
+    '</tr></thead><tbody>' +
+    cantieri.map(function(c){
+      var matur=importoMaturato(c);
+      var pag=importoPagato(c);
+      var daLiq=importoDaLiquidare(c);
+      var perc=percCantiere(c);
+      var salDaPagare=(c.sals||[]).filter(function(s){return s.stato==='approvato';});
+      return '<tr style="'+(daLiq>0?'background:#fffdf0':perc===100?'background:#f8fff9':'')+'">' +
+        '<td><strong>'+esc(c.titolo)+'</strong>'+(c.odl?'<br><span style="font-size:0.72rem;color:var(--muted)">'+esc(c.odl)+'</span>':'')+'</td>' +
+        '<td style="font-size:0.82rem">'+esc(c.fornitore)+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right">€ '+fmt(c.importoContr)+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right;color:var(--success);font-weight:600">€ '+fmt(matur)+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right">€ '+fmt(pag)+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right;font-weight:600;color:'+(daLiq>0?'var(--warning)':'var(--success)')+'">€ '+fmt(daLiq)+'</td>' +
+        '<td style="text-align:center">' +
+          '<div style="display:inline-flex;align-items:center;gap:0.4rem">' +
+            '<div style="width:60px;height:6px;background:var(--cream);border-radius:3px;overflow:hidden">' +
+              '<div style="width:'+perc+'%;height:100%;background:var(--'+(perc>=100?'success':'ink')+');border-radius:3px"></div>' +
+            '</div>' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:0.72rem">'+perc+'%</span>' +
+          '</div>' +
+        '</td>' +
+        '<td>' +
+          (salDaPagare.length ?
+            salDaPagare.map(function(s){
+              return '<span class="badge b-warn" style="margin:0.1rem;cursor:pointer" onclick="setStatoSal(\''+c.id+'\',\''+s.id+'\',\'pagato\');drawPagamenti()">SAL '+s.numero+' € '+fmt(s.importoSal)+'</span>';
+            }).join('') :
+            '<span style="font-size:0.78rem;color:var(--muted)">—</span>') +
+        '</td>' +
+      '</tr>';
+    }).join('') +
+    '<tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">' +
+      '<td colspan="2" style="padding:0.6rem 1.5rem">TOTALE</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totContr)+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totMatur)+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totPag)+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totDaLiq)+'</td>' +
+      '<td colspan="2"></td>' +
+    '</tr>' +
+    '</tbody></table></div>') +
+
+    '<div class="nb"><strong>💰 Come usare la colonna "Da liquidare"</strong>' +
+    'Clicca sui badge SAL arancioni per segnarli come pagati. ' +
+    'Poi usa il modulo Bonifici Fornitori per generare il bonifico con il riferimento SAL. ' +
+    'L\'importo da liquidare si azzera solo quando tutti i SAL approvati risultano pagati.</div>';
+}
+
+// ══ TAB 5 — REPORT ══
+function drawReport(){
+  var el=document.getElementById('c-report');
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  if(!cantieri.length){
+    el.innerHTML='<div class="brow" style="margin-bottom:1rem"><button class="btn btn-g btn-sm" onclick="azzeraReport()">↺ Azzera</button></div>' +
+      '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun cantiere da reportare.</p></div>';
+    return;
+  }
+
+  var totContr=cantieri.reduce(function(s,c){return s+(c.importoContr||0);},0);
+  var totMatur=cantieri.reduce(function(s,c){return s+importoMaturato(c);},0);
+  var totPag  =cantieri.reduce(function(s,c){return s+importoPagato(c);},0);
+  var totDaLiq=cantieri.reduce(function(s,c){return s+importoDaLiquidare(c);},0);
+
+  var righe=cantieri.map(function(c){
+    var perc=percCantiere(c);
+    var matur=importoMaturato(c);
+    var pag=importoPagato(c);
+    var daLiq=importoDaLiquidare(c);
+    var nSal=(c.sals||[]).length;
+    var diF=c.dataInizio?new Date(c.dataInizio).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    var dfF=c.dataFine?new Date(c.dataFine).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    return '<tr style="border-bottom:1px solid var(--cream)">' +
+      '<td style="padding:0.55rem 1rem;font-weight:500">'+esc(c.titolo)+'</td>' +
+      '<td style="padding:0.55rem 1rem;font-size:0.82rem">'+esc(c.fornitore)+'</td>' +
+      '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right">€ '+fmt(c.importoContr)+'</td>' +
+      '<td style="padding:0.55rem 1rem;text-align:center">' +
+        '<div style="display:flex;align-items:center;gap:0.4rem;justify-content:center">' +
+          '<div style="width:50px;height:6px;background:var(--cream);border-radius:3px;overflow:hidden">' +
+            '<div style="width:'+perc+'%;height:100%;background:var(--'+(perc>=100?'success':'ink')+');border-radius:3px"></div>' +
+          '</div>' +
+          '<span style="font-family:\'DM Mono\',monospace;font-size:0.72rem;font-weight:600">'+perc+'%</span>' +
+        '</div>' +
+      '</td>' +
+      '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;color:var(--success);font-weight:600">€ '+fmt(matur)+'</td>' +
+      '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right">€ '+fmt(pag)+'</td>' +
+      '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600;color:'+(daLiq>0?'var(--warning)':'var(--success)')+'">€ '+fmt(daLiq)+'</td>' +
+      '<td style="padding:0.55rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.78rem">'+nSal+'</td>' +
+      '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem">'+diF+' → '+dfF+'</td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraReport()">↺ Azzera tutto</button>' +
+    '</div>' +
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">' +
+    '<div style="background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between">' +
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report SAL — Monitoraggio Avanzamento Lavori</span>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="padding:2rem">' +
+    '<div class="sgrid" style="margin-bottom:1.5rem">' +
+    '<div class="sc k"><div class="cl">Cantieri</div><div class="cv">'+cantieri.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Valore contratti</div><div class="cv" style="font-size:1.1rem">€ '+fmt(totContr)+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Maturato</div><div class="cv gn" style="font-size:1.1rem">€ '+fmt(totMatur)+'</div></div>' +
+    '<div class="sc '+(totDaLiq>0?'g':'gn')+'"><div class="cl">Da liquidare</div><div class="cv '+(totDaLiq>0?'go':'gn')+'" style="font-size:1.1rem">€ '+fmt(totDaLiq)+'</div></div>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">' +
+    '<thead><tr style="background:var(--cream)">' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Lavori</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Contratto</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Avanz.</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Maturato</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Pagato</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Da liquidare</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">N° SAL</th>' +
+      '<th style="padding:0.6rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Periodo</th>' +
+    '</tr></thead><tbody>'+righe+'</tbody>' +
+    '<tfoot><tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">' +
+      '<td colspan="2" style="padding:0.6rem 1rem">TOTALE</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totContr)+'</td>' +
+      '<td></td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totMatur)+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totPag)+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(totDaLiq)+'</td>' +
+      '<td colspan="2"></td>' +
+    '</tr></tfoot>' +
+    '</table>' +
+    '<div style="padding-top:1rem;border-top:1px solid var(--border);margin-top:1.5rem;font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>' +
+    '</div></div>';
+}
+
+function azzeraReport(){
+  if(!confirm('Azzera tutti i cantieri e i SAL?')) return;
+  cantieri=[]; cantCount=0; salGlobCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='cantieri'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='cantieri'?' on':'');
+  });
+  drawCantieri();
+}
+
+// ══ ESEMPI ══
+function caricaEsempi(){
+  cantieri=[]; cantCount=0; salGlobCount=0;
+  var def=[
+    {titolo:'Rifacimento facciata principale',fornitore:'Impresa Rossi Restauri Srl',
+     odl:'OdL-001-2025',importoContr:42500,dataInizio:'2025-02-01',dataFine:'2025-04-15',
+     delibera:'Del. n. 04/2024',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',
+     sals:[
+       {numero:'1',data:'2025-02-28',percSal:30,percCumulata:30,importoSal:12750,rifFattura:'FT-2025-010',stato:'pagato',nota:'Completata demolizione intonaco e preparazione superfici. Ponteggi installati fino al 3° piano.',rilievi:''},
+       {numero:'2',data:'2025-03-31',percSal:40,percCumulata:70,importoSal:17000,rifFattura:'FT-2025-022',stato:'approvato',nota:'Completato intonaco primo strato scale A e B fino al 5° piano. Iniziata tinteggiatura piano terra.',rilievi:'Lieve ritardo scala C per condizioni meteo. Recupero previsto entro fine aprile.'},
+       {numero:'3',data:'2025-04-20',percSal:30,percCumulata:100,importoSal:12750,rifFattura:'',stato:'in_verifica',nota:'Completata tinteggiatura facciata. Rimozione ponteggi in corso.',rilievi:''},
+     ]},
+    {titolo:'Sostituzione colonna montante Scala A',fornitore:'Idraulica Verdi Srl',
+     odl:'OdL-002-2025',importoContr:8400,dataInizio:'2025-01-28',dataFine:'2025-02-10',
+     delibera:'Del. n. 05/2024',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',
+     sals:[
+       {numero:'1',data:'2025-02-08',percSal:100,percCumulata:100,importoSal:8400,rifFattura:'FT-2025-008',stato:'pagato',nota:'Lavori completati nei tempi previsti. Collaudo eseguito positivamente.',rilievi:''},
+     ]},
+  ];
+  def.forEach(function(d){
+    cantCount++;
+    var sals=d.sals.map(function(s){salGlobCount++;return Object.assign({id:'s'+salGlobCount},s);});
+    cantieri.push(Object.assign({id:'c'+cantCount},d,{sals:sals}));
+  });
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='cantieri'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='cantieri'?' on':'');
+  });
+  drawCantieri();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  if(!cantieri.length){alert('Nessun dato da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var rows=[['MONITORAGGIO SAL'],[],
+    ['Cantiere','Fornitore','OdL','Contratto €','Avanz.%','Maturato €','Pagato €','Da liquidare €','N° SAL']];
+  cantieri.forEach(function(c){
+    rows.push([c.titolo,c.fornitore,c.odl,c.importoContr,percCantiere(c),
+               importoMaturato(c),importoPagato(c),importoDaLiquidare(c),(c.sals||[]).length]);
+  });
+  rows.push([]);
+  rows.push(['DETTAGLIO SAL']);
+  rows.push(['Cantiere','N° SAL','Data','Avanz. SAL%','Avanz. Cum.%','Importo €','Fattura','Stato','Note']);
+  cantieri.forEach(function(c){
+    (c.sals||[]).forEach(function(s){
+      rows.push([c.titolo,s.numero,s.data,s.percSal,s.percCumulata,s.importoSal,
+                 s.rifFattura,STATI_SAL[s.stato]?STATI_SAL[s.stato].label:s.stato,s.nota]);
+    });
+  });
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[28,22,12,12,10,12,12,12,8,40].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'SAL');
+  XLSX.writeFile(wb,'CondoKit_MonitoraggioSAL_'+new Date().getFullYear()+'.xlsx');
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

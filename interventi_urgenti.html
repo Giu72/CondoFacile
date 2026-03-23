@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Interventi Urgenti</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--urg:#8b0000;--urg-light:#fff0f0;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--urg);color:white;padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(255,200,200,0.2);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(255,200,200,0.15);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,200,200,0.7);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#ffcccc;font-style:italic;}
+.header-sub{font-size:0.9rem;color:rgba(255,220,220,0.85);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--urg);border-bottom:2px solid var(--urg);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--urg);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-urg{background:var(--urg);color:white;}.btn-urg:hover{background:#6b0000;transform:translateY(-1px);}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--urg);color:white;}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-urg{background:var(--urg-light);color:var(--urg);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}.sc.urg::before{background:var(--urg);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}.cv.urg{color:var(--urg);}
+
+/* INTERVENTO CARD */
+.int-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:0.85rem;box-shadow:0 2px 8px var(--shadow);border-left:5px solid var(--urg);transition:box-shadow 0.15s;}
+.int-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.int-card.aperto{border-left-color:var(--urg);background:var(--urg-light);}
+.int-card.in_corso{border-left-color:var(--accent);}
+.int-card.attesa_approvazione{border-left-color:var(--gold);}
+.int-card.risolto{border-left-color:var(--success);opacity:0.85;}
+.int-card.chiuso{border-left-color:var(--muted);opacity:0.7;}
+.int-titolo{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.15rem;}
+.int-zona{font-size:0.82rem;color:var(--muted);}
+
+/* TIMER INTERVENTO */
+.timer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin:0.75rem 0;}
+.timer-box{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.5rem 0.75rem;text-align:center;}
+.timer-label{font-family:'DM Mono',monospace;font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.timer-val{font-family:'DM Mono',monospace;font-size:0.82rem;font-weight:600;}
+.timer-val.ok{color:var(--success);}
+.timer-val.warn{color:var(--warning);}
+.timer-val.urg{color:var(--urg);}
+
+/* COSTO BOX */
+.costo-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--cream);font-size:0.875rem;}
+.costo-row:last-child{border-bottom:none;}
+.costo-label{color:var(--muted);}
+.costo-val{font-family:'DM Mono',monospace;font-weight:600;}
+
+/* RAPPORTO DOC */
+.rapp-doc{background:white;border:2px solid var(--urg);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.rapp-hs{background:var(--urg);color:white;padding:1.3rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;}
+.rapp-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.rapp-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.75;}
+.rapp-bd p{margin-bottom:0.75rem;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.25rem;}
+.ibox{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem;}
+.ibox-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.ibox-val{font-weight:500;}
+.firma-box{border:1px solid var(--border);border-radius:3px;min-height:55px;background:var(--paper);}
+
+.filtri-bar{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+.filtri-bar .fg{margin:0;min-width:130px;}
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.rapp-doc{box-shadow:none;border:1px solid #ccc;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="segnalazioni_guasti.html">🚨 Segnalazioni</a>
+    <a class="nav-link" href="ordini_di_lavoro.html">🔧 Ordini lavoro</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Fornitori</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Gestione Incidenti · Modulo 5.2</div>
+  <h1>Interventi<br><em>Urgenti</em></h1>
+  <p class="header-sub">Gestisci interventi urgenti h24, traccia i tempi di chiamata, arrivo e risoluzione, approva i costi e genera il rapporto ufficiale.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-registro"  onclick="go('registro')">🚨 1 · Registro</button>
+    <button class="tab-btn"   id="tb-nuovo"      onclick="go('nuovo')">➕ 2 · Nuovo Intervento</button>
+    <button class="tab-btn"   id="tb-rapporto"   onclick="go('rapporto')">📄 3 · Rapporto</button>
+    <button class="tab-btn"   id="tb-costi"      onclick="go('costi')">💰 4 · Costi</button>
+    <button class="tab-btn"   id="tb-report"     onclick="go('report')">📊 5 · Report Assemblea</button>
+  </div>
+
+  <div class="panel on" id="p-registro"> <div id="c-registro"></div> </div>
+  <div class="panel"    id="p-nuovo">    <div id="c-nuovo"></div>    </div>
+  <div class="panel"    id="p-rapporto"> <div id="c-rapporto"></div> </div>
+  <div class="panel"    id="p-costi">    <div id="c-costi"></div>    </div>
+  <div class="panel"    id="p-report">   <div id="c-report"></div>   </div>
+</div>
+
+<div class="page-footer">CondoKit · Interventi Urgenti · Beta · Modulo 5.2</div>
+
+<script>
+var PANELS    = ['registro','nuovo','rapporto','costi','report'];
+var interventi = [];
+var intCount  = 0;
+var editingId = null;
+var rappId    = null;
+
+var TIPI_URG = {
+  allagamento:  '💧 Allagamento',
+  perdita_gas:  '⚠️ Perdita gas',
+  elettrico:    '⚡ Guasto elettrico',
+  ascensore:    '🛗 Blocco ascensore',
+  incendio:     '🔥 Incendio / Fumo',
+  effrazione:   '🔓 Effrazione / Sicurezza',
+  strutturale:  '🏗️ Pericolo strutturale',
+  meteo:        '🌩️ Danni meteo',
+  altro:        '🚨 Altro urgente',
+};
+
+var STATI_INT = {
+  aperto:             {label:'🚨 Aperto',             badge:'b-urg'},
+  tecnico_allertato:  {label:'📞 Tecnico allertato',   badge:'b-warn'},
+  in_corso:           {label:'🔨 In corso',            badge:'b-danger'},
+  attesa_approvazione:{label:'✋ Attesa approvazione', badge:'b-warn'},
+  risolto:            {label:'✅ Risolto',             badge:'b-ok'},
+  chiuso:             {label:'🔒 Chiuso',              badge:'b-neu'},
+};
+
+// ══ HELPERS ══
+function minutiTra(t1, t2) {
+  if (!t1||!t2) return null;
+  var a=parseTime(t1), b=parseTime(t2);
+  if(a===null||b===null) return null;
+  var diff=b-a;
+  if(diff<0) diff+=1440; // over mezzanotte
+  return diff;
+}
+
+function parseTime(t) {
+  var parts=(t||'').split(':');
+  if(parts.length!==2) return null;
+  var h=parseInt(parts[0]),m=parseInt(parts[1]);
+  if(isNaN(h)||isNaN(m)) return null;
+  return h*60+m;
+}
+
+function fmtMin(min) {
+  if(min===null) return '—';
+  if(min<60) return min+'\'';
+  return Math.floor(min/60)+'h '+( min%60 ? (min%60)+'\'':'');
+}
+
+function costoTotale(i) {
+  return (parseFloat(i.costoManodopera)||0)+(parseFloat(i.costoMateriali)||0)+(parseFloat(i.costoTrasferta)||0);
+}
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='registro') drawRegistro();
+  if (name==='nuovo')    drawNuovo();
+  if (name==='rapporto') drawRapporto();
+  if (name==='costi')    drawCosti();
+  if (name==='report')   drawReport();
+}
+function switchTo(name){go(name);}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display=i===0?'block':'none';
+  });
+  drawRegistro();
+};
+
+// ══ TAB 1 — REGISTRO ══
+function drawRegistro() {
+  var el=document.getElementById('c-registro');
+
+  var aperti  =interventi.filter(function(i){return i.stato==='aperto'||i.stato==='tecnico_allertato'||i.stato==='in_corso'||i.stato==='attesa_approvazione';});
+  var risolti =interventi.filter(function(i){return i.stato==='risolto'||i.stato==='chiuso';});
+  var costoTot=interventi.reduce(function(s,i){return s+costoTotale(i);},0);
+
+  var filtStato=(document.getElementById('filtStato')||{}).value||'attivi';
+  var filtTesto=((document.getElementById('filtTesto')||{}).value||'').toLowerCase().trim();
+
+  var filtrati=interventi.filter(function(i){
+    if(filtStato==='attivi'&&(i.stato==='risolto'||i.stato==='chiuso')) return false;
+    if(filtStato!=='tutti'&&filtStato!=='attivi'&&i.stato!==filtStato) return false;
+    if(filtTesto&&!(i.titolo||'').toLowerCase().includes(filtTesto)&&!(i.tecnico||'').toLowerCase().includes(filtTesto)) return false;
+    return true;
+  }).sort(function(a,b){
+    var ord={aperto:0,tecnico_allertato:1,in_corso:2,attesa_approvazione:3,risolto:4,chiuso:5};
+    return (ord[a.stato]||0)-(ord[b.stato]||0);
+  });
+
+  var alertHtml='';
+  var urgAperte=interventi.filter(function(i){return i.stato==='aperto';});
+  if(urgAperte.length) alertHtml='<div style="background:var(--urg-light);border:2px solid var(--urg);border-radius:4px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;font-size:0.875rem;animation:pulse 2s infinite"><strong style="color:var(--urg)">🚨 '+urgAperte.length+' INTERVENTO/I APERTO/I — Attivare immediatamente il tecnico reperibile!</strong></div>';
+
+  el.innerHTML=
+    '<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}</style>'+
+    '<div class="sgrid">'+
+    '<div class="sc urg"><div class="cl">Interventi attivi</div><div class="cv urg">'+aperti.length+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Risolti</div><div class="cv gn">'+risolti.length+'</div></div>'+
+    '<div class="sc k"><div class="cl">Totali</div><div class="cv">'+interventi.length+'</div></div>'+
+    '<div class="sc g"><div class="cl">Costo totale</div><div class="cv go" style="font-size:1.1rem">€ '+fmt(costoTot)+'</div></div>'+
+    '</div>'+
+
+    alertHtml+
+
+    '<div class="filtri-bar">'+
+      '<div class="fg"><label>Stato</label><select id="filtStato" onchange="drawRegistro()">'+
+        '<option value="attivi"'+(filtStato==='attivi'?' selected':'')+'>Solo attivi</option>'+
+        '<option value="tutti"'+(filtStato==='tutti'?' selected':'')+'>Tutti</option>'+
+        Object.keys(STATI_INT).map(function(k){return '<option value="'+k+'"'+(filtStato===k?' selected':'')+'>'+STATI_INT[k].label+'</option>';}).join('')+
+      '</select></div>'+
+      '<div class="fg" style="min-width:200px"><label>Cerca</label>'+
+        '<input type="text" id="filtTesto" value="'+esc(filtTesto)+'" placeholder="Titolo, tecnico..." oninput="drawRegistro()">'+
+      '</div>'+
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="resetFiltri()">↺ Reset</button>'+
+    '</div>'+
+
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-urg" onclick="editingId=null;switchTo(\'nuovo\')">🚨 Nuovo intervento urgente</button>'+
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Esempi</button>'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraRegistro()">↺ Azzera</button>'+
+    '</div>'+
+
+    (!filtrati.length?
+    '<div class="card" style="text-align:center;padding:2.5rem">'+
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">✅</div>'+
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(interventi.length?'Nessun intervento attivo.':'Nessun intervento registrato.')+'</p>'+
+      '<button class="btn btn-urg btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">🚨 Apri intervento urgente</button>'+
+    '</div>':
+    filtrati.map(function(i){
+      var s=STATI_INT[i.stato]||STATI_INT.aperto;
+      var dFmt=i.dataIntervento?new Date(i.dataIntervento).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var minChiamata=minutiTra(i.oraChiamata,i.oraArrivo);
+      var minRisoluz=minutiTra(i.oraChiamata,i.oraFine);
+      var costoI=costoTotale(i);
+      var tipoLabel=TIPI_URG[i.tipo]||i.tipo||'—';
+
+      return '<div class="int-card '+i.stato+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem">'+
+          '<div>'+
+            '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--muted)">N. '+esc(i.numero)+' · '+dFmt+(i.oraChiamata?' · ore '+esc(i.oraChiamata):'')+'</div>'+
+            '<div class="int-titolo">'+esc(i.titolo)+'</div>'+
+            '<div class="int-zona">'+esc(tipoLabel)+' · 📍 '+esc(i.zona||'—')+(i.tecnico?' · 👤 '+esc(i.tecnico):'')+'</div>'+
+          '</div>'+
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem">'+
+            '<span class="badge '+s.badge+'">'+s.label+'</span>'+
+            (costoI?'<span style="font-family:\'DM Mono\',monospace;font-size:0.85rem;font-weight:600">€ '+fmt(costoI)+'</span>':'')+
+          '</div>'+
+        '</div>'+
+
+        // TIMER MINI
+        '<div class="timer-grid">'+
+          timerBox('Chiamata',i.oraChiamata||'—','','')  +
+          timerBox('Arrivo tecnico',i.oraArrivo||'—',minChiamata!==null?fmtMin(minChiamata):'',minChiamata!==null&&minChiamata<=30?'ok':minChiamata!==null&&minChiamata<=60?'warn':'urg')+
+          timerBox('Fine intervento',i.oraFine||'—','','')+
+          timerBox('Durata totale',minRisoluz!==null?fmtMin(minRisoluz):'—','','')+
+        '</div>'+
+
+        (i.costoApprovato===false&&costoI>0?
+          '<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:3px;padding:0.5rem 0.75rem;margin-bottom:0.5rem;font-size:0.82rem">'+
+          '✋ <strong>Approvazione costo richiesta</strong> — € '+fmt(costoI)+' · '+
+          '<button class="btn btn-ok btn-sm" style="margin-left:0.5rem" onclick="approvaCosto(\''+i.id+'\')">✅ Approva</button>'+
+          '</div>':'') +
+
+        '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem">'+
+          avanzaBtn(i)+
+          '<button class="btn btn-g btn-sm" onclick="apriRapporto(\''+i.id+'\')">📄 Rapporto</button>'+
+          '<button class="btn btn-g btn-sm" onclick="editingId=\''+i.id+'\';switchTo(\'nuovo\')">✏️</button>'+
+          (i.stato!=='risolto'&&i.stato!=='chiuso'?'<button class="btn btn-ok btn-sm" onclick="risolviIntervento(\''+i.id+'\')">✅ Risolvi</button>':'')+
+          '<button style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaIntervento(\''+i.id+'\')">✕</button>'+
+        '</div>'+
+      '</div>';
+    }).join(''));
+}
+
+function timerBox(label,val,sub,cls){
+  return '<div class="timer-box">'+
+    '<div class="timer-label">'+label+'</div>'+
+    '<div class="timer-val '+(cls||'')+'">'+esc(val)+'</div>'+
+    (sub?'<div style="font-size:0.62rem;color:var(--muted)">⏱ '+esc(sub)+'</div>':'')+
+    '</div>';
+}
+
+function avanzaBtn(i){
+  var NEXT={aperto:'tecnico_allertato',tecnico_allertato:'in_corso',in_corso:'attesa_approvazione',attesa_approvazione:'risolto'};
+  var NL={tecnico_allertato:'📞 Allerta tecnico',in_corso:'🔨 Avvia intervento',attesa_approvazione:'✋ Richiedi approvazione',risolto:'✅ Risolvi'};
+  var n=NEXT[i.stato];
+  if(!n||i.stato==='risolto'||i.stato==='chiuso') return '';
+  return '<button class="btn btn-p btn-sm" onclick="avanzaStato(\''+i.id+'\',\''+n+'\')">'+NL[n]+'</button>';
+}
+
+function avanzaStato(id,nuovoStato){
+  var i=interventi.find(function(x){return x.id===id;});
+  if(!i) return;
+  i.stato=nuovoStato;
+  var ora=oraAdesso();
+  if(nuovoStato==='tecnico_allertato'&&!i.oraChiamata) i.oraChiamata=ora;
+  if(nuovoStato==='in_corso'&&!i.oraArrivo) i.oraArrivo=ora;
+  if(nuovoStato==='attesa_approvazione') i.costoApprovato=false;
+  drawRegistro();
+}
+
+function approvaCosto(id){
+  var i=interventi.find(function(x){return x.id===id;});
+  if(i){i.costoApprovato=true;i.stato='risolto';}
+  drawRegistro();
+}
+
+function risolviIntervento(id){
+  var i=interventi.find(function(x){return x.id===id;});
+  if(!i) return;
+  var nota=prompt('Note risoluzione (opzionale):','')||'';
+  if(!i.oraFine) i.oraFine=oraAdesso();
+  i.stato='risolto';
+  i.noteRisoluzione=nota;
+  i.costoApprovato=true;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+function eliminaIntervento(id){
+  if(!confirm('Eliminare questo intervento?')) return;
+  interventi=interventi.filter(function(i){return i.id!==id;});
+  drawRegistro();
+}
+
+function resetFiltri(){
+  var s=document.getElementById('filtStato');if(s)s.value='attivi';
+  var t=document.getElementById('filtTesto');if(t)t.value='';
+  drawRegistro();
+}
+
+function azzeraRegistro(){
+  if(!confirm('Eliminare tutti gli interventi urgenti?')) return;
+  interventi=[]; intCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+function oraAdesso(){var d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+
+// ══ TAB 2 — NUOVO / MODIFICA ══
+function drawNuovo(){
+  var el=document.getElementById('c-nuovo');
+  var inv=editingId?interventi.find(function(x){return x.id===editingId;}):null;
+  var v=function(k,def){return inv?(inv[k]!==undefined?inv[k]:def||''):(def||'');};
+  var oggi=new Date().toISOString().split('T')[0];
+  var ora=oraAdesso();
+
+  el.innerHTML=
+    '<div class="sl">'+(editingId?'Modifica intervento':'🚨 Nuovo intervento urgente')+'</div>'+
+    '<div class="card" style="border-top:4px solid var(--urg)">'+
+      '<div class="fg"><label>Titolo / descrizione urgenza</label>'+
+        '<input type="text" id="fTitolo" value="'+esc(v('titolo'))+'" placeholder="Es. Allagamento scala A — perdita tubazione piano 3°"></div>'+
+      '<div class="r4">'+
+        fgsel('fTipo','Tipo urgenza',v('tipo','allagamento'),Object.keys(TIPI_URG).map(function(k){return {v:k,l:TIPI_URG[k]};}))+
+        fgi('fZona','Zona / Area',v('zona'),'Es. Scala A piano 3°')+
+        fgi('fNumero','N° intervento',v('numero'),'Es. URG-001-2025')+
+        fgi('fCondominio','Condominio',v('condominio'),'Es. Condominio Via Roma 10')+
+      '</div>'+
+      '<div class="r4">'+
+        fgd('fData','Data intervento',v('dataIntervento',oggi))+
+        fgt('fOraChiamata','Ora chiamata',v('oraChiamata',ora))+
+        fgt('fOraArrivo','Ora arrivo tecnico',v('oraArrivo'))+
+        fgt('fOraFine','Ora fine intervento',v('oraFine'))+
+      '</div>'+
+    '</div>'+
+
+    '<div class="card">'+
+      '<div class="sl" style="margin-bottom:0.75rem">Tecnico reperibile</div>'+
+      '<div class="r3">'+
+        fgi('fTecnico','Tecnico / Fornitore',v('tecnico'),'Es. Idraulica Verdi Srl')+
+        fgi('fTelTecnico','Tel. reperibilità',v('telTecnico'),'Es. 347 1234567')+
+        fgi('fReferente','Referente in loco',v('referente'),'Es. Rossi Mario Int.3')+
+      '</div>'+
+      '<div class="r3">'+
+        fgi('fSegnalazione','Rif. segnalazione guasto',v('segnalazione'),'Es. SEGN-001-2025')+
+        fgi('fOdl','Rif. ordine di lavoro',v('odl'),'Es. OdL-005-2025')+
+        fgsel('fStato','Stato',v('stato','aperto'),Object.keys(STATI_INT).map(function(k){return {v:k,l:STATI_INT[k].label};}))+
+      '</div>'+
+    '</div>'+
+
+    '<div class="card">'+
+      '<div class="sl" style="margin-bottom:0.75rem">Descrizione e costi</div>'+
+      '<div class="fg"><label>Descrizione intervento eseguito</label>'+
+        '<textarea id="fDescr" placeholder="Descrizione tecnica dell\'intervento eseguito, cause, azioni intraprese...">'+esc(v('descrizione'))+'</textarea></div>'+
+      '<div class="r4">'+
+        fgn('fCostoMan','Costo manodopera (€)',v('costoManodopera'),'Es. 180')+
+        fgn('fCostoMat','Costo materiali (€)',v('costoMateriali'),'Es. 45')+
+        fgn('fCostoTrasf','Costo trasferta (€)',v('costoTrasferta'),'Es. 25')+
+        '<div class="fg"><label>Costo approvato</label><select id="fCostoApp">'+
+          '<option value="si"'+(v('costoApprovato',true)===true||v('costoApprovato',true)==='si'?' selected':'')+'>Sì — Approvato</option>'+
+          '<option value="no"'+(v('costoApprovato',true)===false||v('costoApprovato',true)==='no'?' selected':'')+'>No — In attesa</option>'+
+        '</select></div>'+
+      '</div>'+
+      '<div class="r2">'+
+        '<div class="fg"><label>Cause accertate</label><textarea id="fCause" placeholder="Es. Rottura giunzione tubazione acqua calda per corrosione...">'+esc(v('cause'))+'</textarea></div>'+
+        '<div class="fg"><label>Note / raccomandazioni</label><textarea id="fNote" placeholder="Es. Consigliato controllo impianto intero entro 30 giorni...">'+esc(v('noteRisoluzione'))+'</textarea></div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="brow">'+
+      '<button class="btn btn-urg" onclick="salvaIntervento()">💾 '+(editingId?'Aggiorna':'Salva intervento')+'</button>'+
+      '<button class="btn btn-g" onclick="editingId=null;switchTo(\'registro\')">← Registro</button>'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraNuovo()">↺ Azzera form</button>'+
+    '</div>';
+}
+
+function fgi(id,l,v,ph){return '<div class="fg"><label>'+l+'</label><input type="text" id="'+id+'" value="'+esc(v)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,l,v,ph){return '<div class="fg"><label>'+l+'</label><input type="number" id="'+id+'" value="'+esc(v)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,l,v){return '<div class="fg"><label>'+l+'</label><input type="date" id="'+id+'" value="'+esc(v)+'"></div>';}
+function fgt(id,l,v){return '<div class="fg"><label>'+l+'</label><input type="time" id="'+id+'" value="'+esc(v)+'"></div>';}
+function fgsel(id,l,v,opts){
+  return '<div class="fg"><label>'+l+'</label><select id="'+id+'">'+
+    opts.map(function(o){return '<option value="'+o.v+'"'+(v===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+
+  '</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaIntervento(){
+  var titolo=gv('fTitolo').trim();
+  if(!titolo){alert('Inserisci il titolo dell\'intervento.');return;}
+  var id=editingId||'u'+(++intCount);
+  var obj={
+    id:id,titolo:titolo,tipo:gv('fTipo'),zona:gv('fZona'),numero:gv('fNumero'),condominio:gv('fCondominio'),
+    dataIntervento:gv('fData'),oraChiamata:gv('fOraChiamata'),oraArrivo:gv('fOraArrivo'),oraFine:gv('fOraFine'),
+    tecnico:gv('fTecnico'),telTecnico:gv('fTelTecnico'),referente:gv('fReferente'),
+    segnalazione:gv('fSegnalazione'),odl:gv('fOdl'),stato:gv('fStato'),
+    descrizione:gv('fDescr'),costoManodopera:parseFloat(gv('fCostoMan'))||0,
+    costoMateriali:parseFloat(gv('fCostoMat'))||0,costoTrasferta:parseFloat(gv('fCostoTrasf'))||0,
+    costoApprovato:gv('fCostoApp')==='si',cause:gv('fCause'),noteRisoluzione:gv('fNote'),
+  };
+  if(editingId){var idx=interventi.findIndex(function(x){return x.id===editingId;});if(idx>=0)interventi[idx]=obj;}
+  else interventi.push(obj);
+  editingId=null;
+  switchTo('registro');
+}
+
+function azzeraNuovo(){editingId=null;drawNuovo();}
+
+// ══ TAB 3 — RAPPORTO ══
+function apriRapporto(id){rappId=id;switchTo('rapporto');}
+
+function drawRapporto(){
+  var el=document.getElementById('c-rapporto');
+  var opzioni=interventi.map(function(i){
+    return '<option value="'+i.id+'"'+(rappId===i.id?' selected':'')+'>N. '+esc(i.numero)+' — '+esc(i.titolo)+'</option>';
+  }).join('');
+
+  if(!opzioni){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun intervento registrato.</p><button class="btn btn-urg btn-sm" style="margin-top:1rem" onclick="editingId=null;switchTo(\'nuovo\')">🚨 Nuovo intervento</button></div>';
+    return;
+  }
+  if(!rappId&&interventi.length) rappId=interventi[0].id;
+  var inv=interventi.find(function(x){return x.id===rappId;});
+
+  el.innerHTML=
+    '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">'+
+      '<div class="fg" style="margin:0;flex:1;min-width:240px"><label>Intervento</label>'+
+        '<select id="rappSel" onchange="rappId=this.value;drawRapporto()">'+opzioni+'</select></div>'+
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>'+
+    '</div>'+
+    (inv?renderRapporto(inv):'');
+}
+
+function renderRapporto(i){
+  var s=STATI_INT[i.stato]||STATI_INT.aperto;
+  var dFmt=i.dataIntervento?new Date(i.dataIntervento).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var minArrivo=minutiTra(i.oraChiamata,i.oraArrivo);
+  var minTotale=minutiTra(i.oraChiamata,i.oraFine);
+  var costoI=costoTotale(i);
+
+  return '<div class="rapp-doc">'+
+    '<div class="rapp-hs">'+
+      '<div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;opacity:0.7;margin-bottom:0.25rem">Rapporto Intervento Urgente — n. '+esc(i.numero)+'</div>'+
+        '<div class="rapp-title">'+esc(i.titolo)+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">'+
+        '<span class="badge '+s.badge+'">'+s.label+'</span>'+
+        (i.costoApprovato?'<span class="badge b-ok">💰 Costo approvato</span>':'<span class="badge b-warn">✋ In attesa approvazione</span>')+
+      '</div>'+
+    '</div>'+
+    '<div class="rapp-bd">'+
+
+    '<div class="info-grid">'+
+      ibox('Tipo urgenza',TIPI_URG[i.tipo]||i.tipo||'—')+
+      ibox('Zona / Area',i.zona||'—')+
+      ibox('Condominio',i.condominio||'—')+
+      ibox('Data intervento',dFmt)+
+      ibox('Ora chiamata',i.oraChiamata||'—',true)+
+      ibox('Ora arrivo tecnico',i.oraArrivo||'—',true)+
+      ibox('Ora fine intervento',i.oraFine||'—',true)+
+      ibox('Tempo risposta',minArrivo!==null?fmtMin(minArrivo):'—',true)+
+      ibox('Durata intervento',minTotale!==null?fmtMin(minTotale):'—',true)+
+      ibox('Tecnico',i.tecnico||'—')+
+      ibox('Tel. reperibilità',i.telTecnico||'—',true)+
+      ibox('Referente in loco',i.referente||'—')+
+    '</div>'+
+
+    (i.segnalazione||i.odl?
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.82rem">'+
+      (i.segnalazione?'<span>🔗 Segnalazione: <strong>'+esc(i.segnalazione)+'</strong></span>':'')+
+      (i.segnalazione&&i.odl?'&nbsp;·&nbsp;':'')+
+      (i.odl?'<span>🔧 OdL: <strong>'+esc(i.odl)+'</strong></span>':'')+
+    '</div>':'')+
+
+    (i.descrizione?'<p><strong>Intervento eseguito:</strong><br>'+esc(i.descrizione)+'</p>':'')+
+    (i.cause?'<p><strong>Cause accertate:</strong><br>'+esc(i.cause)+'</p>':'')+
+    (i.noteRisoluzione?'<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:3px;padding:0.75rem 1rem;margin:1rem 0"><strong>Note / Raccomandazioni:</strong><br>'+esc(i.noteRisoluzione)+'</div>':'')+
+
+    // COSTI
+    '<div style="background:var(--urg-light);border:1px solid #e8a0a0;border-radius:4px;padding:1rem 1.5rem;margin:1rem 0">'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--urg);margin-bottom:0.75rem">Riepilogo costi</div>'+
+      '<div class="costo-row"><span class="costo-label">Manodopera</span><span class="costo-val">€ '+fmt(i.costoManodopera)+'</span></div>'+
+      '<div class="costo-row"><span class="costo-label">Materiali</span><span class="costo-val">€ '+fmt(i.costoMateriali)+'</span></div>'+
+      '<div class="costo-row"><span class="costo-label">Trasferta</span><span class="costo-val">€ '+fmt(i.costoTrasferta)+'</span></div>'+
+      '<div class="costo-row" style="border-top:2px solid var(--urg);margin-top:0.25rem;padding-top:0.5rem"><span style="font-weight:600">TOTALE</span><span class="costo-val" style="color:var(--urg);font-size:1.1rem">€ '+fmt(costoI)+'</span></div>'+
+      '<div style="margin-top:0.5rem;font-size:0.8rem;color:var(--urg)">Approvazione: '+(i.costoApprovato?'✅ Approvato':'⏳ In attesa')+'</div>'+
+    '</div>'+
+
+    // FIRME
+    '<p style="margin-top:1.25rem">Il presente rapporto viene sottoscritto come segue.</p>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-top:1.5rem">'+
+      firmaBox('L\'Amministratore','')+firmaBox('Il Tecnico Intervenuto',esc(i.tecnico||''))+firmaBox('Referente in loco',esc(i.referente||''))+
+    '</div>'+
+
+    '<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">'+
+      '<span>Intervento n. '+esc(i.numero)+' · '+esc(i.condominio||'Condominio')+'</span>'+
+      '<span>'+oggi+'</span>'+
+    '</div>'+
+    '</div></div>';
+}
+
+function ibox(label,val,mono){
+  return '<div class="ibox"><div class="ibox-label">'+label+'</div>'+
+    '<div class="ibox-val'+(mono?' style="font-family:\'DM Mono\',monospace"':'')+'">'+esc(String(val||'—'))+'</div></div>';
+}
+function firmaBox(label,nome){
+  return '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.62rem;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem">'+label+'</div>'+
+    (nome?'<div style="font-weight:500;font-size:0.85rem;margin-bottom:0.3rem">'+nome+'</div>':'')+
+    '<div class="firma-box"></div><div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem">Data: _______________</div></div>';
+}
+
+// ══ TAB 4 — COSTI ══
+function drawCosti(){
+  var el=document.getElementById('c-costi');
+  var costoTot=interventi.reduce(function(s,i){return s+costoTotale(i);},0);
+  var costoApp=interventi.filter(function(i){return i.costoApprovato;}).reduce(function(s,i){return s+costoTotale(i);},0);
+  var costoAtt=interventi.filter(function(i){return !i.costoApprovato&&costoTotale(i)>0;}).reduce(function(s,i){return s+costoTotale(i);},0);
+
+  el.innerHTML=
+    '<div class="sgrid">'+
+    '<div class="sc k"><div class="cl">Costo totale</div><div class="cv" style="font-size:1.1rem">€ '+fmt(costoTot)+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Approvati</div><div class="cv gn" style="font-size:1.1rem">€ '+fmt(costoApp)+'</div></div>'+
+    '<div class="sc g"><div class="cl">In attesa approvazione</div><div class="cv go" style="font-size:1.1rem">€ '+fmt(costoAtt)+'</div></div>'+
+    '</div>'+
+
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '</div>'+
+
+    (!interventi.length?
+    '<div class="card" style="text-align:center;padding:2rem"><p style="color:var(--muted)">Nessun intervento registrato.</p></div>':
+    '<div class="tw"><table>'+
+    '<thead><tr><th>N°</th><th>Titolo</th><th>Data</th><th>Tecnico</th>'+
+    '<th style="text-align:right">Manodopera</th><th style="text-align:right">Materiali</th>'+
+    '<th style="text-align:right">Trasferta</th><th style="text-align:right">Totale</th>'+
+    '<th>Approvato</th><th>Azioni</th></tr></thead><tbody>'+
+    interventi.map(function(i){
+      var cI=costoTotale(i);
+      var dFmt=i.dataIntervento?new Date(i.dataIntervento).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return '<tr style="'+(i.costoApprovato?'background:#f8fff9':cI>0?'background:#fffdf0':'')+'">' +
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(i.numero)+'</td>'+
+        '<td><strong>'+esc(i.titolo)+'</strong></td>'+
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+dFmt+'</td>'+
+        '<td style="font-size:0.82rem">'+esc(i.tecnico||'—')+'</td>'+
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right">'+fmt(i.costoManodopera)+'</td>'+
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right">'+fmt(i.costoMateriali)+'</td>'+
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right">'+fmt(i.costoTrasferta)+'</td>'+
+        '<td style="font-family:\'DM Mono\',monospace;text-align:right;font-weight:700">€ '+fmt(cI)+'</td>'+
+        '<td>'+(i.costoApprovato?'<span class="badge b-ok">✅</span>':cI>0?'<span class="badge b-warn">✋ Attesa</span>':'<span class="badge b-neu">—</span>')+'</td>'+
+        '<td>'+((!i.costoApprovato&&cI>0)?'<button class="btn btn-ok btn-sm" onclick="approvaCosto(\''+i.id+'\');drawCosti()">✅ Approva</button>':'')+'</td>'+
+      '</tr>';
+    }).join('')+
+    '<tr style="background:var(--urg);color:white;font-family:\'DM Mono\',monospace;font-weight:700">'+
+      '<td colspan="4" style="padding:0.6rem 1.5rem">TOTALE</td>'+
+      '<td style="padding:0.6rem 1rem;text-align:right">'+fmt(interventi.reduce(function(s,i){return s+(parseFloat(i.costoManodopera)||0);},0))+'</td>'+
+      '<td style="padding:0.6rem 1rem;text-align:right">'+fmt(interventi.reduce(function(s,i){return s+(parseFloat(i.costoMateriali)||0);},0))+'</td>'+
+      '<td style="padding:0.6rem 1rem;text-align:right">'+fmt(interventi.reduce(function(s,i){return s+(parseFloat(i.costoTrasferta)||0);},0))+'</td>'+
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(costoTot)+'</td>'+
+      '<td colspan="2"></td>'+
+    '</tr></tbody></table></div>')+
+
+    '<div class="nb"><strong>💰 Approvazione costi urgenze</strong>'+
+    'I costi degli interventi urgenti devono essere approvati dall\'amministratore o, per importi rilevanti, ratificati in assemblea. '+
+    'Documentare sempre le spese con fattura o ricevuta del tecnico intervenuto.</div>';
+}
+
+// ══ TAB 5 — REPORT ══
+function drawReport(){
+  var el=document.getElementById('c-report');
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var costoTot=interventi.reduce(function(s,i){return s+costoTotale(i);},0);
+  var risolti=interventi.filter(function(i){return i.stato==='risolto'||i.stato==='chiuso';});
+  var attivi=interventi.filter(function(i){return i.stato!=='risolto'&&i.stato!=='chiuso';});
+  var minMedioRisp=risolti.length?Math.round(risolti.reduce(function(s,i){var m=minutiTra(i.oraChiamata,i.oraArrivo);return s+(m!==null?m:0);},0)/risolti.length):0;
+
+  el.innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraReport()">↺ Azzera tutto</button>'+
+    '</div>'+
+
+    (!interventi.length?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun intervento da reportare.</p></div>':
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">'+
+    '<div style="background:var(--urg);color:white;padding:1.2rem 2rem;display:flex;justify-content:space-between">'+
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report Interventi Urgenti</span>'+
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.15);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>'+
+    '</div>'+
+    '<div style="padding:2rem">'+
+
+    '<div class="sgrid" style="margin-bottom:1.5rem">'+
+    '<div class="sc k"><div class="cl">Totali</div><div class="cv">'+interventi.length+'</div></div>'+
+    '<div class="sc r"><div class="cl">Attivi</div><div class="cv a">'+attivi.length+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Risolti</div><div class="cv gn">'+risolti.length+'</div></div>'+
+    '<div class="sc g"><div class="cl">Costo totale</div><div class="cv go" style="font-size:1.1rem">€ '+fmt(costoTot)+'</div></div>'+
+    (risolti.length?'<div class="sc k"><div class="cl">Tempo medio risposta</div><div class="cv">'+fmtMin(minMedioRisp)+'</div></div>':'')+
+    '</div>'+
+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">'+
+    '<thead><tr style="background:var(--urg);color:white">'+
+      ['N°','Data','Tipo','Titolo','Tecnico','Chiamata','Arrivo','Fine','Risposta','Costo €','Stato'].map(function(h){
+        return '<th style="padding:0.65rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.58rem;text-transform:uppercase">'+h+'</th>';
+      }).join('')+
+    '</tr></thead><tbody>'+
+    interventi.map(function(i){
+      var s=STATI_INT[i.stato]||STATI_INT.aperto;
+      var dFmt=i.dataIntervento?new Date(i.dataIntervento).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var mRisp=minutiTra(i.oraChiamata,i.oraArrivo);
+      return '<tr style="border-bottom:1px solid var(--cream);'+(i.stato==='risolto'?'background:#f8fff9':i.stato==='aperto'?'background:var(--urg-light)':'')+'">' +
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(i.numero)+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem;white-space:nowrap">'+dFmt+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-size:0.78rem">'+esc((TIPI_URG[i.tipo]||i.tipo||'—').replace(/^.* /,''))+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-weight:500">'+esc(i.titolo)+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-size:0.78rem">'+esc(i.tecnico||'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(i.oraChiamata||'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(i.oraArrivo||'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem">'+esc(i.oraFine||'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.72rem;text-align:center">'+(mRisp!==null?fmtMin(mRisp):'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-weight:600">'+(costoTotale(i)?'€ '+fmt(costoTotale(i)):'—')+'</td>'+
+        '<td style="padding:0.5rem 1rem"><span class="badge '+s.badge+'">'+s.label+'</span></td>'+
+      '</tr>';
+    }).join('')+
+    '<tr style="background:var(--urg);color:white;font-family:\'DM Mono\',monospace;font-weight:700">'+
+      '<td colspan="9" style="padding:0.6rem 1rem">TOTALE COSTI</td>'+
+      '<td style="padding:0.6rem 1rem">€ '+fmt(costoTot)+'</td>'+
+      '<td></td>'+
+    '</tr></tbody></table>'+
+    '<div style="padding-top:1rem;border-top:1px solid var(--border);margin-top:1.5rem;font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>'+
+    '</div></div>');
+}
+
+function azzeraReport(){
+  if(!confirm('Azzera tutto il registro interventi urgenti?')) return;
+  interventi=[]; intCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+// ══ ESEMPI ══
+function caricaEsempi(){
+  interventi=[]; intCount=0;
+  var oggi=new Date().toISOString().split('T')[0];
+  function fa(gg){var d=new Date();d.setDate(d.getDate()-gg);return d.toISOString().split('T')[0];}
+  var def=[
+    {numero:'URG-001-2025',titolo:'Allagamento scala A — rottura tubazione piano 3°',tipo:'allagamento',zona:'Scala A piano 3°',condominio:'Condominio Via Roma 10',dataIntervento:fa(5),oraChiamata:'23:15',oraArrivo:'23:52',oraFine:'01:30',tecnico:'Idraulica Verdi Srl',telTecnico:'347 1234567',referente:'Rossi Mario Int.3',segnalazione:'SEGN-001-2025',odl:'',stato:'risolto',descrizione:'Rottura giunzione tubazione acqua calda al piano 3°. Intervento: isolamento tratto e sostituzione giunto. Asciugatura parti comuni.',cause:'Corrosione accelerata giunzione in rame dovuta a calcio.',costoManodopera:220,costoMateriali:45,costoTrasferta:30,costoApprovato:true,noteRisoluzione:'Consigliata verifica impianto intero entro 6 mesi.'},
+    {numero:'URG-002-2025',titolo:'Blocco ascensore con persona a bordo',tipo:'ascensore',zona:'Ascensore',condominio:'Condominio Via Roma 10',dataIntervento:fa(12),oraChiamata:'18:30',oraArrivo:'18:55',oraFine:'19:20',tecnico:'ElevaTech Srl',telTecnico:'02 5555555',referente:'Neri Anna Int.4',segnalazione:'',odl:'',stato:'risolto',descrizione:'Ascensore bloccato tra piano 2° e 3° con persona a bordo. Intervento: sblocco manuale e ripristino fune guida.',cause:'Falsa partenza per tensione irregolare rete.',costoManodopera:180,costoMateriali:0,costoTrasferta:50,costoApprovato:true,noteRisoluzione:'Programmata revisione straordinaria la prossima settimana.'},
+    {numero:'URG-003-2025',titolo:'Caduta calcinacci facciata su area pedonale',tipo:'strutturale',zona:'Facciata',condominio:'Condominio Via Roma 10',dataIntervento:oggi,oraChiamata:'09:00',oraArrivo:'09:45',oraFine:'',tecnico:'Impresa Rossi Restauri',telTecnico:'02 1234567',referente:'Marino Carlo Int.7',segnalazione:'',odl:'',stato:'in_corso',descrizione:'Caduta frammenti intonaco zona balconi 4° piano lato strada. Area transennata. Tecnico in sopralluogo.',cause:'',costoManodopera:0,costoMateriali:0,costoTrasferta:60,costoApprovato:false,noteRisoluzione:''},
+  ];
+  def.forEach(function(d){intCount++;interventi.push(Object.assign({id:'u'+intCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  if(!interventi.length){alert('Nessun intervento da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['REGISTRO INTERVENTI URGENTI'],[],
+     ['N°','Data','Tipo','Titolo','Zona','Tecnico','Tel.','Chiamata','Arrivo','Fine','Risposta (min)','Manodopera €','Materiali €','Trasferta €','Totale €','Approvato','Stato']].concat(
+    interventi.map(function(i){
+      var mRisp=minutiTra(i.oraChiamata,i.oraArrivo);
+      return [i.numero,i.dataIntervento,TIPI_URG[i.tipo]||i.tipo,i.titolo,i.zona,i.tecnico,i.telTecnico,
+              i.oraChiamata,i.oraArrivo,i.oraFine,mRisp!==null?mRisp:'',
+              i.costoManodopera,i.costoMateriali,i.costoTrasferta,costoTotale(i),
+              i.costoApprovato?'Sì':'No',STATI_INT[i.stato]?STATI_INT[i.stato].label:i.stato];
+    }))
+  );
+  ws['!cols']=[10,10,16,32,16,22,12,8,8,8,12,12,12,12,12,10,16].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Interventi Urgenti');
+  XLSX.writeFile(wb,'CondoKit_InterventiUrgenti_'+new Date().getFullYear()+'.xlsx');
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

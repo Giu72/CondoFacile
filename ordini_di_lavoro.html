@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Ordini di Lavoro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.b-purple{background:#e8d0f0;color:#601080;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}.sc.bl::before{background:#2a5080;}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* ORDINE CARD */
+.ord-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px var(--shadow);border-left:4px solid var(--border);transition:box-shadow 0.15s;}
+.ord-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.ord-card.bozza{border-left-color:var(--muted);}
+.ord-card.inviato{border-left-color:var(--gold);}
+.ord-card.accettato{border-left-color:#2a5080;}
+.ord-card.in_corso{border-left-color:var(--accent);}
+.ord-card.completato{border-left-color:var(--success);}
+.ord-card.collaudato{border-left-color:#601080;}
+.ord-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;}
+.ord-num{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);}
+.ord-titolo{font-family:'DM Serif Display',serif;font-size:1.05rem;}
+.ord-fornitore{font-size:0.85rem;color:var(--muted);}
+
+/* TIMELINE STATO */
+.timeline{display:flex;align-items:center;gap:0;margin:1rem 0;overflow-x:auto;padding-bottom:0.25rem;}
+.tl-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:70px;}
+.tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;border:2px solid var(--border);background:var(--cream);color:var(--muted);transition:all 0.2s;cursor:pointer;flex-shrink:0;}
+.tl-dot.done{background:var(--success);border-color:var(--success);color:white;}
+.tl-dot.current{background:var(--ink);border-color:var(--ink);color:white;}
+.tl-dot.future{background:var(--cream);border-color:var(--border);color:var(--muted);}
+.tl-label{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-top:0.3rem;text-align:center;white-space:nowrap;}
+.tl-line{flex:1;height:2px;background:var(--border);min-width:20px;}
+.tl-line.done{background:var(--success);}
+
+/* DOCUMENTO ORDINE */
+.doc-ord{background:white;border:2px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.doc-ord-hs{background:var(--ink);color:var(--paper);padding:1.4rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;}
+.doc-ord-title{font-family:'DM Serif Display',serif;font-size:1.3rem;}
+.doc-ord-num{font-family:'DM Mono',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px;margin-top:0.3rem;display:inline-block;}
+.doc-ord-bd{padding:2.5rem 3rem;font-size:0.9rem;line-height:1.8;}
+.doc-ord-bd p{margin-bottom:0.85rem;}
+.doc-ogg{background:var(--cream);border-left:3px solid var(--ink);padding:0.75rem 1rem;margin:1.25rem 0;font-weight:500;}
+.firma-box{border:1px solid var(--border);border-radius:4px;padding:1.25rem;min-height:80px;background:var(--paper);}
+.firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem;}
+.firma-item{border-top:1px solid var(--border);padding-top:0.5rem;}
+.firma-label{font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+
+/* FILTRI */
+.filtri-bar{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+.filtri-bar .fg{margin:0;min-width:140px;}
+
+/* PROGRESS BAR */
+.prog-wrap{margin-bottom:0.5rem;}
+.prog-label{display:flex;justify-content:space-between;margin-bottom:0.2rem;font-size:0.78rem;}
+.prog-bar{height:6px;background:var(--cream);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.5s;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.doc-ord{box-shadow:none;border:1px solid #ccc;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="raccolta_preventivi.html">📋 Preventivi</a>
+    <a class="nav-link" href="archivio_delibere.html">🗄️ Delibere</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Fornitori</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Fornitori e Manutenzioni · Modulo 3.2</div>
+  <h1>Ordini<br><em>di Lavoro</em></h1>
+  <p class="header-sub">Crea e invia gli ordini di lavoro ai fornitori, traccia l'avanzamento, gestisci l'accettazione e il collaudo, tieni il registro degli interventi completati.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-lista"    onclick="go('lista')">📋 1 · Lista Ordini</button>
+    <button class="tab-btn"   id="tb-nuovo"     onclick="go('nuovo')">➕ 2 · Nuovo Ordine</button>
+    <button class="tab-btn"   id="tb-documento" onclick="go('documento')">📄 3 · Documento PDF</button>
+    <button class="tab-btn"   id="tb-registro"  onclick="go('registro')">✅ 4 · Interventi Completati</button>
+    <button class="tab-btn"   id="tb-report"    onclick="go('report')">📊 5 · Report Assemblea</button>
+  </div>
+
+  <div class="panel on" id="p-lista">    <div id="c-lista"></div>    </div>
+  <div class="panel"    id="p-nuovo">    <div id="c-nuovo"></div>    </div>
+  <div class="panel"    id="p-documento"><div id="c-documento"></div></div>
+  <div class="panel"    id="p-registro"> <div id="c-registro"></div> </div>
+  <div class="panel"    id="p-report">   <div id="c-report"></div>   </div>
+</div>
+
+<div class="page-footer">CondoKit · Ordini di Lavoro · Beta · Modulo 3.2</div>
+
+<script>
+var PANELS  = ['lista','nuovo','documento','registro','report'];
+var ordini  = [];
+var ordCount = 0;
+var editingId = null;
+var docOrdId  = null;
+
+var STATI = [
+  {id:'bozza',      label:'📝 Bozza',        badge:'b-neu',    cls:'bozza'},
+  {id:'inviato',    label:'📬 Inviato',       badge:'b-warn',   cls:'inviato'},
+  {id:'accettato',  label:'🤝 Accettato',     badge:'b-info',   cls:'accettato'},
+  {id:'in_corso',   label:'🔨 In corso',      badge:'b-danger', cls:'in_corso'},
+  {id:'completato', label:'✅ Completato',    badge:'b-ok',     cls:'completato'},
+  {id:'collaudato', label:'⭐ Collaudato',    badge:'b-purple', cls:'collaudato'},
+];
+
+var STATI_MAP = {};
+STATI.forEach(function(s){STATI_MAP[s.id]=s;});
+
+var CATEGORIE = {
+  edilizia:'Edilizia/Muratura', idraulica:'Idraulica',
+  elettrica:'Impianti elettrici', ascensore:'Ascensore',
+  giardinaggio:'Giardinaggio', pulizie:'Pulizie',
+  manutenzione:'Manutenzione ordinaria', straordinario:'Lavori straordinari',
+  altro:'Altro',
+};
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='lista')     drawLista();
+  if (name==='nuovo')     drawNuovo();
+  if (name==='documento') drawDocumento();
+  if (name==='registro')  drawRegistro();
+  if (name==='report')    drawReport();
+}
+
+function switchTo(name) { go(name); }
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  drawLista();
+};
+
+// ══ TAB 1 — LISTA ══
+function drawLista() {
+  var el = document.getElementById('c-lista');
+
+  var counts = {};
+  STATI.forEach(function(s){counts[s.id]=ordini.filter(function(o){return o.stato===s.id;}).length;});
+
+  var filtStato = (document.getElementById('filtStato')||{}).value||'tutti';
+  var filtTesto = ((document.getElementById('filtTesto')||{}).value||'').toLowerCase().trim();
+
+  var filtrati = ordini.filter(function(o) {
+    if (filtStato!=='tutti' && o.stato!==filtStato) return false;
+    if (filtTesto && !(o.fornitore||'').toLowerCase().includes(filtTesto) &&
+        !(o.titolo||'').toLowerCase().includes(filtTesto) &&
+        !(o.numero||'').toLowerCase().includes(filtTesto)) return false;
+    return true;
+  }).sort(function(a,b){return (b.dataOrdine||'').localeCompare(a.dataOrdine||'');});
+
+  // Calcolo % completamento complessivo
+  var pesi = {bozza:0,inviato:1,accettato:2,in_corso:3,completato:4,collaudato:5};
+  var maxPeso = 5;
+  var percTot = ordini.length ? Math.round(ordini.reduce(function(s,o){return s+(pesi[o.stato]||0);},0)/(ordini.length*maxPeso)*100) : 0;
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Ordini totali</div><div class="cv">'+ordini.length+'</div></div>' +
+    '<div class="sc g"><div class="cl">In corso</div><div class="cv go">'+(counts.in_corso+counts.accettato+counts.inviato)+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Completati/Collaudati</div><div class="cv gn">'+(counts.completato+counts.collaudato)+'</div></div>' +
+    '<div class="sc k"><div class="cl">Avanzamento medio</div><div class="cv">'+percTot+'%</div></div>' +
+    '</div>' +
+
+    (ordini.length ?
+    '<div class="card" style="padding:1rem 1.5rem;margin-bottom:1.5rem">' +
+      STATI.map(function(s){
+        var n=counts[s.id]||0;
+        var perc=ordini.length?Math.round(n/ordini.length*100):0;
+        return '<div class="prog-wrap">' +
+          '<div class="prog-label"><span>'+s.label+'</span><span style="font-family:\'DM Mono\',monospace">'+n+' ordini</span></div>' +
+          '<div class="prog-bar"><div class="prog-fill" style="width:'+perc+'%;background:var(--'+(s.id==='collaudato'?'success':s.id==='completato'?'success':s.id==='in_corso'?'accent':s.id==='accettato'?'ink':s.id==='inviato'?'gold':'muted')+')"></div></div>' +
+        '</div>';
+      }).join('') +
+    '</div>' : '') +
+
+    // FILTRI
+    '<div class="filtri-bar">' +
+      '<div class="fg"><label>Stato</label><select id="filtStato" onchange="drawLista()">' +
+        '<option value="tutti">Tutti</option>' +
+        STATI.map(function(s){return '<option value="'+s.id+'"'+(filtStato===s.id?' selected':'')+'>'+s.label+'</option>';}).join('') +
+      '</select></div>' +
+      '<div class="fg" style="min-width:200px"><label>Cerca</label>' +
+        '<input type="text" id="filtTesto" value="'+esc(filtTesto)+'" placeholder="Fornitore, titolo, n°..." oninput="drawLista()">' +
+      '</div>' +
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="resetFiltri()">↺ Reset</button>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Nuovo ordine</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Esempi</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraLista()">↺ Azzera</button>' +
+    '</div>' +
+
+    (filtrati.length ? filtrati.map(function(o) {
+      var s    = STATI_MAP[o.stato]||STATI[0];
+      var dFmt = o.dataOrdine?new Date(o.dataOrdine).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var scFmt= o.scadConsegna?new Date(o.scadConsegna).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var scad = o.scadConsegna&&!['completato','collaudato'].includes(o.stato)&&new Date(o.scadConsegna)<new Date();
+
+      return '<div class="ord-card '+s.cls+'">' +
+        '<div class="ord-header">' +
+          '<div>' +
+            '<div class="ord-num">OdL n. '+esc(o.numero)+' · '+dFmt+'</div>' +
+            '<div class="ord-titolo">'+esc(o.titolo)+'</div>' +
+            '<div class="ord-fornitore">'+esc(o.fornitore)+(o.delibera?' · '+esc(o.delibera):'')+(o.preventivo?' · Prev. '+esc(o.preventivo):'')+'</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem">' +
+            '<span class="badge '+s.badge+'">'+s.label+'</span>' +
+            (o.importo?'<span style="font-family:\'DM Mono\',monospace;font-size:0.85rem;font-weight:600">€ '+fmt(o.importo)+'</span>':'') +
+            (scad?'<span class="badge b-danger">⏰ Consegna scaduta</span>':'') +
+          '</div>' +
+        '</div>' +
+        renderTimeline(o.stato) +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">' +
+          '<button class="btn btn-g btn-sm" onclick="editingId=\''+o.id+'\';switchTo(\'nuovo\')">✏️ Modifica</button>' +
+          '<button class="btn btn-g btn-sm" onclick="docOrdId=\''+o.id+'\';switchTo(\'documento\')">📄 Documento</button>' +
+          avanzaBtn(o) +
+          '<button class="btn btn-sm" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaOrdine(\''+o.id+'\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') :
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(ordini.length?'Nessun ordine trovato.':'Nessun ordine di lavoro. Creane uno!')+'</p>' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Crea ordine</button>' +
+    '</div>');
+}
+
+function renderTimeline(statoCorrente) {
+  var idx = STATI.findIndex(function(s){return s.id===statoCorrente;});
+  var html = '<div class="timeline">';
+  STATI.forEach(function(s, i) {
+    var cls = i < idx ? 'done' : i === idx ? 'current' : 'future';
+    if (i > 0) html += '<div class="tl-line'+(i<=idx?' done':'')+'"></div>';
+    html += '<div class="tl-step">' +
+      '<div class="tl-dot '+cls+'">'+(i<idx?'✓':i===idx?'●':'○')+'</div>' +
+      '<div class="tl-label">'+s.label.split(' ')[1]+'</div>' +
+    '</div>';
+  });
+  return html + '</div>';
+}
+
+function avanzaBtn(o) {
+  var idx = STATI.findIndex(function(s){return s.id===o.stato;});
+  if (idx >= STATI.length-1) return '<span class="badge b-purple">⭐ Collaudato</span>';
+  var prossimo = STATI[idx+1];
+  return '<button class="btn btn-ok btn-sm" onclick="avanzaStato(\''+o.id+'\')">→ '+prossimo.label+'</button>';
+}
+
+function avanzaStato(id) {
+  var o   = ordini.find(function(x){return x.id===id;});
+  if (!o) return;
+  var idx = STATI.findIndex(function(s){return s.id===o.stato;});
+  if (idx < STATI.length-1) {
+    o.stato = STATI[idx+1].id;
+    if (o.stato==='completato') o.dataCompletamento = new Date().toISOString().split('T')[0];
+    if (o.stato==='collaudato') o.dataCollaudo = new Date().toISOString().split('T')[0];
+  }
+  drawLista();
+}
+
+function eliminaOrdine(id) {
+  if (!confirm('Eliminare questo ordine di lavoro?')) return;
+  ordini = ordini.filter(function(o){return o.id!==id;});
+  drawLista();
+}
+
+function resetFiltri() {
+  var s=document.getElementById('filtStato');if(s)s.value='tutti';
+  var t=document.getElementById('filtTesto');if(t)t.value='';
+  drawLista();
+}
+
+function azzeraLista() {
+  if (!confirm('Eliminare tutti gli ordini di lavoro?')) return;
+  ordini=[]; ordCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='lista'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='lista'?' on':'');
+  });
+  drawLista();
+}
+
+// ══ TAB 2 — NUOVO / MODIFICA ══
+function drawNuovo() {
+  var el = document.getElementById('c-nuovo');
+  var d  = editingId ? ordini.find(function(x){return x.id===editingId;}) : null;
+  var v  = function(k,def){return d?(d[k]||def||''):(def||'');};
+
+  el.innerHTML =
+    '<div class="sl">'+(editingId?'Modifica ordine di lavoro':'Nuovo ordine di lavoro')+'</div>' +
+    '<div class="card">' +
+      '<div class="r4">' +
+        fgi('fNumero','N° ordine',v('numero'),'Es. OdL-001-2025') +
+        fgd('fDataOrdine','Data ordine',v('dataOrdine')) +
+        fgsel('fStato','Stato iniziale',v('stato','bozza'),STATI.map(function(s){return {v:s.id,l:s.label};})) +
+        fgsel('fCategoria','Categoria',v('categoria','manutenzione'),Object.keys(CATEGORIE).map(function(k){return {v:k,l:CATEGORIE[k]};})) +
+      '</div>' +
+      '<div class="fg"><label>Titolo / oggetto lavori</label>' +
+        '<input type="text" id="fTitolo" value="'+esc(v('titolo'))+'" placeholder="Es. Rifacimento facciata principale"></div>' +
+      '<div class="r3">' +
+        fgi('fFornitore','Fornitore / Ditta',v('fornitore'),'Es. Impresa Rossi Restauri Srl') +
+        fgi('fContatti','Contatti fornitore',v('contatti'),'Es. Tel. 02 1234567') +
+        fgi('fReferente','Referente in cantiere',v('referente'),'Es. Ing. Mario Rossi') +
+      '</div>' +
+      '<div class="r4">' +
+        fgn('fImporto','Importo (€)',v('importo'),'Es. 42500') +
+        fgd('fDataInizio','Data inizio lavori',v('dataInizio')) +
+        fgd('fScadConsegna','Scadenza consegna',v('scadConsegna')) +
+        fgi('fDurata','Durata prevista',v('durata'),'Es. 45 giorni lavorativi') +
+      '</div>' +
+      '<div class="r3">' +
+        fgi('fPreventivo','Rif. preventivo',v('preventivo'),'Es. PREV-001-2025') +
+        fgi('fDelibera','Rif. delibera',v('delibera'),'Es. Del. n. 04/2024') +
+        fgi('fVerbale','Rif. verbale',v('verbale'),'Es. Verbale n. 02/2024') +
+      '</div>' +
+      '<div class="fg"><label>Descrizione dettagliata lavori</label>' +
+        '<textarea id="fDescr" style="min-height:100px" placeholder="Descrizione completa dei lavori da eseguire, materiali, modalità...">'+esc(v('descr'))+'</textarea></div>' +
+      '<div class="r2">' +
+        '<div class="fg"><label>Condizioni particolari / penali</label>' +
+          '<textarea id="fCondizioni" placeholder="Es. Penale €500/giorno per ritardi. Pulizia cantiere a carico dell\'impresa...">'+esc(v('condizioni'))+'</textarea></div>' +
+        '<div class="fg"><label>Note interne (non stampate)</label>' +
+          '<textarea id="fNote" placeholder="Note riservate all\'amministratore...">'+esc(v('note'))+'</textarea></div>' +
+      '</div>' +
+      '<div class="r3">' +
+        fgi('fCondominio','Condominio',v('condominio'),'Es. Condominio Via Roma 10') +
+        fgi('fAdmin','Amministratore',v('admin'),'Es. Studio Amm. Bianchi') +
+        fgi('fGaranzia','Garanzia richiesta',v('garanzia'),'Es. 5 anni su materiali e manodopera') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaOrdine()">💾 '+(editingId?'Aggiorna':'Salva ordine')+'</button>' +
+      '<button class="btn btn-g btn-sm" onclick="editingId=null;switchTo(\'lista\')">← Lista</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraNuovo()">↺ Azzera form</button>' +
+    '</div>';
+}
+
+function fgi(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="number" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,label,value){return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaOrdine() {
+  var titolo = gv('fTitolo').trim();
+  if (!titolo){alert('Inserisci almeno il titolo / oggetto dei lavori.');return;}
+  var id  = editingId||'o'+(++ordCount);
+  var old = editingId?ordini.find(function(x){return x.id===editingId;})||{}:{};
+  var obj = {
+    id:id, numero:gv('fNumero'), dataOrdine:gv('fDataOrdine'),
+    stato:gv('fStato'), categoria:gv('fCategoria'), titolo:titolo,
+    fornitore:gv('fFornitore'), contatti:gv('fContatti'), referente:gv('fReferente'),
+    importo:parseFloat(gv('fImporto'))||0, dataInizio:gv('fDataInizio'),
+    scadConsegna:gv('fScadConsegna'), durata:gv('fDurata'),
+    preventivo:gv('fPreventivo'), delibera:gv('fDelibera'), verbale:gv('fVerbale'),
+    descr:gv('fDescr'), condizioni:gv('fCondizioni'), note:gv('fNote'),
+    condominio:gv('fCondominio'), admin:gv('fAdmin'), garanzia:gv('fGaranzia'),
+    dataCompletamento: old.dataCompletamento||'',
+    dataCollaudo: old.dataCollaudo||'',
+    noteCollaudo: old.noteCollaudo||'',
+  };
+  if (editingId){var idx=ordini.findIndex(function(x){return x.id===editingId;});if(idx>=0)ordini[idx]=obj;}
+  else ordini.push(obj);
+  editingId=null;
+  switchTo('lista');
+}
+
+function azzeraNuovo(){editingId=null;drawNuovo();}
+
+// ══ TAB 3 — DOCUMENTO PDF ══
+function drawDocumento() {
+  var el = document.getElementById('c-documento');
+
+  if (!ordini.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun ordine di lavoro. Creane uno dalla Tab 2.</p>' +
+      '<button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="editingId=null;switchTo(\'nuovo\')">➕ Nuovo ordine</button></div>';
+    return;
+  }
+
+  // Selettore ordine
+  var opzioni = ordini.map(function(o){
+    return '<option value="'+o.id+'"'+(docOrdId===o.id?' selected':'')+'>OdL n. '+esc(o.numero)+' — '+esc(o.fornitore)+'</option>';
+  }).join('');
+
+  if (!docOrdId && ordini.length) docOrdId = ordini[0].id;
+  var o = ordini.find(function(x){return x.id===docOrdId;});
+
+  el.innerHTML =
+    '<div class="lnav" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">' +
+      '<div class="fg" style="margin:0;flex:1;min-width:240px"><label>Ordine di lavoro</label>' +
+        '<select id="docSel" onchange="docOrdId=this.value;drawDocumento()">' + opzioni + '</select></div>' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>' +
+      '<button class="btn btn-g btn-sm" onclick="copiaEmail()">📧 Copia email</button>' +
+    '</div>' +
+
+    (o ? renderDocOrdine(o) : '');
+}
+
+function renderDocOrdine(o) {
+  var s     = STATI_MAP[o.stato]||STATI[0];
+  var dFmt  = o.dataOrdine?new Date(o.dataOrdine).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var diF   = o.dataInizio?new Date(o.dataInizio).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var scF   = o.scadConsegna?new Date(o.scadConsegna).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var oggi  = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  window._docCorrente = o;
+
+  return '<div class="doc-ord">' +
+    '<div class="doc-ord-hs">' +
+      '<div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;opacity:0.6;margin-bottom:0.3rem">Ordine di Lavoro</div>' +
+        '<div class="doc-ord-title">'+esc(o.titolo)+'</div>' +
+        '<div class="doc-ord-num">n. '+esc(o.numero)+'</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.7rem;opacity:0.7">'+dFmt+'</div>' +
+        '<span class="badge '+s.badge+'" style="margin-top:0.4rem;display:inline-block">'+s.label+'</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="doc-ord-bd">' +
+
+    // PARTI
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">' +
+      '<div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Committente</div>' +
+        '<div style="font-weight:600;font-size:1rem">'+esc(o.condominio||'Condominio')+'</div>' +
+        (o.admin?'<div style="font-size:0.85rem;color:var(--muted)">Amm. '+esc(o.admin)+'</div>':'') +
+      '</div>' +
+      '<div>' +
+        '<div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Appaltatore</div>' +
+        '<div style="font-weight:600;font-size:1rem">'+esc(o.fornitore)+'</div>' +
+        (o.contatti?'<div style="font-size:0.85rem;color:var(--muted)">'+esc(o.contatti)+'</div>':'') +
+        (o.referente?'<div style="font-size:0.85rem;color:var(--muted)">Ref.: '+esc(o.referente)+'</div>':'') +
+      '</div>' +
+    '</div>' +
+
+    // OGGETTO E RIFERIMENTI
+    '<div class="doc-ogg">Oggetto: '+esc(o.titolo)+'</div>' +
+
+    (o.preventivo||o.delibera||o.verbale ?
+    '<div style="background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1rem;font-size:0.85rem">' +
+      (o.preventivo?'<div><strong>Riferimento preventivo:</strong> '+esc(o.preventivo)+'</div>':'')+
+      (o.delibera?'<div><strong>Delibera di autorizzazione:</strong> '+esc(o.delibera)+'</div>':'')+
+      (o.verbale?'<div><strong>Verbale assemblea:</strong> '+esc(o.verbale)+'</div>':'')+
+    '</div>' : '') +
+
+    // DESCRIZIONE
+    '<p><strong>Il committente incarica l\'appaltatore di eseguire i seguenti lavori:</strong></p>' +
+    '<div style="background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1rem 1.5rem;margin:0.75rem 0;font-size:0.875rem;line-height:1.7">' +
+      (o.descr ? esc(o.descr) : '<em style="color:var(--muted)">[Descrizione lavori da completare]</em>') +
+    '</div>' +
+
+    // CONDIZIONI ECONOMICHE
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1.25rem 0">' +
+      infoBox('Importo contrattuale','€ '+fmt(o.importo)) +
+      infoBox('Data inizio lavori',diF) +
+      infoBox('Data consegna',scF) +
+    '</div>' +
+
+    (o.durata?'<p><strong>Durata prevista:</strong> '+esc(o.durata)+'</p>':'') +
+    (o.garanzia?'<p><strong>Garanzia:</strong> '+esc(o.garanzia)+'</p>':'') +
+
+    (o.condizioni?
+    '<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1.25rem;margin-top:1rem;font-size:0.85rem">' +
+      '<strong>Condizioni particolari:</strong><br>'+esc(o.condizioni)+'</div>' : '') +
+
+    // FIRME
+    '<p style="margin-top:1.5rem">Il presente ordine di lavoro è accettato dalle parti come segue.</p>' +
+    '<div class="firma-grid">' +
+      '<div class="firma-item"><div class="firma-label">Per il committente — Amministratore</div>' +
+        (o.admin?'<div style="font-weight:500;margin-bottom:0.5rem">'+esc(o.admin)+'</div>':'')+
+        '<div class="firma-box"></div>' +
+        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem">Data: _______________</div></div>' +
+      '<div class="firma-item"><div class="firma-label">Per l\'appaltatore</div>' +
+        '<div style="font-weight:500;margin-bottom:0.5rem">'+esc(o.fornitore)+'</div>' +
+        '<div class="firma-box"></div>' +
+        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem">Data: _______________</div></div>' +
+    '</div>' +
+
+    (o.stato==='collaudato'&&o.dataCollaudo ?
+    '<div style="margin-top:2rem;padding:1rem 1.5rem;background:var(--success-light);border:1px solid var(--success);border-radius:4px">' +
+      '<strong style="color:var(--success)">✅ LAVORI COLLAUDATI</strong><br>' +
+      '<div style="font-size:0.85rem;margin-top:0.4rem">Data collaudo: '+new Date(o.dataCollaudo).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})+'</div>' +
+      (o.noteCollaudo?'<div style="font-size:0.82rem;color:var(--muted);margin-top:0.25rem">'+esc(o.noteCollaudo)+'</div>':'') +
+    '</div>' : '') +
+
+    '<div style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">' +
+      '<span>OdL n. '+esc(o.numero)+' · '+esc(o.condominio||'Condominio')+'</span>' +
+      '<span>'+oggi+'</span>' +
+    '</div>' +
+    '</div></div>';
+}
+
+function infoBox(label,val){
+  return '<div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem">'+label+'</div>' +
+    '<div style="font-weight:600;font-family:\'DM Mono\',monospace">'+val+'</div></div>';
+}
+
+function copiaEmail() {
+  var o = window._docCorrente;
+  if (!o){alert('Seleziona prima un ordine.');return;}
+  var dFmt=o.dataOrdine?new Date(o.dataOrdine).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'——';
+  var testo='Oggetto: Ordine di lavoro n. '+o.numero+' — '+o.titolo+'\n\n'+
+    'Gentile '+o.fornitore+',\n\n'+
+    'con la presente Le confermiamo l\'incarico per i seguenti lavori:\n\n'+
+    'Oggetto: '+o.titolo+'\n'+
+    'Condominio: '+(o.condominio||'—')+'\n'+
+    'Importo: € '+fmt(o.importo)+'\n'+
+    'Inizio lavori: '+(o.dataInizio?new Date(o.dataInizio).toLocaleDateString('it-IT'):'—')+'\n'+
+    'Consegna: '+(o.scadConsegna?new Date(o.scadConsegna).toLocaleDateString('it-IT'):'—')+'\n\n'+
+    'Si prega di confermare l\'accettazione del presente ordine.\n\n'+
+    'Distinti saluti,\n'+(o.admin||'Amministratore');
+  navigator.clipboard.writeText(testo)
+    .then(function(){alert('✅ Testo email copiato!');})
+    .catch(function(){alert('Copia manuale con Ctrl+C.');});
+}
+
+// ══ TAB 4 — REGISTRO INTERVENTI COMPLETATI ══
+function drawRegistro() {
+  var el = document.getElementById('c-registro');
+  var completati = ordini.filter(function(o){return o.stato==='completato'||o.stato==='collaudato';})
+    .sort(function(a,b){return (b.dataCompletamento||'').localeCompare(a.dataCompletamento||'');});
+
+  var importoTot = completati.reduce(function(s,o){return s+o.importo;},0);
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc gn"><div class="cl">Interventi completati</div><div class="cv gn">'+completati.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Valore totale</div><div class="cv">€ '+fmt(importoTot)+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Collaudati</div><div class="cv gn">'+completati.filter(function(o){return o.stato==='collaudato';}).length+'</div></div>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa registro</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>' +
+    '</div>' +
+
+    (!completati.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun intervento completato ancora.</p></div>' :
+    '<div class="tw"><table>' +
+    '<thead><tr>' +
+      '<th>N° OdL</th><th>Fornitore</th><th>Lavori</th><th>Categoria</th>' +
+      '<th>Importo</th><th>Completato</th><th>Collaudo</th><th>Stato</th><th>Azioni</th>' +
+    '</tr></thead><tbody>' +
+    completati.map(function(o) {
+      var s    = STATI_MAP[o.stato]||STATI[0];
+      var dcF  = o.dataCompletamento?new Date(o.dataCompletamento).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var dkF  = o.dataCollaudo?new Date(o.dataCollaudo).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return '<tr style="'+(o.stato==='collaudato'?'background:#f8fff9':'')+'">' +
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(o.numero)+'</td>' +
+        '<td><strong>'+esc(o.fornitore)+'</strong></td>' +
+        '<td>'+esc(o.titolo)+'</td>' +
+        '<td style="font-size:0.78rem;color:var(--muted)">'+esc(CATEGORIE[o.categoria]||o.categoria||'—')+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;font-weight:600">€ '+fmt(o.importo)+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+dcF+'</td>' +
+        '<td style="font-family:\'DM Mono\',monospace;font-size:0.75rem">'+dkF+'</td>' +
+        '<td><span class="badge '+s.badge+'">'+s.label+'</span></td>' +
+        '<td>' +
+          (o.stato==='completato' ?
+            '<button class="btn btn-sm b-purple" style="background:#e8d0f0;color:#601080;border:1px solid #c0a0e0;font-size:0.7rem" ' +
+            'onclick="collaudaOrdine(\''+o.id+'\')">⭐ Collauda</button>' :
+            '<span style="font-size:0.78rem;color:var(--success)">✅ Collaudato</span>') +
+        '</td>' +
+      '</tr>';
+    }).join('') +
+    '<tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">' +
+      '<td colspan="4" style="padding:0.6rem 1.5rem">TOTALE</td>' +
+      '<td style="padding:0.6rem 1rem">€ '+fmt(importoTot)+'</td>' +
+      '<td colspan="4"></td>' +
+    '</tr>' +
+    '</tbody></table></div>');
+}
+
+function collaudaOrdine(id) {
+  var o=ordini.find(function(x){return x.id===id;});
+  if(!o) return;
+  var note=prompt('Note collaudo (opzionale):', '')||'';
+  o.stato='collaudato';
+  o.dataCollaudo=new Date().toISOString().split('T')[0];
+  o.noteCollaudo=note;
+  drawRegistro();
+}
+
+// ══ TAB 5 — REPORT ASSEMBLEA ══
+function drawReport() {
+  var el   = document.getElementById('c-report');
+  var oggi = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var tutti= ordini.slice().sort(function(a,b){return (b.dataOrdine||'').localeCompare(a.dataOrdine||'');});
+  var importoTot = tutti.reduce(function(s,o){return s+o.importo;},0);
+  var completati = tutti.filter(function(o){return o.stato==='completato'||o.stato==='collaudato';});
+  var inCorso    = tutti.filter(function(o){return ['inviato','accettato','in_corso'].includes(o.stato);});
+
+  el.innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa report</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+    '</div>' +
+
+    (!tutti.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun ordine di lavoro da reportare.</p></div>' :
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">' +
+    '<div style="background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between">' +
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report Ordini di Lavoro</span>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="padding:2rem">' +
+
+    '<div class="sgrid" style="margin-bottom:1.5rem">' +
+    '<div class="sc k"><div class="cl">Ordini totali</div><div class="cv">'+tutti.length+'</div></div>' +
+    '<div class="sc g"><div class="cl">In corso</div><div class="cv go">'+inCorso.length+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Completati</div><div class="cv gn">'+completati.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Valore totale</div><div class="cv" style="font-size:1.1rem">€ '+fmt(importoTot)+'</div></div>' +
+    '</div>' +
+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1.5rem">' +
+    '<thead><tr style="background:var(--ink);color:var(--paper)">' +
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">N° OdL</th>' +
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>' +
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Oggetto lavori</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Importo</th>' +
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Consegna</th>' +
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>' +
+    '</tr></thead><tbody>' +
+    tutti.map(function(o) {
+      var s   =STATI_MAP[o.stato]||STATI[0];
+      var scF =o.scadConsegna?new Date(o.scadConsegna).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var scad=o.scadConsegna&&!['completato','collaudato'].includes(o.stato)&&new Date(o.scadConsegna)<new Date();
+      return '<tr style="border-bottom:1px solid var(--cream)'+(o.stato==='collaudato'?';background:#f8fff9':o.stato==='in_corso'?';background:#fff8f8':'')+'">' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+esc(o.numero)+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-weight:500">'+esc(o.fornitore)+'</td>' +
+        '<td style="padding:0.55rem 1rem">'+esc(o.titolo)+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">€ '+fmt(o.importo)+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+(scad?'<span style="color:var(--accent)">⏰ </span>':'')+scF+'</td>' +
+        '<td style="padding:0.55rem 1rem"><span class="badge '+s.badge+'">'+s.label+'</span></td>' +
+      '</tr>';
+    }).join('') +
+    '<tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">' +
+      '<td colspan="3" style="padding:0.6rem 1rem">TOTALE</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(importoTot)+'</td>' +
+      '<td colspan="2"></td>' +
+    '</tr>' +
+    '</tbody></table>' +
+
+    '<div style="padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>' +
+    '</div></div>');
+}
+
+// ══ ESEMPI ══
+function caricaEsempi() {
+  ordini=[]; ordCount=0;
+  var def = [
+    {numero:'OdL-001-2025',dataOrdine:'2025-01-15',stato:'in_corso',categoria:'edilizia',
+     titolo:'Rifacimento facciata principale',fornitore:'Impresa Rossi Restauri Srl',
+     contatti:'Tel. 02 1234567',referente:'Geom. Mario Rossi',importo:42500,
+     dataInizio:'2025-02-01',scadConsegna:'2025-04-15',durata:'45 giorni lavorativi',
+     preventivo:'PREV-001-2025',delibera:'Del. n. 04/2024',verbale:'Verbale n. 02/2024',
+     condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',
+     garanzia:'5 anni su materiali e manodopera',
+     descr:'Rifacimento completo intonaco facciata principale, tinteggiatura, riparazione balconi e davanzali. Fornitura e posa ponteggi inclusa.',
+     condizioni:'Penale di € 300/giorno per ritardi non giustificati. Pulizia cantiere giornaliera a carico dell\'impresa.',
+     note:'Cantiere avviato regolarmente il 03/02.',dataCompletamento:'',dataCollaudo:'',noteCollaudo:''},
+    {numero:'OdL-002-2025',dataOrdine:'2025-01-20',stato:'collaudato',categoria:'idraulica',
+     titolo:'Sostituzione colonna montante acqua Scala A',fornitore:'Idraulica Verdi Srl',
+     contatti:'Tel. 02 9876543',referente:'P.I. Giuseppe Verdi',importo:8400,
+     dataInizio:'2025-01-28',scadConsegna:'2025-02-10',durata:'10 giorni lavorativi',
+     preventivo:'PREV-005-2024',delibera:'Del. n. 05/2024',verbale:'Verbale n. 03/2024',
+     condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',
+     garanzia:'2 anni su manodopera, garanzia produttore su materiali',
+     descr:'Sostituzione colonna montante acqua calda e fredda Scala A, dal piano seminterrato al 5° piano. Ripristino tracce incluso.',
+     condizioni:'',note:'',
+     dataCompletamento:'2025-02-08',dataCollaudo:'2025-02-15',noteCollaudo:'Collaudo eseguito positivamente. Nessuna perdita rilevata.'},
+    {numero:'OdL-003-2025',dataOrdine:'2025-03-01',stato:'inviato',categoria:'ascensore',
+     titolo:'Manutenzione straordinaria ascensore',fornitore:'ElevaTech Srl',
+     contatti:'Tel. 02 5555555',referente:'Ing. Carlo Neri',importo:3200,
+     dataInizio:'2025-03-15',scadConsegna:'2025-03-16',durata:'1 giorno',
+     preventivo:'PREV-004-2025',delibera:'',verbale:'',
+     condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',
+     garanzia:'1 anno',
+     descr:'Revisione quinquennale obbligatoria ascensore, sostituzione cavi e lubrificazione meccanismi.',
+     condizioni:'',note:'In attesa di conferma data da parte di ElevaTech.',
+     dataCompletamento:'',dataCollaudo:'',noteCollaudo:''},
+  ];
+  def.forEach(function(d){ordCount++;ordini.push(Object.assign({id:'o'+ordCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='lista'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='lista'?' on':'');
+  });
+  drawLista();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel() {
+  if(!ordini.length){alert('Nessun ordine da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['REGISTRO ORDINI DI LAVORO'],[],
+     ['N° OdL','Data','Fornitore','Oggetto','Categoria','Importo €','Inizio','Consegna','Preventivo','Delibera','Stato','Completato','Collaudato']].concat(
+    ordini.map(function(o){
+      return [o.numero,o.dataOrdine,o.fornitore,o.titolo,CATEGORIE[o.categoria]||o.categoria,
+              o.importo,o.dataInizio,o.scadConsegna,o.preventivo,o.delibera,
+              STATI_MAP[o.stato]?STATI_MAP[o.stato].label:o.stato,
+              o.dataCompletamento||'',o.dataCollaudo||''];
+    }))
+  );
+  ws['!cols']=[12,10,24,30,18,12,10,10,14,14,14,10,10].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Ordini di Lavoro');
+  XLSX.writeFile(wb,'CondoKit_OrdiniLavoro_'+new Date().getFullYear()+'.xlsx');
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

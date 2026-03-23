@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Raccolta Preventivi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* PREVENTIVO CARD */
+.prev-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px var(--shadow);border-left:4px solid var(--border);transition:box-shadow 0.15s;}
+.prev-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.prev-card.ricevuto{border-left-color:var(--gold);}
+.prev-card.valutato{border-left-color:#2a5080;}
+.prev-card.approvato{border-left-color:var(--success);}
+.prev-card.rifiutato{border-left-color:var(--accent);}
+.prev-card.migliore{border-left-color:var(--success);background:linear-gradient(135deg,#f8fff9 0%,white 100%);}
+.prev-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;}
+.prev-fornitore{font-family:'DM Serif Display',serif;font-size:1.05rem;}
+.prev-lavoro{font-size:0.85rem;color:var(--muted);margin-bottom:0.3rem;}
+.prev-importo{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--ink);}
+.prev-importo.best{color:var(--success);}
+
+/* CONFRONTO */
+.confronto-grid{display:grid;gap:1rem;margin-bottom:1.5rem;}
+.confronto-col{background:white;border:2px solid var(--border);border-radius:4px;overflow:hidden;}
+.confronto-col.best{border-color:var(--success);}
+.confronto-col.best .confronto-head{background:var(--success);}
+.confronto-head{background:var(--ink);color:var(--paper);padding:0.9rem 1.25rem;}
+.confronto-fornitore{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.2rem;}
+.confronto-importo{font-family:'DM Mono',monospace;font-size:1.1rem;}
+.confronto-body{padding:1rem 1.25rem;}
+.confronto-row{display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--cream);font-size:0.82rem;}
+.confronto-row:last-child{border-bottom:none;}
+.confronto-label{color:var(--muted);}
+.confronto-val{font-weight:500;text-align:right;}
+
+/* CHECKLIST */
+.check-item{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.9rem;background:var(--cream);border:1px solid var(--border);border-radius:3px;margin-bottom:0.4rem;}
+.check-item.ok{background:var(--success-light);border-color:var(--success);}
+.check-item.ko{background:var(--accent-light);border-color:var(--accent);}
+.check-label{flex:1;font-size:0.875rem;}
+.check-ico{font-size:1rem;flex-shrink:0;}
+
+/* FILTRI */
+.filtri-bar{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+.filtri-bar .fg{margin:0;min-width:140px;}
+
+/* REPORT */
+.report-doc{background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;}
+.report-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.report-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.confronto-grid{grid-template-columns:repeat(3,1fr)!important;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="archivio_delibere.html">🗄️ Delibere</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Fornitori</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Fornitori e Manutenzioni · Modulo 3.1</div>
+  <h1>Raccolta<br><em>Preventivi</em></h1>
+  <p class="header-sub">Archivia i preventivi ricevuti, confrontali affiancati, verifica la documentazione dei fornitori e prepara il report per l'assemblea.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-lista"     onclick="go('lista')">📋 1 · Lista Preventivi</button>
+    <button class="tab-btn"   id="tb-nuovo"      onclick="go('nuovo')">➕ 2 · Nuovo Preventivo</button>
+    <button class="tab-btn"   id="tb-confronto"  onclick="go('confronto')">⚖️ 3 · Confronto</button>
+    <button class="tab-btn"   id="tb-checklist"  onclick="go('checklist')">✅ 4 · Checklist Documenti</button>
+    <button class="tab-btn"   id="tb-report"     onclick="go('report')">📄 5 · Report Assemblea</button>
+  </div>
+
+  <div class="panel on" id="p-lista">    <div id="c-lista"></div>    </div>
+  <div class="panel"    id="p-nuovo">    <div id="c-nuovo"></div>    </div>
+  <div class="panel"    id="p-confronto"><div id="c-confronto"></div></div>
+  <div class="panel"    id="p-checklist"><div id="c-checklist"></div></div>
+  <div class="panel"    id="p-report">   <div id="c-report"></div>   </div>
+</div>
+
+<div class="page-footer">CondoKit · Raccolta Preventivi · Beta · Art. 1135 c.c. — obbligo di confronto preventivi per lavori straordinari</div>
+
+<script>
+var PANELS    = ['lista','nuovo','confronto','checklist','report'];
+var preventivi = [];
+var prevCount  = 0;
+var editingId  = null;
+
+// Dati gara corrente
+var gara = {nome:'', condominio:'', descrizione:'', dataAss:'', delibera:''};
+
+var STATI = {
+  ricevuto: {label:'📬 Ricevuto',  badge:'b-warn',   cls:'ricevuto'},
+  valutato: {label:'🔍 Valutato',  badge:'b-info',   cls:'valutato'},
+  approvato:{label:'✅ Approvato', badge:'b-ok',     cls:'approvato'},
+  rifiutato:{label:'❌ Rifiutato', badge:'b-danger', cls:'rifiutato'},
+};
+
+var CATEGORIE = {
+  edilizia:     'Edilizia/Muratura',
+  idraulica:    'Idraulica',
+  elettrica:    'Impianti elettrici',
+  ascensore:    'Ascensore',
+  giardinaggio: 'Giardinaggio',
+  pulizie:      'Pulizie',
+  amministrativo:'Servizi amministrativi',
+  assicurazione:'Assicurazione',
+  altro:        'Altro',
+};
+
+var DOCS_RICHIESTI = [
+  {id:'durc',       label:'DURC (Documento Unico Regolarità Contributiva)',   obbligatorio:true},
+  {id:'visura',     label:'Visura camerale aggiornata',                        obbligatorio:true},
+  {id:'assicurazione',label:'Attestato polizza assicurazione RC',              obbligatorio:true},
+  {id:'antimafia',  label:'Dichiarazione antimafia',                           obbligatorio:false},
+  {id:'iso',        label:'Certificazione ISO / qualificazione SOA',           obbligatorio:false},
+  {id:'preventivo', label:'Preventivo dettagliato firmato',                    obbligatorio:true},
+  {id:'referenze',  label:'Referenze lavori analoghi',                         obbligatorio:false},
+  {id:'garanzia',   label:'Garanzia post-lavori (anni)',                       obbligatorio:false},
+];
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='lista')     drawLista();
+  if (name==='nuovo')     drawNuovo();
+  if (name==='confronto') drawConfronto();
+  if (name==='checklist') drawChecklist();
+  if (name==='report')    drawReport();
+}
+
+function switchTo(name) {
+  go(name);
+}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
+  });
+  drawLista();
+};
+
+// ══ TAB 1 — LISTA ══
+function drawLista() {
+  var el = document.getElementById('c-lista');
+  var nRic = preventivi.filter(function(p){return p.stato==='ricevuto';}).length;
+  var nVal = preventivi.filter(function(p){return p.stato==='valutato';}).length;
+  var nApp = preventivi.filter(function(p){return p.stato==='approvato';}).length;
+  var nRif = preventivi.filter(function(p){return p.stato==='rifiutato';}).length;
+
+  var filtGara  = (document.getElementById('filtGara') ||{}).value||'tutti';
+  var filtStato = (document.getElementById('filtStato')||{}).value||'tutti';
+  var filtTesto = ((document.getElementById('filtTesto')||{}).value||'').toLowerCase().trim();
+
+  var gare = [];
+  preventivi.forEach(function(p){if(p.gara&&gare.indexOf(p.gara)===-1)gare.push(p.gara);});
+
+  var filtrati = preventivi.filter(function(p){
+    if (filtGara!=='tutti' && p.gara!==filtGara)   return false;
+    if (filtStato!=='tutti'&& p.stato!==filtStato) return false;
+    if (filtTesto && !(p.fornitore||'').toLowerCase().includes(filtTesto) &&
+        !(p.lavoro||'').toLowerCase().includes(filtTesto) &&
+        !(p.gara||'').toLowerCase().includes(filtTesto)) return false;
+    return true;
+  });
+
+  // Individua il miglior preventivo per importo per ogni gara (tra approvati o valutati)
+  var bestPerGara = {};
+  gare.forEach(function(g){
+    var candidati = preventivi.filter(function(p){return p.gara===g && (p.stato==='valutato'||p.stato==='ricevuto') && p.importo;});
+    if (candidati.length) {
+      var best = candidati.reduce(function(m,p){return parseFloat(p.importo)<parseFloat(m.importo)?p:m;});
+      bestPerGara[g] = best.id;
+    }
+  });
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Preventivi totali</div><div class="cv">'+preventivi.length+'</div></div>' +
+    '<div class="sc g"><div class="cl">Ricevuti</div><div class="cv go">'+nRic+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Approvati</div><div class="cv gn">'+nApp+'</div></div>' +
+    '<div class="sc r"><div class="cl">Rifiutati</div><div class="cv a">'+nRif+'</div></div>' +
+    '</div>' +
+
+    // GARA CONFIG
+    '<div class="card">' +
+      '<div class="r3">' +
+        '<div class="fg"><label>Nome gara / lavoro</label><input type="text" id="garaNome" value="'+esc(gara.nome)+'" placeholder="Es. Rifacimento facciata 2025" onchange="gara.nome=this.value"></div>' +
+        '<div class="fg"><label>Condominio</label><input type="text" id="garaCondominio" value="'+esc(gara.condominio)+'" placeholder="Es. Condominio Via Roma 10" onchange="gara.condominio=this.value"></div>' +
+        '<div class="fg"><label>Rif. delibera</label><input type="text" id="garaDelibera" value="'+esc(gara.delibera)+'" placeholder="Es. Del. n. 04/2024" onchange="gara.delibera=this.value"></div>' +
+      '</div>' +
+    '</div>' +
+
+    // FILTRI
+    '<div class="filtri-bar">' +
+      '<div class="fg"><label>Gara</label><select id="filtGara" onchange="drawLista()">' +
+        '<option value="tutti">Tutte le gare</option>' +
+        gare.map(function(g){return '<option value="'+esc(g)+'"'+(filtGara===g?' selected':'')+'>'+esc(g)+'</option>';}).join('') +
+      '</select></div>' +
+      '<div class="fg"><label>Stato</label><select id="filtStato" onchange="drawLista()">' +
+        '<option value="tutti">Tutti</option>' +
+        Object.keys(STATI).map(function(k){return '<option value="'+k+'"'+(filtStato===k?' selected':'')+'>'+STATI[k].label+'</option>';}).join('') +
+      '</select></div>' +
+      '<div class="fg" style="min-width:180px"><label>Cerca</label>' +
+        '<input type="text" id="filtTesto" value="'+esc(filtTesto)+'" placeholder="Fornitore, lavoro..." oninput="drawLista()">' +
+      '</div>' +
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="resetFiltri()">↺ Reset</button>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Nuovo preventivo</button>' +
+      '<button class="btn btn-g btn-sm" onclick="switchTo(\'confronto\')">⚖️ Confronta</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Esempi</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraLista()">↺ Azzera</button>' +
+    '</div>' +
+
+    (filtrati.length ? filtrati.map(function(p) {
+      var stato  = STATI[p.stato]||STATI.ricevuto;
+      var isMigliore = bestPerGara[p.gara]===p.id;
+      var dFmt   = p.dataPreventivo ? new Date(p.dataPreventivo).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var impFmt = p.importo ? '€ '+fmt(p.importo) : '—';
+      var docsOk = p.docs ? DOCS_RICHIESTI.filter(function(d){return d.obbligatorio;}).every(function(d){return p.docs[d.id];}) : false;
+
+      return '<div class="prev-card '+(isMigliore&&p.stato!=='rifiutato'?'migliore':stato.cls)+'">' +
+        '<div class="prev-header">' +
+          '<div>' +
+            '<div class="prev-lavoro">'+(p.gara?esc(p.gara)+' · ':'')+esc(CATEGORIE[p.categoria]||p.categoria||'')+'</div>' +
+            '<div class="prev-fornitore">'+esc(p.fornitore)+'</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            '<div class="prev-importo'+(isMigliore&&p.stato!=='rifiutato'?' best':'')+'">'+impFmt+'</div>' +
+            (p.importoIVA?'<div style="font-size:0.75rem;color:var(--muted)">IVA incl.: € '+fmt(p.importoIVA)+'</div>':'') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">' +
+          '<span class="badge '+stato.badge+'">'+stato.label+'</span>' +
+          (isMigliore&&p.stato!=='rifiutato'?'<span class="badge b-ok">⭐ Offerta più bassa</span>':'') +
+          (docsOk?'<span class="badge b-ok">📎 Docs OK</span>':'<span class="badge b-warn">📎 Docs incompleti</span>') +
+          (p.delibera?'<span class="badge b-info">🗄️ '+esc(p.delibera)+'</span>':'') +
+          '<span class="badge b-neu">'+dFmt+'</span>' +
+        '</div>' +
+        (p.note?'<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">'+esc(p.note.substring(0,100))+(p.note.length>100?'...':'')+'</div>':'') +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
+          '<button class="btn btn-g btn-sm" onclick="modificaPrev(\''+p.id+'\')">✏️ Modifica</button>' +
+          '<button class="btn btn-g btn-sm" onclick="switchTo(\'checklist\');drawChecklist(\''+p.id+'\')">📎 Documenti</button>' +
+          (p.stato!=='approvato'?'<button class="btn btn-ok btn-sm" onclick="setStato(\''+p.id+'\',\'approvato\')">✅ Approva</button>':'') +
+          (p.stato!=='rifiutato'?'<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent)" onclick="setStato(\''+p.id+'\',\'rifiutato\')">❌ Rifiuta</button>':'') +
+          '<button class="btn btn-sm" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaPrev(\''+p.id+'\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') :
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(preventivi.length?'Nessun preventivo trovato con i filtri selezionati.':'Nessun preventivo. Aggiungine uno!')+'</p>' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Aggiungi preventivo</button>' +
+    '</div>');
+}
+
+function resetFiltri(){
+  ['filtGara','filtStato'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='tutti';});
+  var t=document.getElementById('filtTesto');if(t)t.value='';
+  drawLista();
+}
+
+function setStato(id,stato) {
+  var p=preventivi.find(function(x){return x.id===id;});
+  if(p){p.stato=stato;}
+  drawLista();
+}
+
+function eliminaPrev(id) {
+  if(!confirm('Eliminare questo preventivo?')) return;
+  preventivi=preventivi.filter(function(p){return p.id!==id;});
+  drawLista();
+}
+
+function modificaPrev(id) {
+  editingId=id;
+  switchTo('nuovo');
+}
+
+function azzeraLista() {
+  if(!confirm('Eliminare tutti i preventivi?')) return;
+  preventivi=[]; prevCount=0;
+  gara={nome:'',condominio:'',descrizione:'',dataAss:'',delibera:''};
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='lista'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='lista'?' on':'');
+  });
+  drawLista();
+}
+
+// ══ TAB 2 — NUOVO/MODIFICA ══
+function drawNuovo() {
+  var el = document.getElementById('c-nuovo');
+  var d  = editingId ? preventivi.find(function(x){return x.id===editingId;}) : null;
+  var v  = function(k,def){return d?(d[k]||def||''):(def||'');};
+
+  el.innerHTML =
+    '<div class="sl">'+(editingId?'Modifica preventivo':'Nuovo preventivo')+'</div>' +
+    '<div class="card">' +
+      '<div class="r3">' +
+        fgi('fGara','Nome gara / lavoro',v('gara',gara.nome),'Es. Rifacimento facciata 2025') +
+        fgi('fFornitore','Fornitore / Ditta',v('fornitore'),'Es. Impresa Rossi Costruzioni') +
+        fgsel('fCategoria','Categoria lavoro',v('categoria','edilizia'),Object.keys(CATEGORIE).map(function(k){return {v:k,l:CATEGORIE[k]};})) +
+      '</div>' +
+      '<div class="r4">' +
+        fgn('fImporto','Importo netto (€)',v('importo'),'Es. 45000') +
+        fgn('fImportoIVA','Importo IVA incl. (€)',v('importoIVA'),'Es. 54900') +
+        fgd('fDataPreventivo','Data preventivo',v('dataPreventivo')) +
+        fgd('fValidita','Validità offerta',v('validita')) +
+      '</div>' +
+      '<div class="r3">' +
+        fgi('fRifPrev','N° / rif. preventivo',v('rifPrev'),'Es. PREV-2025-001') +
+        fgi('fDelibera','Rif. delibera',v('delibera',gara.delibera),'Es. Del. n. 04/2024') +
+        fgsel('fStato','Stato',v('stato','ricevuto'),Object.keys(STATI).map(function(k){return {v:k,l:STATI[k].label};})) +
+      '</div>' +
+      '<div class="r2">' +
+        '<div class="fg"><label>Descrizione lavori</label><textarea id="fDescr" placeholder="Descrizione dettagliata dei lavori preventivati...">'+esc(v('descr'))+'</textarea></div>' +
+        '<div class="fg"><label>Note / condizioni particolari</label><textarea id="fNote" placeholder="Es. Tempi di esecuzione, garanzie, esclusioni...">'+esc(v('note'))+'</textarea></div>' +
+      '</div>' +
+      '<div class="r3">' +
+        fgi('fGaranzia','Garanzia post-lavori',v('garanzia'),'Es. 2 anni') +
+        fgi('fTempistica','Tempistica esecuzione',v('tempistica'),'Es. 60 giorni lavorativi') +
+        fgi('fContatti','Contatti fornitore',v('contatti'),'Es. Tel. 02 1234567') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaPrev()">💾 '+(editingId?'Aggiorna':'Salva preventivo')+'</button>' +
+      '<button class="btn btn-g" onclick="editingId=null;switchTo(\'lista\')">← Torna alla lista</button>' +
+      '<button class="btn btn-g" onclick="azzeraNuovo()">↺ Azzera form</button>' +
+    '</div>';
+}
+
+function fgi(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="number" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,label,value){return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaPrev() {
+  var fornitore = gv('fFornitore').trim();
+  if (!fornitore){alert('Inserisci il nome del fornitore.');return;}
+  var id = editingId||'p'+(++prevCount);
+  var existing = editingId ? preventivi.find(function(x){return x.id===editingId;})||{} : {};
+  var obj = {
+    id:id, gara:gv('fGara'), fornitore:fornitore,
+    categoria:gv('fCategoria'), importo:parseFloat(gv('fImporto'))||0,
+    importoIVA:parseFloat(gv('fImportoIVA'))||0,
+    dataPreventivo:gv('fDataPreventivo'), validita:gv('fValidita'),
+    rifPrev:gv('fRifPrev'), delibera:gv('fDelibera'), stato:gv('fStato'),
+    descr:gv('fDescr'), note:gv('fNote'),
+    garanzia:gv('fGaranzia'), tempistica:gv('fTempistica'), contatti:gv('fContatti'),
+    docs: existing.docs || {},
+  };
+  if (editingId){var idx=preventivi.findIndex(function(x){return x.id===editingId;});if(idx>=0)preventivi[idx]=obj;}
+  else preventivi.push(obj);
+  editingId=null;
+  switchTo('lista');
+}
+
+function azzeraNuovo(){editingId=null;drawNuovo();}
+
+// ══ TAB 3 — CONFRONTO ══
+function drawConfronto() {
+  var el = document.getElementById('c-confronto');
+
+  var gare=[];
+  preventivi.forEach(function(p){if(p.gara&&gare.indexOf(p.gara)===-1)gare.push(p.gara);});
+
+  var garaSelEl = document.getElementById('confGara');
+  var garaSel   = garaSelEl ? garaSelEl.value : (gare[0]||'');
+
+  var candidati = preventivi.filter(function(p){
+    return (!garaSel||p.gara===garaSel) && p.stato!=='rifiutato' && p.importo;
+  }).sort(function(a,b){return a.importo-b.importo;});
+
+  var importoMin = candidati.length ? candidati[0].importo : 0;
+
+  var colStyle = 'grid-template-columns:repeat('+Math.min(candidati.length,4)+',1fr)';
+
+  el.innerHTML =
+    '<div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">' +
+      '<div class="fg" style="margin:0;min-width:220px"><label>Gara / lavoro</label>' +
+        '<select id="confGara" onchange="drawConfronto()">' +
+          '<option value="">Tutti i preventivi</option>' +
+          gare.map(function(g){return '<option value="'+esc(g)+'"'+(garaSel===g?' selected':'')+'>'+esc(g)+'</option>';}).join('') +
+        '</select></div>' +
+      '<button class="btn btn-s btn-sm" style="align-self:flex-end" onclick="window.print()">🖨️ Stampa confronto</button>' +
+    '</div>' +
+
+    (!candidati.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<p style="color:var(--muted)">Nessun preventivo da confrontare. Aggiungili dalla Tab 2.</p>' +
+    '</div>' :
+
+    '<div class="confronto-grid" style="'+colStyle+'">' +
+    candidati.map(function(p,i) {
+      var isBest = p.importo === importoMin;
+      var dFmt = p.dataPreventivo?new Date(p.dataPreventivo).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var risparmio = i>0 ? '+ € '+fmt(p.importo-importoMin) : 'Offerta più bassa';
+      var stato=STATI[p.stato]||STATI.ricevuto;
+      return '<div class="confronto-col'+(isBest?' best':'')+'">' +
+        '<div class="confronto-head">' +
+          '<div class="confronto-fornitore">'+esc(p.fornitore)+'</div>' +
+          '<div class="confronto-importo">€ '+fmt(p.importo)+'</div>' +
+          (p.importoIVA?'<div style="font-size:0.72rem;opacity:0.7">IVA incl. € '+fmt(p.importoIVA)+'</div>':'')+
+        '</div>' +
+        '<div class="confronto-body">' +
+          confRow('Categoria',CATEGORIE[p.categoria]||p.categoria||'—') +
+          confRow('Data prev.',dFmt) +
+          confRow('Rif.',p.rifPrev||'—') +
+          confRow('Validità',p.validita||'—') +
+          confRow('Garanzia',p.garanzia||'—') +
+          confRow('Tempistica',p.tempistica||'—') +
+          confRow('Vs. min.',risparmio) +
+          confRow('Stato','<span class="badge '+stato.badge+'">'+stato.label+'</span>') +
+          (p.note?'<div style="margin-top:0.75rem;font-size:0.78rem;color:var(--muted);border-top:1px solid var(--cream);padding-top:0.5rem">'+esc(p.note.substring(0,80))+'</div>':'') +
+          '<div style="margin-top:0.75rem;display:flex;gap:0.4rem;flex-wrap:wrap">' +
+            (p.stato!=='approvato'?'<button class="btn btn-ok btn-sm" onclick="setStato(\''+p.id+'\',\'approvato\');drawConfronto()">✅ Approva</button>':'<span class="badge b-ok">✅ Approvato</span>')+
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+    '</div>') +
+
+    '<div class="nb"><strong>⚖️ Art. 1135 c.c. — Confronto preventivi</strong>' +
+    'Per i lavori straordinari è consigliabile raccogliere almeno 3 preventivi da ditte diverse. ' +
+    'L\'assemblea deve approvare l\'affidamento con le maggioranze previste dall\'art. 1136 c.c. ' +
+    'La documentazione dei preventivi va conservata agli atti del condominio.</div>';
+}
+
+function confRow(label,val){
+  return '<div class="confronto-row"><span class="confronto-label">'+label+'</span><span class="confronto-val">'+val+'</span></div>';
+}
+
+// ══ TAB 4 — CHECKLIST DOCUMENTI ══
+var checklistPrevId = null;
+function drawChecklist(prevId) {
+  if(prevId) checklistPrevId=prevId;
+  var el = document.getElementById('c-checklist');
+
+  // Selettore preventivo
+  var opzioni = preventivi.map(function(p){
+    return '<option value="'+p.id+'"'+(checklistPrevId===p.id?' selected':'')+'>'+esc(p.fornitore)+(p.gara?' ('+esc(p.gara)+')':'')+'</option>';
+  }).join('');
+
+  var p = checklistPrevId ? preventivi.find(function(x){return x.id===checklistPrevId;}) : null;
+
+  var items = '';
+  if (p) {
+    items = DOCS_RICHIESTI.map(function(doc){
+      var ok = p.docs && p.docs[doc.id];
+      return '<div class="check-item '+(ok?'ok':doc.obbligatorio?'ko':'')+'">' +
+        '<span class="check-ico">'+(ok?'✅':doc.obbligatorio?'❌':'⚪')+'</span>' +
+        '<span class="check-label"><strong>'+doc.label+'</strong>'+(doc.obbligatorio?' <span style="color:var(--accent);font-size:0.75rem">*obbligatorio</span>':'')+'</span>' +
+        '<input type="checkbox" '+(ok?'checked':'')+
+          ' onchange="toggleDoc(\''+p.id+'\',\''+doc.id+'\',this.checked)" ' +
+          'style="width:18px;height:18px;cursor:pointer;accent-color:var(--success);">' +
+      '</div>';
+    }).join('');
+  }
+
+  var nOk  = p && p.docs ? Object.values(p.docs).filter(Boolean).length : 0;
+  var nObb = DOCS_RICHIESTI.filter(function(d){return d.obbligatorio;}).length;
+  var tuttiObb = p && p.docs ? DOCS_RICHIESTI.filter(function(d){return d.obbligatorio;}).every(function(d){return p.docs[d.id];}) : false;
+
+  el.innerHTML =
+    '<div class="fg" style="max-width:400px;margin-bottom:1.5rem">' +
+      '<label>Seleziona fornitore</label>' +
+      '<select id="checkPrevSel" onchange="checklistPrevId=this.value;drawChecklist()">' +
+        '<option value="">— Seleziona —</option>'+opzioni +
+      '</select>' +
+    '</div>' +
+
+    (!preventivi.length ?
+    '<div class="card" style="text-align:center;padding:2rem"><p style="color:var(--muted)">Nessun preventivo. Aggiungine uno dalla Tab 2.</p></div>' :
+    !p ?
+    '<div class="card" style="text-align:center;padding:2rem"><p style="color:var(--muted)">Seleziona un fornitore per vedere la checklist documenti.</p></div>' :
+
+    (tuttiObb ?
+    '<div style="background:var(--success-light);border:1px solid var(--success);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;font-size:0.875rem;color:var(--success)"><strong>✅ Tutti i documenti obbligatori sono stati ricevuti!</strong></div>' :
+    '<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;font-size:0.875rem"><strong>⚠️ Documenti mancanti</strong> — Ricevuti '+nOk+' su '+DOCS_RICHIESTI.length+' ('+nObb+' obbligatori)</div>') +
+
+    '<div class="sl">Checklist documenti — '+esc(p.fornitore)+'</div>' +
+    items +
+
+    '<div class="brow">' +
+      '<button class="btn btn-g btn-sm" onclick="resetChecklist()">↺ Azzera checklist</button>' +
+    '</div>');
+}
+
+function toggleDoc(prevId,docId,val){
+  var p=preventivi.find(function(x){return x.id===prevId;});
+  if(p){if(!p.docs)p.docs={};p.docs[docId]=val;}
+  drawChecklist();
+}
+
+function resetChecklist(){
+  var p=checklistPrevId?preventivi.find(function(x){return x.id===checklistPrevId;}):null;
+  if(!p)return;
+  if(!confirm('Azzerare la checklist documenti per '+p.fornitore+'?'))return;
+  p.docs={};
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='checklist'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='checklist'?' on':'');
+  });
+  drawChecklist();
+}
+
+// ══ TAB 5 — REPORT ASSEMBLEA ══
+function drawReport() {
+  var el   = document.getElementById('c-report');
+  var oggi = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+
+  var gare=[];
+  preventivi.forEach(function(p){if(p.gara&&gare.indexOf(p.gara)===-1)gare.push(p.gara);});
+
+  var garaSelEl=document.getElementById('reportGara');
+  var garaSel=garaSelEl?garaSelEl.value:(gare[0]||'');
+
+  var candidati=preventivi.filter(function(p){return !garaSel||p.gara===garaSel;})
+    .sort(function(a,b){return a.importo-b.importo;});
+
+  var approvato=candidati.find(function(p){return p.stato==='approvato';});
+  var importoMin=candidati.length&&candidati[0].importo?candidati[0].importo:0;
+
+  el.innerHTML =
+    '<div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">' +
+      '<div class="fg" style="margin:0;min-width:220px"><label>Gara</label>' +
+        '<select id="reportGara" onchange="drawReport()">' +
+          '<option value="">Tutti</option>' +
+          gare.map(function(g){return '<option value="'+esc(g)+'"'+(garaSel===g?' selected':'')+'>'+esc(g)+'</option>';}).join('') +
+        '</select></div>' +
+      '<button class="btn btn-s btn-sm" style="align-self:flex-end" onclick="window.print()">🖨️ Stampa report</button>' +
+      '<button class="btn btn-ok btn-sm" style="align-self:flex-end" onclick="expExcel()">📊 Excel</button>' +
+    '</div>' +
+
+    (!candidati.length?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun preventivo da reportare.</p></div>':
+
+    '<div class="report-doc">' +
+    '<div class="report-hs">' +
+      '<span class="report-title">Report Preventivi — '+esc(garaSel||'Tutti')+'</span>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="padding:2rem">' +
+
+    '<div style="margin-bottom:1.5rem">' +
+      (gara.condominio?'<div style="font-size:0.875rem;margin-bottom:0.25rem"><strong>Condominio:</strong> '+esc(gara.condominio)+'</div>':'')+
+      (gara.delibera?'<div style="font-size:0.875rem;margin-bottom:0.25rem"><strong>Rif. delibera:</strong> '+esc(gara.delibera)+'</div>':'')+
+      '<div style="font-size:0.875rem"><strong>Preventivi ricevuti:</strong> '+candidati.length+'</div>' +
+    '</div>' +
+
+    (approvato?
+    '<div style="background:var(--success-light);border:1px solid var(--success);border-radius:4px;padding:1rem 1.5rem;margin-bottom:1.5rem">' +
+      '<strong style="color:var(--success)">✅ Preventivo approvato: '+esc(approvato.fornitore)+'</strong><br>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.9rem">€ '+fmt(approvato.importo)+
+      (approvato.importoIVA?' (IVA incl. € '+fmt(approvato.importoIVA)+')':'')+
+      '</span>' +
+    '</div>':'') +
+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1.5rem">' +
+    '<thead><tr style="background:var(--ink);color:var(--paper)">' +
+      '<th style="padding:0.7rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Categoria</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Importo netto</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">IVA incl.</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Tempistica</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>' +
+      '<th style="padding:0.7rem 1rem;text-align:center;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Docs</th>' +
+    '</tr></thead><tbody>' +
+    candidati.map(function(p){
+      var stato=STATI[p.stato]||STATI.ricevuto;
+      var isBest=p.importo===importoMin&&p.importo>0;
+      var docsOk=p.docs?DOCS_RICHIESTI.filter(function(d){return d.obbligatorio;}).every(function(d){return p.docs[d.id];}):false;
+      return '<tr style="border-bottom:1px solid var(--cream);'+(p.stato==='approvato'?'background:#f8fff9':isBest?'background:#f8fff9':'')+'">' +
+        '<td style="padding:0.55rem 1rem;font-weight:500">'+esc(p.fornitore)+(isBest?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.62rem;color:var(--success)">⭐ Offerta più bassa</span>':'')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem;color:var(--muted)">'+esc(CATEGORIE[p.categoria]||p.categoria||'—')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">€ '+fmt(p.importo)+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;font-size:0.78rem;color:var(--muted)">'+(p.importoIVA?'€ '+fmt(p.importoIVA):'—')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem">'+esc(p.tempistica||'—')+'</td>' +
+        '<td style="padding:0.55rem 1rem"><span class="badge '+stato.badge+'">'+stato.label+'</span></td>' +
+        '<td style="padding:0.55rem 1rem;text-align:center">'+(docsOk?'✅':'⚠️')+'</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>' +
+
+    '<div style="padding-top:1.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>' +
+    '</div></div>');
+}
+
+// ══ ESEMPI ══
+function caricaEsempi() {
+  preventivi=[]; prevCount=0;
+  gara={nome:'Rifacimento facciata 2025',condominio:'Condominio Via Roma 10',descrizione:'',dataAss:'2025-03-15',delibera:'Del. n. 04/2024'};
+  var def=[
+    {gara:'Rifacimento facciata 2025',fornitore:'Impresa Rossi Restauri Srl',categoria:'edilizia',importo:42500,importoIVA:51850,dataPreventivo:'2025-01-10',validita:'2025-04-10',rifPrev:'PREV-001-2025',delibera:'Del. n. 04/2024',stato:'approvato',descr:'Rifacimento intonaco, tinteggiatura e riparazione balconi.',note:'Comprende smontaggio e rimontaggio ponteggi.',garanzia:'5 anni',tempistica:'45 giorni lavorativi',contatti:'Tel. 02 1234567',docs:{durc:true,visura:true,assicurazione:true,preventivo:true,referenze:true,garanzia:false,antimafia:false,iso:false}},
+    {gara:'Rifacimento facciata 2025',fornitore:'Edilservice Bianchi & C.',categoria:'edilizia',importo:48200,importoIVA:58804,dataPreventivo:'2025-01-18',validita:'2025-04-18',rifPrev:'PREV-002-2025',delibera:'Del. n. 04/2024',stato:'rifiutato',descr:'Rifacimento facciata con materiali premium.',note:'Non include balconi.',garanzia:'3 anni',tempistica:'60 giorni lavorativi',contatti:'Tel. 02 9876543',docs:{durc:true,visura:true,assicurazione:false,preventivo:true,referenze:false,garanzia:false,antimafia:false,iso:false}},
+    {gara:'Rifacimento facciata 2025',fornitore:'Costruzioni Verdi Snc',categoria:'edilizia',importo:45800,importoIVA:55876,dataPreventivo:'2025-01-22',validita:'2025-04-22',rifPrev:'PREV-003-2025',delibera:'Del. n. 04/2024',stato:'valutato',descr:'Rifacimento completo con trattamento anti-umidità.',note:'Sconto 5% se lavori iniziano entro febbraio.',garanzia:'4 anni',tempistica:'50 giorni lavorativi',contatti:'Tel. 335 1234567',docs:{durc:false,visura:true,assicurazione:true,preventivo:true,referenze:true,garanzia:false,antimafia:false,iso:true}},
+    {gara:'Manutenzione ascensore 2025',fornitore:'ElevaTech Srl',categoria:'ascensore',importo:3200,importoIVA:3904,dataPreventivo:'2025-02-05',validita:'2025-05-05',rifPrev:'PREV-004-2025',delibera:'',stato:'ricevuto',descr:'Manutenzione annuale ascensore, revisione quinquennale inclusa.',note:'Contratto pluriennale disponibile con sconto.',garanzia:'1 anno',tempistica:'1 giorno',contatti:'Tel. 02 5555555',docs:{durc:true,visura:true,assicurazione:true,preventivo:true,referenze:false,garanzia:false,antimafia:false,iso:false}},
+  ];
+  def.forEach(function(d){prevCount++;preventivi.push(Object.assign({id:'p'+prevCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='lista'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='lista'?' on':'');
+  });
+  drawLista();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel() {
+  if(!preventivi.length){alert('Nessun preventivo da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['RACCOLTA PREVENTIVI — '+gara.nome],[],
+     ['Gara','Fornitore','Categoria','Importo netto','IVA incl.','Data prev.','Validità','Rif. prev.','Delibera','Stato','Garanzia','Tempistica','Docs OK','Note']].concat(
+    preventivi.map(function(p){
+      var docsOk=p.docs?DOCS_RICHIESTI.filter(function(d){return d.obbligatorio;}).every(function(d){return p.docs[d.id];}):false;
+      return [p.gara,p.fornitore,CATEGORIE[p.categoria]||p.categoria,p.importo,p.importoIVA,
+              p.dataPreventivo,p.validita,p.rifPrev,p.delibera,
+              STATI[p.stato]?STATI[p.stato].label:p.stato,
+              p.garanzia,p.tempistica,docsOk?'Sì':'No',p.note];
+    }))
+  );
+  ws['!cols']=[20,24,18,12,12,10,10,14,14,12,10,16,8,30].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Preventivi');
+  XLSX.writeFile(wb,'CondoKit_Preventivi_'+new Date().getFullYear()+'.xlsx');
+}
+
+// ══ UTILS ══
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

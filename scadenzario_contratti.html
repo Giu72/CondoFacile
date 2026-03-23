@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Scadenzario Contratti</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.b-purple{background:#e8d0f0;color:#601080;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* CONTRATTO CARD */
+.contr-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:0.85rem;box-shadow:0 2px 8px var(--shadow);border-left:4px solid var(--border);transition:box-shadow 0.15s;}
+.contr-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.contr-card.scaduto{border-left-color:var(--accent);background:#fff8f8;}
+.contr-card.urgente{border-left-color:var(--accent);}
+.contr-card.imminente{border-left-color:var(--gold);background:#fffdf0;}
+.contr-card.ok{border-left-color:var(--success);}
+.contr-card.cessato{border-left-color:var(--muted);opacity:0.65;}
+.contr-titolo{font-family:'DM Serif Display',serif;font-size:1.05rem;margin-bottom:0.2rem;}
+.contr-fornitore{font-size:0.85rem;color:var(--muted);}
+.contr-importo{font-family:'DM Serif Display',serif;font-size:1.3rem;}
+
+/* SCHEDA CONTRATTO */
+.scheda-doc{background:white;border:2px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+.scheda-hs{background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+.scheda-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.scheda-bd{padding:2rem 2.5rem;font-size:0.875rem;line-height:1.75;}
+.scheda-bd p{margin-bottom:0.75rem;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.25rem;}
+.ibox{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.6rem 0.9rem;}
+.ibox-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.ibox-val{font-weight:500;}
+
+/* STORICO RINNOVI */
+.rinnovo-item{display:flex;gap:1rem;padding:0.6rem 0.9rem;background:var(--cream);border:1px solid var(--border);border-radius:3px;margin-bottom:0.4rem;align-items:center;flex-wrap:wrap;}
+.rinnovo-data{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);white-space:nowrap;min-width:80px;}
+.rinnovo-desc{font-size:0.82rem;flex:1;}
+
+/* FILTRI */
+.filtri-bar{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+.filtri-bar .fg{margin:0;min-width:140px;}
+
+/* TIMELINE SCADENZE */
+.timeline-scad{position:relative;padding-left:1.5rem;}
+.timeline-scad::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:1rem;}
+.tl-item::before{content:'';position:absolute;left:-1.1rem;top:0.3rem;width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid white;}
+.tl-item.scaduto::before{background:var(--accent);}
+.tl-item.urgente::before{background:var(--accent);}
+.tl-item.imminente::before{background:var(--gold);}
+.tl-item.ok::before{background:var(--success);}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.filtri-bar,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.scheda-doc{box-shadow:none;border:1px solid #ccc;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="manutenzioni_programmate.html">🔧 Manutenzioni</a>
+    <a class="nav-link" href="archivio_delibere.html">🗄️ Delibere</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Fornitori</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Fornitori e Manutenzioni · Modulo 3.5</div>
+  <h1>Scadenzario<br><em>Contratti</em></h1>
+  <p class="header-sub">Gestisci tutti i contratti attivi, ricevi alert sulle scadenze, tieni lo storico dei rinnovi e stampa le schede per l'assemblea.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-registro"   onclick="go('registro')">📋 1 · Registro</button>
+    <button class="tab-btn"   id="tb-nuovo"       onclick="go('nuovo')">➕ 2 · Nuovo Contratto</button>
+    <button class="tab-btn"   id="tb-scadenzario" onclick="go('scadenzario')">⏰ 3 · Scadenzario</button>
+    <button class="tab-btn"   id="tb-scheda"      onclick="go('scheda')">📄 4 · Scheda Contratto</button>
+    <button class="tab-btn"   id="tb-storico"     onclick="go('storico')">📂 5 · Storico Rinnovi</button>
+    <button class="tab-btn"   id="tb-report"      onclick="go('report')">📊 6 · Report</button>
+  </div>
+
+  <div class="panel on" id="p-registro">   <div id="c-registro"></div>   </div>
+  <div class="panel"    id="p-nuovo">      <div id="c-nuovo"></div>      </div>
+  <div class="panel"    id="p-scadenzario"><div id="c-scadenzario"></div></div>
+  <div class="panel"    id="p-scheda">     <div id="c-scheda"></div>     </div>
+  <div class="panel"    id="p-storico">    <div id="c-storico"></div>    </div>
+  <div class="panel"    id="p-report">     <div id="c-report"></div>     </div>
+</div>
+
+<div class="page-footer">CondoKit · Scadenzario Contratti · Beta · Modulo 3.5</div>
+
+<script>
+var PANELS    = ['registro','nuovo','scadenzario','scheda','storico','report'];
+var contratti = [];
+var contCount = 0;
+var rinnovi   = [];
+var rinCount  = 0;
+var editingId = null;
+var schedaId  = null;
+
+var TIPI = {
+  manutenzione:  '🔧 Manutenzione',
+  fornitura:     '📦 Fornitura',
+  assicurazione: '🛡️ Assicurazione',
+  pulizie:       '🧹 Pulizie',
+  ascensore:     '🛗 Ascensore',
+  energia:       '⚡ Energia/Gas',
+  telecomunicazioni:'📡 Telecomunicazioni',
+  consulenza:    '💼 Consulenza',
+  appalto:       '🏗️ Appalto',
+  altro:         '📄 Altro',
+};
+
+var STATI_CONTR = {
+  attivo:    {label:'✅ Attivo',       badge:'b-ok',     cls:'ok'},
+  in_scadenza:{label:'⚠️ In scadenza', badge:'b-warn',   cls:'imminente'},
+  scaduto:   {label:'🚨 Scaduto',      badge:'b-danger', cls:'scaduto'},
+  disdettato:{label:'🚫 Disdettato',   badge:'b-neu',    cls:'cessato'},
+  rinnovato: {label:'🔄 Rinnovato',    badge:'b-info',   cls:'ok'},
+  cessato:   {label:'⛔ Cessato',      badge:'b-neu',    cls:'cessato'},
+};
+
+// ══ HELPERS ══
+function statoContratto(c) {
+  if (c.stato==='cessato'||c.stato==='disdettato') return c.stato;
+  if (!c.dataScadenza) return 'attivo';
+  var scad = new Date(c.dataScadenza);
+  var oggi = new Date();
+  var diff = Math.ceil((scad-oggi)/86400000);
+  // Controlla anche preavviso recesso
+  var preavv = parseInt(c.preavvisoGiorni)||60;
+  if (diff < 0)      return 'scaduto';
+  if (diff <= preavv) return 'in_scadenza';
+  return 'attivo';
+}
+
+function diffGiorniScad(c) {
+  if (!c.dataScadenza) return null;
+  return Math.ceil((new Date(c.dataScadenza)-new Date())/86400000);
+}
+
+function costoAnnuo(c) {
+  var imp = parseFloat(c.importo)||0;
+  var freq = c.frequenzaPagamento;
+  if (freq==='mensile')    return imp*12;
+  if (freq==='trimestrale')return imp*4;
+  if (freq==='semestrale') return imp*2;
+  if (freq==='annuale')    return imp;
+  return imp;
+}
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='registro')   drawRegistro();
+  if (name==='nuovo')      drawNuovo();
+  if (name==='scadenzario')drawScadenzario();
+  if (name==='scheda')     drawScheda();
+  if (name==='storico')    drawStorico();
+  if (name==='report')     drawReport();
+}
+function switchTo(name){go(name);}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  drawRegistro();
+};
+
+// ══ TAB 1 — REGISTRO ══
+function drawRegistro() {
+  var el = document.getElementById('c-registro');
+
+  var nAtt  = contratti.filter(function(c){return statoContratto(c)==='attivo'||statoContratto(c)==='rinnovato';}).length;
+  var nScad = contratti.filter(function(c){return statoContratto(c)==='scaduto';}).length;
+  var nImm  = contratti.filter(function(c){return statoContratto(c)==='in_scadenza';}).length;
+  var costoTot = contratti.filter(function(c){return statoContratto(c)!=='cessato'&&statoContratto(c)!=='disdettato';})
+                          .reduce(function(s,c){return s+costoAnnuo(c);},0);
+
+  var filtTipo  = (document.getElementById('filtTipo') ||{}).value||'tutti';
+  var filtStato = (document.getElementById('filtStato')||{}).value||'tutti';
+  var filtTesto = ((document.getElementById('filtTesto')||{}).value||'').toLowerCase().trim();
+
+  var filtrati = contratti.filter(function(c){
+    if (filtTipo!=='tutti'  && c.tipo!==filtTipo)  return false;
+    if (filtStato!=='tutti' && statoContratto(c)!==filtStato) return false;
+    if (filtTesto && !(c.titolo||'').toLowerCase().includes(filtTesto) &&
+        !(c.fornitore||'').toLowerCase().includes(filtTesto)) return false;
+    return true;
+  }).sort(function(a,b){
+    var ord={scaduto:0,in_scadenza:1,attivo:2,rinnovato:3,disdettato:4,cessato:5};
+    return (ord[statoContratto(a)]||2)-(ord[statoContratto(b)]||2);
+  });
+
+  // Alert banner
+  var alertHtml='';
+  if (nScad>0) alertHtml+='<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:0.75rem;font-size:0.875rem"><strong style="color:var(--accent)">🚨 '+nScad+' contratto/i SCADUTO/I</strong> — Rinnovare o cessare immediatamente.</div>';
+  if (nImm>0)  alertHtml+='<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;font-size:0.875rem"><strong style="color:var(--warning)">⚠️ '+nImm+' contratto/i in scadenza</strong> — Verificare il preavviso di recesso.</div>';
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Contratti totali</div><div class="cv">'+contratti.length+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Attivi</div><div class="cv gn">'+nAtt+'</div></div>' +
+    '<div class="sc r"><div class="cl">Scaduti</div><div class="cv a">'+nScad+'</div></div>' +
+    '<div class="sc g"><div class="cl">In scadenza</div><div class="cv go">'+nImm+'</div></div>' +
+    '<div class="sc k"><div class="cl">Costo annuo attivi</div><div class="cv" style="font-size:1.1rem">€ '+fmt(costoTot)+'</div></div>' +
+    '</div>' +
+
+    alertHtml +
+
+    '<div class="filtri-bar">' +
+      '<div class="fg"><label>Tipo</label><select id="filtTipo" onchange="drawRegistro()">' +
+        '<option value="tutti">Tutti</option>' +
+        Object.keys(TIPI).map(function(k){return '<option value="'+k+'"'+(filtTipo===k?' selected':'')+'>'+TIPI[k]+'</option>';}).join('') +
+      '</select></div>' +
+      '<div class="fg"><label>Stato</label><select id="filtStato" onchange="drawRegistro()">' +
+        '<option value="tutti">Tutti</option>' +
+        Object.keys(STATI_CONTR).map(function(k){return '<option value="'+k+'"'+(filtStato===k?' selected':'')+'>'+STATI_CONTR[k].label+'</option>';}).join('') +
+      '</select></div>' +
+      '<div class="fg" style="min-width:180px"><label>Cerca</label>' +
+        '<input type="text" id="filtTesto" value="'+esc(filtTesto)+'" placeholder="Titolo, fornitore..." oninput="drawRegistro()">' +
+      '</div>' +
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="resetFiltri()">↺ Reset</button>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Nuovo contratto</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="caricaEsempi()">📋 Esempi</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraRegistro()">↺ Azzera</button>' +
+    '</div>' +
+
+    (!filtrati.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(contratti.length?'Nessun contratto trovato.':'Nessun contratto registrato.')+'</p>' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuovo\')">➕ Aggiungi</button>' +
+    '</div>' :
+    filtrati.map(function(c){
+      var stato = statoContratto(c);
+      var s     = STATI_CONTR[stato]||STATI_CONTR.attivo;
+      var diff  = diffGiorniScad(c);
+      var scadFmt = c.dataScadenza?new Date(c.dataScadenza).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var diffTxt = diff===null?'Nessuna scadenza':diff<0?'Scaduto '+Math.abs(diff)+' gg fa':diff===0?'Scade oggi!':'Scade tra '+diff+' giorni';
+      var preavv  = parseInt(c.preavvisoGiorni)||60;
+      var entroPreavviso = diff!==null && diff>=0 && diff<=preavv;
+
+      return '<div class="contr-card '+s.cls+'">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">' +
+          '<div>' +
+            '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem">'+esc(TIPI[c.tipo]||c.tipo||'—')+(c.numero?' · n. '+esc(c.numero):'')+'</div>' +
+            '<div class="contr-titolo">'+esc(c.titolo)+'</div>' +
+            '<div class="contr-fornitore">'+esc(c.fornitore)+(c.delibera?' · '+esc(c.delibera):'')+'</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            (c.importo?'<div class="contr-importo">€ '+fmt(c.importo)+'</div>'+
+            '<div style="font-size:0.72rem;color:var(--muted)">'+esc(freqLabel(c.frequenzaPagamento))+(c.importo?'/rata':'')+' · € '+fmt(costoAnnuo(c))+'/anno</div>':'') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.75rem">' +
+          '<span class="badge '+s.badge+'">'+s.label+'</span>' +
+          '<span class="badge b-neu">📅 '+scadFmt+'</span>' +
+          '<span class="badge '+(stato==='scaduto'?'b-danger':stato==='in_scadenza'?'b-warn':'b-neu')+'">'+(diff!==null?diffTxt:'Nessuna scadenza')+'</span>' +
+          (entroPreavviso?'<span class="badge b-danger">⚠️ Entro preavviso '+preavv+' gg</span>':'') +
+          (c.rinnovoAuto?'<span class="badge b-info">🔄 Rinnovo auto</span>':'') +
+        '</div>' +
+        (c.note?'<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem">'+esc(c.note.substring(0,100))+(c.note.length>100?'...':'')+'</div>':'') +
+        '<div style="display:flex;gap:0.4rem;flex-wrap:wrap">' +
+          '<button class="btn btn-g btn-sm" onclick="apriScheda(\''+c.id+'\')">📄 Scheda</button>' +
+          '<button class="btn btn-g btn-sm" onclick="editingId=\''+c.id+'\';switchTo(\'nuovo\')">✏️ Modifica</button>' +
+          '<button class="btn btn-ok btn-sm" onclick="rinnovaContratto(\''+c.id+'\')">🔄 Rinnova</button>' +
+          '<button class="btn btn-sm" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent)" onclick="cessaContratto(\''+c.id+'\')">⛔ Cessa</button>' +
+          '<button style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaContratto(\''+c.id+'\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join(''));
+}
+
+function freqLabel(f){
+  return {mensile:'Mensile',trimestrale:'Trimestrale',semestrale:'Semestrale',annuale:'Annuale',unica:'Unica'}[f]||f||'—';
+}
+
+function resetFiltri(){
+  ['filtTipo','filtStato'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='tutti';});
+  var t=document.getElementById('filtTesto');if(t)t.value='';
+  drawRegistro();
+}
+
+function apriScheda(id){schedaId=id;switchTo('scheda');}
+
+function rinnovaContratto(id){
+  var c=contratti.find(function(x){return x.id===id;});
+  if(!c) return;
+  var nuovaScad=prompt('Nuova data di scadenza (AAAA-MM-GG):',c.dataScadenza||'');
+  if(!nuovaScad) return;
+  var nota=prompt('Nota rinnovo (opzionale):','')||'';
+  var vecchiaScad=c.dataScadenza;
+  c.dataScadenza=nuovaScad;
+  c.stato='rinnovato';
+  rinCount++;
+  rinnovi.push({id:'r'+rinCount,contrattoId:id,titolo:c.titolo,tipo:'rinnovo',
+    data:new Date().toISOString().split('T')[0],
+    vecchiaScad:vecchiaScad,nuovaScad:nuovaScad,nota:nota});
+  drawRegistro();
+}
+
+function cessaContratto(id){
+  var c=contratti.find(function(x){return x.id===id;});
+  if(!c) return;
+  if(!confirm('Segnare il contratto "'+c.titolo+'" come cessato?')) return;
+  var nota=prompt('Motivazione cessazione (opzionale):','')||'';
+  c.stato='cessato';
+  rinCount++;
+  rinnovi.push({id:'r'+rinCount,contrattoId:id,titolo:c.titolo,tipo:'cessazione',
+    data:new Date().toISOString().split('T')[0],nota:nota});
+  drawRegistro();
+}
+
+function eliminaContratto(id){
+  if(!confirm('Eliminare questo contratto dal registro?')) return;
+  contratti=contratti.filter(function(c){return c.id!==id;});
+  drawRegistro();
+}
+
+function azzeraRegistro(){
+  if(!confirm('Eliminare tutti i contratti e lo storico rinnovi?')) return;
+  contratti=[]; contCount=0; rinnovi=[]; rinCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+// ══ TAB 2 — NUOVO / MODIFICA ══
+function drawNuovo(){
+  var el=document.getElementById('c-nuovo');
+  var c=editingId?contratti.find(function(x){return x.id===editingId;}):null;
+  var v=function(k,def){return c?(c[k]!==undefined?c[k]:def||''):(def||'');};
+
+  el.innerHTML=
+    '<div class="sl">'+(editingId?'Modifica contratto':'Nuovo contratto')+'</div>'+
+    '<div class="card">'+
+      '<div class="r3">'+
+        fgi('fTitolo','Oggetto contratto',v('titolo'),'Es. Manutenzione ascensore')+
+        fgsel('fTipo','Tipo',v('tipo','manutenzione'),Object.keys(TIPI).map(function(k){return {v:k,l:TIPI[k]};}))+
+        fgi('fNumero','N° contratto',v('numero'),'Es. CONTR-2024-001')+
+      '</div>'+
+      '<div class="r3">'+
+        fgi('fFornitore','Fornitore / Compagnia',v('fornitore'),'Es. ElevaTech Srl')+
+        fgi('fContatti','Contatti',v('contatti'),'Es. Tel. 02 1234567')+
+        fgi('fReferente','Referente',v('referente'),'Es. Mario Rossi')+
+      '</div>'+
+      '<div class="r4">'+
+        fgd('fDataInizio','Data inizio',v('dataInizio'))+
+        fgd('fDataScadenza','Data scadenza',v('dataScadenza'))+
+        fgi('fDurata','Durata contratto',v('durata'),'Es. 1 anno, 3 anni...')+
+        fgsel('fRinnovoAuto','Rinnovo automatico',v('rinnovoAuto','no'),[{v:'no',l:'No — Rinnovo esplicito'},{v:'si',l:'Sì — Rinnovo tacito'}])+
+      '</div>'+
+      '<div class="r4">'+
+        fgn('fImporto','Importo rata (€)',v('importo'),'Es. 350')+
+        fgsel('fFrequenza','Frequenza pagamento',v('frequenzaPagamento','annuale'),[
+          {v:'mensile',l:'Mensile'},{v:'trimestrale',l:'Trimestrale'},
+          {v:'semestrale',l:'Semestrale'},{v:'annuale',l:'Annuale'},{v:'unica',l:'Unica tantum'},
+        ])+
+        fgi('fPreavviso','Preavviso recesso (gg)',v('preavvisoGiorni','60'),'Es. 60')+
+        fgi('fDelibera','Rif. delibera',v('delibera'),'Es. Del. n. 03/2024')+
+      '</div>'+
+      '<div class="r2">'+
+        '<div class="fg"><label>Oggetto / prestazioni previste</label><textarea id="fOggetto" placeholder="Descrizione dettagliata delle prestazioni previste dal contratto...">'+esc(v('oggetto'))+'</textarea></div>'+
+        '<div class="fg"><label>Condizioni di recesso</label><textarea id="fRecesso" placeholder="Es. Preavviso scritto 60 giorni prima della scadenza a mezzo raccomandata A/R...">'+esc(v('recesso'))+'</textarea></div>'+
+      '</div>'+
+      '<div class="r2">'+
+        '<div class="fg"><label>Penali e clausole particolari</label><textarea id="fPenali" placeholder="Es. Penale del 10% in caso di recesso anticipato...">'+esc(v('penali'))+'</textarea></div>'+
+        '<div class="fg"><label>Note interne</label><textarea id="fNote" placeholder="Note riservate all\'amministratore...">'+esc(v('note'))+'</textarea></div>'+
+      '</div>'+
+      '<div class="r3">'+
+        fgi('fCondominio','Condominio',v('condominio'),'Es. Condominio Via Roma 10')+
+        fgi('fAdmin','Amministratore',v('admin'),'Es. Studio Amm. Bianchi')+
+        fgsel('fStatoManuale','Stato manuale',v('stato',''),[
+          {v:'',l:'— Auto (da date) —'},{v:'attivo',l:'Attivo'},
+          {v:'disdettato',l:'Disdettato'},{v:'cessato',l:'Cessato'},
+        ])+
+      '</div>'+
+    '</div>'+
+    '<div class="brow">'+
+      '<button class="btn btn-p" onclick="salvaContratto()">💾 '+(editingId?'Aggiorna':'Salva')+'</button>'+
+      '<button class="btn btn-g" onclick="editingId=null;switchTo(\'registro\')">← Registro</button>'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraNuovo()">↺ Azzera form</button>'+
+    '</div>';
+}
+
+function fgi(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="number" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,label,value){return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">'+
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaContratto(){
+  var titolo=gv('fTitolo').trim();
+  if(!titolo){alert('Inserisci il titolo del contratto.');return;}
+  var id=editingId||'c'+(++contCount);
+  var obj={
+    id:id,titolo:titolo,tipo:gv('fTipo'),numero:gv('fNumero'),
+    fornitore:gv('fFornitore'),contatti:gv('fContatti'),referente:gv('fReferente'),
+    dataInizio:gv('fDataInizio'),dataScadenza:gv('fDataScadenza'),durata:gv('fDurata'),
+    rinnovoAuto:gv('fRinnovoAuto')==='si',
+    importo:parseFloat(gv('fImporto'))||0,frequenzaPagamento:gv('fFrequenza'),
+    preavvisoGiorni:parseInt(gv('fPreavviso'))||60,delibera:gv('fDelibera'),
+    oggetto:gv('fOggetto'),recesso:gv('fRecesso'),penali:gv('fPenali'),note:gv('fNote'),
+    condominio:gv('fCondominio'),admin:gv('fAdmin'),
+    stato:gv('fStatoManuale')||'',
+  };
+  if(editingId){var idx=contratti.findIndex(function(x){return x.id===editingId;});if(idx>=0)contratti[idx]=obj;}
+  else contratti.push(obj);
+  editingId=null;
+  switchTo('registro');
+}
+
+function azzeraNuovo(){editingId=null;drawNuovo();}
+
+// ══ TAB 3 — SCADENZARIO ══
+function drawScadenzario(){
+  var el=document.getElementById('c-scadenzario');
+  var oggi=new Date();
+
+  var conScad=contratti
+    .filter(function(c){return c.dataScadenza&&statoContratto(c)!=='cessato'&&statoContratto(c)!=='disdettato';})
+    .map(function(c){return {c:c,diff:diffGiorniScad(c),stato:statoContratto(c)};})
+    .sort(function(a,b){return a.diff-b.diff;});
+
+  el.innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa scadenzario</button>'+
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+    '</div>'+
+
+    (!conScad.length?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun contratto con scadenza definita.</p></div>':
+
+    '<div class="timeline-scad">'+
+    conScad.map(function(x){
+      var c=x.c; var diff=x.diff; var stato=x.stato;
+      var s=STATI_CONTR[stato]||STATI_CONTR.attivo;
+      var scadFmt=new Date(c.dataScadenza).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+      var diffTxt=diff<0?'🚨 Scaduto '+Math.abs(diff)+' gg fa':diff===0?'🚨 Scade OGGI':diff<=30?'⚠️ Tra '+diff+' gg':'📅 Tra '+diff+' gg';
+      var preavv=parseInt(c.preavvisoGiorni)||60;
+      var entroPreavv=diff>=0&&diff<=preavv;
+      return '<div class="tl-item '+s.cls+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;background:white;border:1px solid var(--border);border-radius:4px;padding:0.9rem 1.1rem;flex-wrap:wrap;gap:0.5rem">'+
+          '<div style="flex:1">'+
+            '<div style="font-weight:500">'+esc(c.titolo)+'</div>'+
+            '<div style="font-size:0.78rem;color:var(--muted)">'+esc(TIPI[c.tipo]||c.tipo)+' · '+esc(c.fornitore)+(c.numero?' · n. '+esc(c.numero):'')+'</div>'+
+            '<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Scadenza: '+scadFmt+' · Preavviso: '+preavv+' gg</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-weight:600;font-size:0.875rem;color:var(--'+(stato==='scaduto'?'accent':stato==='in_scadenza'?'warning':'success')+')">'+diffTxt+'</div>'+
+            (c.importo?'<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">€ '+fmt(costoAnnuo(c))+'/anno</div>':'')+
+            '<div style="display:flex;gap:0.3rem;margin-top:0.4rem;justify-content:flex-end">'+
+              (entroPreavv?'<span class="badge b-danger">⚠️ Entro preavviso</span>':'')+
+              (c.rinnovoAuto?'<span class="badge b-info">🔄 Auto</span>':'')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:0.4rem;margin-top:0.4rem;margin-left:0.5rem">'+
+          '<button class="btn btn-ok btn-sm" onclick="rinnovaContratto(\''+c.id+'\');drawScadenzario()">🔄 Rinnova</button>'+
+          '<button class="btn btn-g btn-sm" onclick="apriScheda(\''+c.id+'\')">📄 Scheda</button>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+    '</div>')+
+
+    '<div class="nb"><strong>⚠️ Attenzione al preavviso di recesso</strong>'+
+    'Per recedere da un contratto è necessario rispettare il preavviso contrattuale (solitamente 30-90 giorni prima della scadenza). '+
+    'Il mancato rispetto del preavviso comporta il rinnovo tacito del contratto per un altro periodo. '+
+    'I contratti con il badge "Entro preavviso" richiedono azione immediata.</div>';
+}
+
+// ══ TAB 4 — SCHEDA CONTRATTO ══
+function drawScheda(){
+  var el=document.getElementById('c-scheda');
+
+  var opzioni=contratti.map(function(c){
+    return '<option value="'+c.id+'"'+(schedaId===c.id?' selected':'')+'>'+esc(c.titolo)+' — '+esc(c.fornitore)+'</option>';
+  }).join('');
+
+  if(!opzioni){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun contratto registrato.</p><button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="editingId=null;switchTo(\'nuovo\')">➕ Nuovo contratto</button></div>';
+    return;
+  }
+  if(!schedaId&&contratti.length) schedaId=contratti[0].id;
+  var c=contratti.find(function(x){return x.id===schedaId;});
+
+  el.innerHTML=
+    '<div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">'+
+      '<div class="fg" style="margin:0;flex:1;min-width:240px"><label>Contratto</label>'+
+        '<select id="schedaSel" onchange="schedaId=this.value;drawScheda()">'+opzioni+'</select></div>'+
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa scheda</button>'+
+    '</div>'+
+    (c?renderScheda(c):'');
+}
+
+function renderScheda(c){
+  var stato=statoContratto(c);
+  var s=STATI_CONTR[stato]||STATI_CONTR.attivo;
+  var diff=diffGiorniScad(c);
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var diFmt=c.dataInizio?new Date(c.dataInizio).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  var dsFmt=c.dataScadenza?new Date(c.dataScadenza).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  var rinnoviContr=rinnovi.filter(function(r){return r.contrattoId===c.id;});
+
+  return '<div class="scheda-doc">'+
+    '<div class="scheda-hs">'+
+      '<span class="scheda-title">'+esc(c.titolo)+'</span>'+
+      '<span class="badge '+s.badge+'">'+s.label+'</span>'+
+    '</div>'+
+    '<div class="scheda-bd">'+
+
+    '<div class="info-grid">'+
+      ibox('Tipo contratto',TIPI[c.tipo]||c.tipo||'—')+
+      ibox('N° contratto',c.numero||'—',true)+
+      ibox('Fornitore',c.fornitore)+
+      ibox('Referente',c.referente||'—')+
+      ibox('Data inizio',diFmt)+
+      ibox('Data scadenza',dsFmt)+
+      ibox('Durata',c.durata||'—')+
+      ibox('Rinnovo automatico',c.rinnovoAuto?'Sì — Rinnovo tacito':'No — Rinnovo esplicito')+
+      ibox('Importo rata','€ '+fmt(c.importo)+' '+freqLabel(c.frequenzaPagamento))+
+      ibox('Costo annuo','€ '+fmt(costoAnnuo(c)))+
+      ibox('Preavviso recesso',c.preavvisoGiorni+' giorni')+
+      ibox('Rif. delibera',c.delibera||'—',true)+
+    '</div>'+
+
+    (diff!==null?'<div style="background:'+(stato==='scaduto'?'var(--accent-light)':stato==='in_scadenza'?'var(--gold-light)':'var(--success-light)')+';border:1px solid '+(stato==='scaduto'?'var(--accent)':stato==='in_scadenza'?'var(--gold)':'var(--success)')+';border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1rem;font-size:0.875rem">'+
+      (diff<0?'🚨 Contratto scaduto da '+Math.abs(diff)+' giorni':diff===0?'🚨 Contratto scade OGGI':'📅 Mancano '+diff+' giorni alla scadenza')+
+      (diff>=0&&diff<=(parseInt(c.preavvisoGiorni)||60)?' — <strong>Entro il preavviso di recesso</strong>':'')+
+    '</div>':'')+
+
+    (c.oggetto?'<div style="margin-bottom:1rem"><strong>Oggetto / prestazioni:</strong><br><div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.75rem 1rem;margin-top:0.4rem;font-size:0.875rem">'+esc(c.oggetto)+'</div></div>':'')+
+    (c.recesso?'<div style="margin-bottom:1rem"><strong>Condizioni di recesso:</strong><br><div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:3px;padding:0.75rem 1rem;margin-top:0.4rem;font-size:0.875rem">'+esc(c.recesso)+'</div></div>':'')+
+    (c.penali?'<div style="margin-bottom:1rem"><strong>Penali / clausole:</strong><br><div style="background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:0.75rem 1rem;margin-top:0.4rem;font-size:0.875rem">'+esc(c.penali)+'</div></div>':'')+
+
+    (rinnoviContr.length?
+    '<div style="margin-top:1rem"><strong>Storico rinnovi e modifiche:</strong>'+
+    rinnoviContr.map(function(r){
+      var tipoIco=r.tipo==='rinnovo'?'🔄':r.tipo==='cessazione'?'⛔':'📝';
+      return '<div class="rinnovo-item">'+
+        '<span class="rinnovo-data">'+esc(r.data)+'</span>'+
+        '<span class="rinnovo-desc">'+tipoIco+' <strong>'+esc(r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1))+'</strong>'+
+        (r.vecchiaScad?' — da '+esc(r.vecchiaScad):'')+
+        (r.nuovaScad?' a '+esc(r.nuovaScad):'')+
+        (r.nota?' — '+esc(r.nota):'')+
+        '</span></div>';
+    }).join('')+'</div>':'') +
+
+    '<div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">'+
+      '<span>'+esc(c.condominio||'Condominio')+(c.admin?' · '+esc(c.admin):'')+'</span>'+
+      '<span>'+oggi+'</span>'+
+    '</div>'+
+    '</div></div>';
+}
+
+function ibox(label,val,mono){
+  return '<div class="ibox"><div class="ibox-label">'+label+'</div>'+
+    '<div class="ibox-val'+(mono?' style="font-family:\'DM Mono\',monospace"':'')+'">'+esc(String(val||'—'))+'</div></div>';
+}
+
+// ══ TAB 5 — STORICO RINNOVI ══
+function drawStorico(){
+  var el=document.getElementById('c-storico');
+
+  el.innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraStorico()">↺ Azzera storico</button>'+
+    '</div>'+
+    (!rinnovi.length?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun rinnovo o modifica registrata. Usa i pulsanti "Rinnova" o "Cessa" nel registro.</p></div>':
+    rinnovi.slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(r){
+      var tipoIco=r.tipo==='rinnovo'?'🔄':r.tipo==='cessazione'?'⛔':'📝';
+      var dFmt=r.data?new Date(r.data).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+      return '<div class="rinnovo-item" style="padding:0.75rem 1rem;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem">'+
+        '<span class="rinnovo-data">'+dFmt+'</span>'+
+        '<div class="rinnovo-desc">'+
+          '<div><strong>'+tipoIco+' '+esc(r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1))+'</strong> — '+esc(r.titolo)+'</div>'+
+          (r.vecchiaScad||r.nuovaScad?'<div style="font-size:0.75rem;color:var(--muted)">'+(r.vecchiaScad?'Da: '+esc(r.vecchiaScad):'')+' '+(r.nuovaScad?'→ A: '+esc(r.nuovaScad):'')+'</div>':'')+
+          (r.nota?'<div style="font-size:0.78rem;color:var(--muted);font-style:italic">'+esc(r.nota)+'</div>':'')+
+        '</div>'+
+        '<button style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem" onclick="eliminaRinnovo(\''+r.id+'\')">✕</button>'+
+      '</div>';
+    }).join(''));
+}
+
+function eliminaRinnovo(id){
+  rinnovi=rinnovi.filter(function(r){return r.id!==id;});
+  drawStorico();
+}
+
+function azzeraStorico(){
+  if(!confirm('Cancellare tutto lo storico rinnovi?')) return;
+  rinnovi=[]; rinCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='storico'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='storico'?' on':'');
+  });
+  drawStorico();
+}
+
+// ══ TAB 6 — REPORT ══
+function drawReport(){
+  var el=document.getElementById('c-report');
+  var oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var attivi=contratti.filter(function(c){var s=statoContratto(c);return s!=='cessato'&&s!=='disdettato';});
+  var costoTot=attivi.reduce(function(s,c){return s+costoAnnuo(c);},0);
+  var nScad=contratti.filter(function(c){return statoContratto(c)==='scaduto';}).length;
+  var nImm=contratti.filter(function(c){return statoContratto(c)==='in_scadenza';}).length;
+
+  el.innerHTML=
+    '<div class="brow" style="margin-bottom:1.5rem">'+
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
+      '<button class="btn btn-g btn-sm" onclick="azzeraReport()">↺ Azzera tutto</button>'+
+    '</div>'+
+
+    (!contratti.length?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun contratto da reportare.</p></div>':
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">'+
+    '<div style="background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between">'+
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report Contratti — Scadenzario</span>'+
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>'+
+    '</div>'+
+    '<div style="padding:2rem">'+
+
+    '<div class="sgrid" style="margin-bottom:1.5rem">'+
+    '<div class="sc k"><div class="cl">Contratti totali</div><div class="cv">'+contratti.length+'</div></div>'+
+    '<div class="sc gn"><div class="cl">Attivi</div><div class="cv gn">'+attivi.length+'</div></div>'+
+    '<div class="sc r"><div class="cl">Scaduti</div><div class="cv a">'+nScad+'</div></div>'+
+    '<div class="sc g"><div class="cl">In scadenza</div><div class="cv go">'+nImm+'</div></div>'+
+    '<div class="sc k"><div class="cl">Costo annuo totale</div><div class="cv" style="font-size:1.1rem">€ '+fmt(costoTot)+'</div></div>'+
+    '</div>'+
+
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">'+
+    '<thead><tr style="background:var(--ink);color:var(--paper)">'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Contratto</th>'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Tipo</th>'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>'+
+      '<th style="padding:0.7rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Costo/anno</th>'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Scadenza</th>'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Preavviso</th>'+
+      '<th style="padding:0.7rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>'+
+    '</tr></thead><tbody>'+
+    contratti.map(function(c){
+      var stato=statoContratto(c);
+      var s=STATI_CONTR[stato]||STATI_CONTR.attivo;
+      var diff=diffGiorniScad(c);
+      var scadFmt=c.dataScadenza?new Date(c.dataScadenza).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var diffTxt=diff===null?'—':diff<0?'Scaduto':diff<=30?'Tra '+diff+' gg':'Tra '+diff+' gg';
+      return '<tr style="border-bottom:1px solid var(--cream);'+(stato==='scaduto'?'background:#fff8f8':stato==='in_scadenza'?'background:#fffdf0':stato==='cessato'||stato==='disdettato'?'opacity:0.6':'')+'">' +
+        '<td style="padding:0.55rem 1rem;font-weight:500">'+esc(c.titolo)+(c.numero?'<br><span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--muted)">'+esc(c.numero)+'</span>':'')+'</td>'+
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem">'+esc(TIPI[c.tipo]||c.tipo||'—')+'</td>'+
+        '<td style="padding:0.55rem 1rem;font-size:0.82rem">'+esc(c.fornitore)+'</td>'+
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right;font-weight:600">'+(costoAnnuo(c)?'€ '+fmt(costoAnnuo(c)):'—')+'</td>'+
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+scadFmt+'<br><span style="color:var(--'+(stato==='scaduto'?'accent':stato==='in_scadenza'?'warning':'muted')+')">'+diffTxt+'</span></td>'+
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem;color:var(--muted)">'+c.preavvisoGiorni+' gg'+(c.rinnovoAuto?' · 🔄 Auto':'')+'</td>'+
+        '<td style="padding:0.55rem 1rem"><span class="badge '+s.badge+'">'+s.label+'</span></td>'+
+        '</tr>';
+    }).join('')+
+    '<tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">'+
+      '<td colspan="3" style="padding:0.6rem 1rem">TOTALE COSTO ANNUO ATTIVI</td>'+
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(costoTot)+'</td>'+
+      '<td colspan="3"></td>'+
+    '</tr>'+
+    '</tbody></table>'+
+    '<div style="padding-top:1rem;border-top:1px solid var(--border);margin-top:1.5rem;font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>'+
+    '</div></div>');
+}
+
+function azzeraReport(){
+  if(!confirm('Azzera tutto: contratti, storico rinnovi e impostazioni?')) return;
+  contratti=[]; contCount=0; rinnovi=[]; rinCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+// ══ ESEMPI ══
+function caricaEsempi(){
+  contratti=[]; contCount=0;
+  var oggi=new Date();
+  function da(mesi){var d=new Date(oggi);d.setMonth(d.getMonth()+mesi);return d.toISOString().split('T')[0];}
+  var def=[
+    {titolo:'Manutenzione ascensore',tipo:'ascensore',numero:'CONTR-2023-001',fornitore:'ElevaTech Srl',contatti:'Tel. 02 5555555',referente:'Ing. Carlo Neri',dataInizio:'2023-01-01',dataScadenza:da(2),durata:'3 anni',rinnovoAuto:true,importo:3200,frequenzaPagamento:'annuale',preavvisoGiorni:90,delibera:'Del. n. 03/2023',oggetto:'Manutenzione ordinaria semestrale, revisione quinquennale inclusa.',recesso:'Preavviso scritto 90 giorni prima a mezzo raccomandata A/R.',penali:'',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',stato:''},
+    {titolo:'Polizza assicurativa fabbricato',tipo:'assicurazione',numero:'POL-2024-045',fornitore:'Generali Assicurazioni',contatti:'Agente: Mario Rossi Tel. 02 1234567',referente:'Mario Rossi',dataInizio:'2024-01-01',dataScadenza:da(8),durata:'1 anno',rinnovoAuto:true,importo:2800,frequenzaPagamento:'semestrale',preavvisoGiorni:60,delibera:'Del. n. 01/2024',oggetto:'Polizza incendio e scoppio, RC condominiale, tutela legale.',recesso:'Disdetta entro 60 giorni dalla scadenza.',penali:'',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',stato:''},
+    {titolo:'Pulizie scale e parti comuni',tipo:'pulizie',numero:'CONTR-2024-003',fornitore:'Pulizie Verdi Sas',contatti:'Tel. 02 9876543',referente:'Anna Verdi',dataInizio:'2024-03-01',dataScadenza:da(-5),durata:'1 anno',rinnovoAuto:false,importo:280,frequenzaPagamento:'mensile',preavvisoGiorni:30,delibera:'',oggetto:'Pulizia scale 2 volte/settimana, parti comuni 1 volta/settimana.',recesso:'Preavviso scritto 30 giorni.',penali:'',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',stato:''},
+    {titolo:'Fornitura energia elettrica parti comuni',tipo:'energia',numero:'FON-2023-088',fornitore:'Enel Energia Spa',contatti:'Servizio clienti 800.900.800',referente:'',dataInizio:'2023-06-01',dataScadenza:da(14),durata:'2 anni',rinnovoAuto:false,importo:180,frequenzaPagamento:'mensile',preavvisoGiorni:30,delibera:'',oggetto:'Fornitura energia elettrica scale, garage e parti comuni.',recesso:'Secondo le condizioni del fornitore.',penali:'',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',stato:''},
+    {titolo:'Manutenzione impianto antincendio',tipo:'manutenzione',numero:'CONTR-2024-007',fornitore:'SafeFire Srl',contatti:'Tel. 02 7777777',referente:'Luca Safe',dataInizio:'2024-01-15',dataScadenza:da(1),durata:'1 anno',rinnovoAuto:false,importo:600,frequenzaPagamento:'annuale',preavvisoGiorni:60,delibera:'Del. n. 02/2024',oggetto:'Verifica semestrale estintori, idranti e impianto rilevazione fumo.',recesso:'Preavviso 60 giorni.',penali:'',condominio:'Condominio Via Roma 10',admin:'Studio Amm. Bianchi',stato:''},
+  ];
+  def.forEach(function(d){contCount++;contratti.push(Object.assign({id:'c'+contCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='registro'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='registro'?' on':'');
+  });
+  drawRegistro();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  if(!contratti.length){alert('Nessun contratto da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(
+    [['SCADENZARIO CONTRATTI'],[],
+     ['Titolo','Tipo','N°','Fornitore','Inizio','Scadenza','Durata','Rinnovo auto','Importo €','Frequenza','Costo annuo €','Preavviso gg','Delibera','Stato']].concat(
+    contratti.map(function(c){
+      var stato=statoContratto(c);
+      return [c.titolo,TIPI[c.tipo]||c.tipo,c.numero,c.fornitore,c.dataInizio,c.dataScadenza,
+              c.durata,c.rinnovoAuto?'Sì':'No',c.importo,freqLabel(c.frequenzaPagamento),
+              costoAnnuo(c),c.preavvisoGiorni,c.delibera,
+              STATI_CONTR[stato]?STATI_CONTR[stato].label:stato];
+    }))
+  );
+  ws['!cols']=[28,18,14,24,10,10,10,10,10,12,12,10,14,14].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws,'Contratti');
+  if(rinnovi.length){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['STORICO RINNOVI'],[],['Data','Tipo','Contratto','Da scadenza','A scadenza','Note']].concat(
+      rinnovi.map(function(r){return [r.data,r.tipo,r.titolo,r.vecchiaScad||'',r.nuovaScad||'',r.nota];})));
+    ws2['!cols']=[10,12,28,10,10,30].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Storico Rinnovi');
+  }
+  XLSX.writeFile(wb,'CondoKit_Contratti_'+new Date().getFullYear()+'.xlsx');
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>

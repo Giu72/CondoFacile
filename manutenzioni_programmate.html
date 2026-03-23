@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<script src="condokit-data-layer.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoKit — Manutenzioni Programmate</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8402a;--accent-light:#e8d5d0;--gold:#b8860b;--gold-light:#f0e6c0;--border:#c8bfaa;--muted:#7a7060;--success:#2a6640;--success-light:#d0e8d8;--warning:#8b4a00;--shadow:rgba(26,26,46,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+.navbar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.navbar-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);text-decoration:none;padding:0.9rem 0;}
+.navbar-logo em{color:var(--accent);font-style:italic;}
+.nav-links{display:flex;gap:0.25rem;align-items:center;}
+.nav-link{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 0.9rem;border-radius:3px;transition:all 0.15s;}
+.nav-link:hover{color:var(--ink);background:var(--cream);}
+.header{background:var(--ink);color:var(--paper);padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border:2px solid rgba(200,190,170,0.15);border-radius:50%;}
+.header::after{content:'';position:absolute;top:20px;right:60px;width:120px;height:120px;border:1px solid rgba(200,190,170,0.1);border-radius:50%;}
+.header-eyebrow{font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--border);margin-bottom:0.6rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;line-height:1.15;margin-bottom:0.5rem;}
+.header h1 em{color:#e8b090;font-style:italic;}
+.header-sub{font-size:0.9rem;color:var(--border);font-weight:300;max-width:520px;}
+.main{max-width:1300px;margin:0 auto;padding:2rem 2rem 4rem;}
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:2rem;flex-wrap:wrap;}
+.tab-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.8rem 1.1rem;cursor:pointer;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);background:var(--cream);}
+.tab-btn.on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+.panel{display:none;}.panel.on{display:block;}
+.sl{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.5rem;box-shadow:0 2px 8px var(--shadow);margin-bottom:1.5rem;}
+.fg{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{background:var(--paper);border:1px solid var(--border);border-radius:3px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:var(--ink);appearance:none;transition:border-color 0.2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);}
+.fg textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.r4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+.btn{padding:0.65rem 1.3rem;border-radius:3px;border:none;font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p{background:var(--accent);color:white;}.btn-p:hover{background:#a03020;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:var(--paper);}.btn-s:hover{background:#2d2d4a;transform:translateY(-1px);}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-g:hover{background:var(--cream);color:var(--ink);}
+.btn-ok{background:var(--success);color:white;}.btn-ok:hover{background:#1e4d30;transform:translateY(-1px);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.brow{display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.tw{background:white;border:1px solid var(--border);border-radius:4px;overflow-x:auto;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead tr{background:var(--ink);color:var(--paper);}
+thead th{padding:0.8rem 1rem;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:400;white-space:nowrap;}
+thead th:first-child{padding-left:1.5rem;}
+tbody tr{border-bottom:1px solid var(--cream);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf8f4;}
+tbody td{padding:0.6rem 1rem;vertical-align:middle;}
+tbody td:first-child{padding-left:1.5rem;}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:2px;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:500;white-space:nowrap;}
+.b-ok{background:var(--success-light);color:var(--success);}
+.b-warn{background:var(--gold-light);color:var(--warning);}
+.b-danger{background:var(--accent-light);color:var(--accent);}
+.b-info{background:#d0e8f0;color:#1a4080;}
+.b-neu{background:var(--cream);color:var(--muted);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:1rem 1.4rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sc.gn::before{background:var(--success);}.sc.r::before{background:var(--accent);}
+.sc.g::before{background:var(--gold);}.sc.k::before{background:var(--ink);}
+.cl{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.cv{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--ink);line-height:1;}
+.cv.gn{color:var(--success);}.cv.a{color:var(--accent);}.cv.go{color:var(--gold);}
+
+/* MANUTENZIONE CARD */
+.man-card{background:white;border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.5rem;margin-bottom:0.85rem;box-shadow:0 2px 8px var(--shadow);border-left:4px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;transition:box-shadow 0.15s;}
+.man-card:hover{box-shadow:0 4px 16px var(--shadow);}
+.man-card.scaduta{border-left-color:var(--accent);background:#fff8f8;}
+.man-card.imminente{border-left-color:var(--gold);background:#fffdf0;}
+.man-card.ok{border-left-color:var(--success);}
+.man-card.completata{border-left-color:var(--muted);opacity:0.75;}
+.man-titolo{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:0.2rem;}
+.man-meta{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);}
+.man-scad{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:600;}
+.man-scad.r{color:var(--accent);}
+.man-scad.g{color:var(--gold);}
+.man-scad.ok{color:var(--success);}
+
+/* CALENDARIO */
+.cal-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:0.5rem;margin-bottom:1.5rem;}
+.cal-mese{background:white;border:1px solid var(--border);border-radius:4px;padding:0.75rem;min-height:140px;}
+.cal-mese-header{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;text-align:center;}
+.cal-evento{font-size:0.65rem;padding:0.2rem 0.4rem;border-radius:2px;margin-bottom:0.2rem;line-height:1.3;cursor:default;}
+.cal-evento.scaduta{background:var(--accent-light);color:var(--accent);}
+.cal-evento.imminente{background:var(--gold-light);color:var(--warning);}
+.cal-evento.ok{background:var(--success-light);color:var(--success);}
+.cal-evento.passata{background:var(--cream);color:var(--muted);}
+
+/* STORICO */
+.stor-item{display:flex;align-items:flex-start;gap:1rem;padding:0.75rem 1rem;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem;}
+.stor-data{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);white-space:nowrap;min-width:85px;}
+.stor-body{flex:1;}
+.stor-titolo{font-weight:500;font-size:0.875rem;}
+.stor-meta{font-size:0.75rem;color:var(--muted);margin-top:0.15rem;}
+
+.nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
+.nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
+@media print{.navbar,.tab-bar,.brow,.page-footer,.no-print{display:none!important;}.main{padding:0;}body{background:white;}.cal-grid{grid-template-columns:repeat(6,1fr)!important;}}
+.page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
+  <div class="nav-links">
+    <a class="nav-link" href="ordini_di_lavoro.html">🔧 Ordini lavoro</a>
+    <a class="nav-link" href="bonifici_fornitori.html">💳 Fornitori</a>
+    <a class="nav-link" href="index.html">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-eyebrow">Fornitori e Manutenzioni · Modulo 3.4</div>
+  <h1>Manutenzioni<br><em>Programmate</em></h1>
+  <p class="header-sub">Piano di manutenzione con scadenzario automatico, alert interventi in scadenza, storico eseguiti e report annuale.</p>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <button class="tab-btn on" id="tb-piano"      onclick="go('piano')">📋 1 · Piano</button>
+    <button class="tab-btn"   id="tb-nuova"       onclick="go('nuova')">➕ 2 · Nuova Attività</button>
+    <button class="tab-btn"   id="tb-scadenzario" onclick="go('scadenzario')">🗓️ 3 · Scadenzario</button>
+    <button class="tab-btn"   id="tb-calendario"  onclick="go('calendario')">📅 4 · Calendario</button>
+    <button class="tab-btn"   id="tb-storico"     onclick="go('storico')">📂 5 · Storico</button>
+    <button class="tab-btn"   id="tb-report"      onclick="go('report')">📊 6 · Report</button>
+  </div>
+
+  <div class="panel on" id="p-piano">      <div id="c-piano"></div>      </div>
+  <div class="panel"    id="p-nuova">      <div id="c-nuova"></div>      </div>
+  <div class="panel"    id="p-scadenzario"><div id="c-scadenzario"></div></div>
+  <div class="panel"    id="p-calendario"> <div id="c-calendario"></div> </div>
+  <div class="panel"    id="p-storico">    <div id="c-storico"></div>    </div>
+  <div class="panel"    id="p-report">     <div id="c-report"></div>     </div>
+</div>
+
+<div class="page-footer">CondoKit · Manutenzioni Programmate · Beta · Modulo 3.4</div>
+
+<script>
+var PANELS   = ['piano','nuova','scadenzario','calendario','storico','report'];
+var attivita = []; // piano di manutenzione
+var storico  = []; // interventi eseguiti
+var actCount = 0;
+var storCount= 0;
+var editingId= null;
+
+var FREQUENZE = {
+  mensile:      {label:'Mensile',       mesi:1},
+  bimestrale:   {label:'Bimestrale',    mesi:2},
+  trimestrale:  {label:'Trimestrale',   mesi:3},
+  semestrale:   {label:'Semestrale',    mesi:6},
+  annuale:      {label:'Annuale',       mesi:12},
+  biennale:     {label:'Biennale',      mesi:24},
+  quinquennale: {label:'Quinquennale',  mesi:60},
+  personalizzata:{label:'Personalizzata',mesi:0},
+};
+
+var CATEGORIE_MAN = {
+  ascensore:   '🛗 Ascensore',
+  caldaia:     '🔥 Caldaia/Impianto termico',
+  idraulica:   '💧 Impianto idraulico',
+  elettrico:   '⚡ Impianto elettrico',
+  verde:       '🌿 Verde/Giardinaggio',
+  pulizie:     '🧹 Pulizie parti comuni',
+  antincendio: '🔥 Antincendio',
+  cancelli:    '🚪 Cancelli/Portoni',
+  tetto:       '🏠 Tetto/Copertura',
+  facciata:    '🏢 Facciata',
+  piscina:     '🏊 Piscina',
+  altro:       '🔧 Altro',
+};
+
+var MESI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+// ══ HELPERS ══
+function prossimaScadenza(a) {
+  if (!a.ultimaEsecuzione && !a.dataInizio) return null;
+  var base = a.ultimaEsecuzione || a.dataInizio;
+  var d    = new Date(base);
+  var mesi = a.frequenza==='personalizzata' ? (parseInt(a.freqMesi)||1) : (FREQUENZE[a.frequenza]||{mesi:12}).mesi;
+  d.setMonth(d.getMonth()+mesi);
+  return d;
+}
+
+function statoScadenza(a) {
+  var scad = prossimaScadenza(a);
+  if (!scad) return 'ok';
+  var oggi  = new Date();
+  var diff  = Math.ceil((scad-oggi)/86400000);
+  if (diff < 0)  return 'scaduta';
+  if (diff <= 30) return 'imminente';
+  return 'ok';
+}
+
+function diffGiorni(a) {
+  var scad = prossimaScadenza(a);
+  if (!scad) return null;
+  return Math.ceil((scad - new Date())/86400000);
+}
+
+// ══ TAB SYSTEM ══
+function go(name) {
+  PANELS.forEach(function(n) {
+    document.getElementById('p-'+n).style.display = n===name ? 'block' : 'none';
+    document.getElementById('tb-'+n).className = 'tab-btn'+(n===name?' on':'');
+  });
+  if (name==='piano')       drawPiano();
+  if (name==='nuova')       drawNuova();
+  if (name==='scadenzario') drawScadenzario();
+  if (name==='calendario')  drawCalendario();
+  if (name==='storico')     drawStorico();
+  if (name==='report')      drawReport();
+}
+function switchTo(name){go(name);}
+
+window.onload = function() {
+  PANELS.forEach(function(n,i) {
+    document.getElementById('p-'+n).style.display = i===0?'block':'none';
+  });
+  drawPiano();
+};
+
+// ══ TAB 1 — PIANO ══
+function drawPiano() {
+  var el = document.getElementById('c-piano');
+
+  var nScad = attivita.filter(function(a){return statoScadenza(a)==='scaduta';}).length;
+  var nImm  = attivita.filter(function(a){return statoScadenza(a)==='imminente';}).length;
+  var nOk   = attivita.filter(function(a){return statoScadenza(a)==='ok';}).length;
+
+  // Filtro categoria
+  var filtCat = (document.getElementById('filtCat')||{}).value||'tutti';
+
+  var filtrate = attivita.filter(function(a){
+    return filtCat==='tutti' || a.categoria===filtCat;
+  }).sort(function(a,b){
+    var ord={scaduta:0,imminente:1,ok:2};
+    return (ord[statoScadenza(a)]||2)-(ord[statoScadenza(b)]||2);
+  });
+
+  // Banner alert
+  var alertHtml='';
+  if (nScad>0) alertHtml+='<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:0.75rem;font-size:0.875rem"><strong style="color:var(--accent)">🚨 '+nScad+' intervento/i SCADUTO/I</strong> — Pianificare immediatamente.</div>';
+  if (nImm>0)  alertHtml+='<div style="background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;font-size:0.875rem"><strong style="color:var(--warning)">⚠️ '+nImm+' intervento/i in scadenza entro 30 giorni</strong></div>';
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Attività nel piano</div><div class="cv">'+attivita.length+'</div></div>' +
+    '<div class="sc r"><div class="cl">Scadute</div><div class="cv a">'+nScad+'</div></div>' +
+    '<div class="sc g"><div class="cl">In scadenza (30gg)</div><div class="cv go">'+nImm+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Nei tempi</div><div class="cv gn">'+nOk+'</div></div>' +
+    '</div>' +
+
+    alertHtml +
+
+    '<div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">' +
+      '<div class="fg" style="margin:0;min-width:180px"><label>Categoria</label>' +
+        '<select id="filtCat" onchange="drawPiano()">' +
+          '<option value="tutti">Tutte</option>' +
+          Object.keys(CATEGORIE_MAN).map(function(k){return '<option value="'+k+'"'+(filtCat===k?' selected':'')+'>'+CATEGORIE_MAN[k]+'</option>';}).join('') +
+        '</select></div>' +
+      '<button class="btn btn-p btn-sm" style="align-self:flex-end" onclick="editingId=null;switchTo(\'nuova\')">➕ Nuova attività</button>' +
+      '<button class="btn btn-ok btn-sm" style="align-self:flex-end" onclick="expExcel()">📊 Excel</button>' +
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="caricaEsempi()">📋 Esempi</button>' +
+      '<button class="btn btn-g btn-sm" style="align-self:flex-end" onclick="azzeraPiano()">↺ Azzera</button>' +
+    '</div>' +
+
+    (!filtrate.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem">' +
+      '<div style="font-size:2.5rem;margin-bottom:0.75rem">📋</div>' +
+      '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">'+(attivita.length?'Nessuna attività per la categoria selezionata.':'Nessuna attività nel piano. Aggiungine una!')+'</p>' +
+      '<button class="btn btn-p btn-sm" onclick="editingId=null;switchTo(\'nuova\')">➕ Aggiungi</button>' +
+    '</div>' :
+    filtrate.map(function(a) {
+      var stato = statoScadenza(a);
+      var diff  = diffGiorni(a);
+      var scad  = prossimaScadenza(a);
+      var scadFmt = scad ? scad.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var freqLabel = a.frequenza==='personalizzata' ? 'ogni '+a.freqMesi+' mesi' : (FREQUENZE[a.frequenza]||{label:'—'}).label;
+      var diffTxt = diff===null ? '—' : diff<0 ? 'Scaduta '+Math.abs(diff)+' gg fa' : diff===0 ? 'Scade oggi!' : 'Tra '+diff+' giorni';
+      var catLabel = CATEGORIE_MAN[a.categoria]||a.categoria||'—';
+
+      return '<div class="man-card '+stato+'">' +
+        '<div style="flex:1">' +
+          '<div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.3rem;flex-wrap:wrap">' +
+            '<span style="font-size:0.82rem;color:var(--muted)">'+catLabel+'</span>' +
+            (a.obbligatoria?'<span class="badge b-danger">⚠️ Obbligatoria</span>':'') +
+          '</div>' +
+          '<div class="man-titolo">'+esc(a.titolo)+'</div>' +
+          '<div class="man-meta">'+freqLabel+(a.fornitore?' · '+esc(a.fornitore):'')+(a.odl?' · OdL '+esc(a.odl):'')+'</div>' +
+          (a.note?'<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">'+esc(a.note.substring(0,80))+'</div>':'') +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0">' +
+          '<div class="man-scad '+(stato==='scaduta'?'r':stato==='imminente'?'g':'ok')+'">'+diffTxt+'</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Pross.: '+scadFmt+'</div>' +
+          (a.ultimaEsecuzione?'<div style="font-size:0.72rem;color:var(--muted)">Ult.: '+new Date(a.ultimaEsecuzione).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})+'</div>':'') +
+          '<div style="display:flex;gap:0.4rem;margin-top:0.5rem;justify-content:flex-end;flex-wrap:wrap">' +
+            '<button class="btn btn-ok btn-sm" onclick="eseguiIntervento(\''+a.id+'\')">✅ Eseguito</button>' +
+            '<button class="btn btn-g btn-sm" onclick="editingId=\''+a.id+'\';switchTo(\'nuova\')">✏️</button>' +
+            '<button style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem;padding:0.2rem 0.4rem" onclick="eliminaAttivita(\''+a.id+'\')">✕</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join(''));
+}
+
+function eseguiIntervento(id) {
+  var a = attivita.find(function(x){return x.id===id;});
+  if (!a) return;
+  var note = prompt('Note intervento (opzionale):','')||'';
+  var costo= prompt('Costo intervento (€, opzionale):','')||'';
+  var oggi  = new Date().toISOString().split('T')[0];
+  a.ultimaEsecuzione = oggi;
+  storCount++;
+  storico.push({
+    id:'st'+storCount, attivitaId:id, titolo:a.titolo,
+    categoria:a.categoria, data:oggi, fornitore:a.fornitore||'',
+    costo:parseFloat(costo)||0, note:note,
+  });
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='piano'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='piano'?' on':'');
+  });
+  drawPiano();
+}
+
+function eliminaAttivita(id) {
+  if (!confirm('Eliminare questa attività dal piano?')) return;
+  attivita=attivita.filter(function(a){return a.id!==id;});
+  drawPiano();
+}
+
+function azzeraPiano() {
+  if (!confirm('Azzerare il piano di manutenzione?')) return;
+  attivita=[]; actCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='piano'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='piano'?' on':'');
+  });
+  drawPiano();
+}
+
+// ══ TAB 2 — NUOVA ATTIVITÀ ══
+function drawNuova() {
+  var el = document.getElementById('c-nuova');
+  var a  = editingId ? attivita.find(function(x){return x.id===editingId;}) : null;
+  var v  = function(k,def){return a?(a[k]!==undefined?a[k]:def||''):(def||'');};
+
+  el.innerHTML =
+    '<div class="sl">'+(editingId?'Modifica attività':'Nuova attività di manutenzione')+'</div>' +
+    '<div class="card">' +
+      '<div class="r3">' +
+        fgsel('fCategoria','Categoria',v('categoria','ascensore'),Object.keys(CATEGORIE_MAN).map(function(k){return {v:k,l:CATEGORIE_MAN[k]};})) +
+        fgi('fTitolo','Titolo intervento',v('titolo'),'Es. Revisione ascensore') +
+        fgsel('fFrequenza','Frequenza',v('frequenza','annuale'),Object.keys(FREQUENZE).map(function(k){return {v:k,l:FREQUENZE[k].label};})) +
+      '</div>' +
+      '<div id="freqPers" style="'+(v('frequenza')==='personalizzata'?'':'display:none')+'"><div class="r4">' +
+        fgn('fFreqMesi','Ogni N mesi',v('freqMesi',1),'Es. 4') +
+      '</div></div>' +
+      '<div class="r4">' +
+        fgd('fDataInizio','Prima scadenza / inizio',v('dataInizio')) +
+        fgd('fUltimaEsec','Ultima esecuzione',v('ultimaEsecuzione')) +
+        fgi('fFornitore','Fornitore abituale',v('fornitore'),'Es. ElevaTech Srl') +
+        fgi('fOdl','Rif. ordine di lavoro',v('odl'),'Es. OdL-003-2025') +
+      '</div>' +
+      '<div class="r3">' +
+        fgn('fCostoPrev','Costo previsto (€)',v('costoPrev'),'Es. 350') +
+        fgi('fCondominio','Condominio',v('condominio'),'Es. Condominio Via Roma 10') +
+        '<div class="fg"><label>Obbligatoria per legge</label>' +
+          '<select id="fObbligatoria">' +
+            '<option value="0"'+(v('obbligatoria',false)?'':' selected')+'>No</option>' +
+            '<option value="1"'+(v('obbligatoria',false)?' selected':'')+'>Sì — Obbligo normativo</option>' +
+          '</select></div>' +
+      '</div>' +
+      '<div class="fg"><label>Note / istruzioni</label>' +
+        '<textarea id="fNote" placeholder="Es. Contattare ElevaTech almeno 15 giorni prima. Richiedere verbale di revisione.">'+esc(v('note'))+'</textarea></div>' +
+    '</div>' +
+
+    '<div class="brow">' +
+      '<button class="btn btn-p" onclick="salvaAttivita()">💾 '+(editingId?'Aggiorna':'Salva')+'</button>' +
+      '<button class="btn btn-g" onclick="editingId=null;switchTo(\'piano\')">← Piano</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraNuova()">↺ Azzera form</button>' +
+    '</div>';
+
+  // Mostra/nascondi mesi personalizzati
+  setTimeout(function(){
+    var sel=document.getElementById('fFrequenza');
+    if(sel){
+      sel.addEventListener('change',function(){
+        var fp=document.getElementById('freqPers');
+        if(fp) fp.style.display=this.value==='personalizzata'?'block':'none';
+      });
+    }
+  },50);
+}
+
+function fgi(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="text" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'"></div>';}
+function fgn(id,label,value,ph){return '<div class="fg"><label>'+label+'</label><input type="number" id="'+id+'" value="'+esc(value)+'" placeholder="'+ph+'" min="0" step="0.01"></div>';}
+function fgd(id,label,value){return '<div class="fg"><label>'+label+'</label><input type="date" id="'+id+'" value="'+esc(value)+'"></div>';}
+function fgsel(id,label,value,opts){
+  return '<div class="fg"><label>'+label+'</label><select id="'+id+'">' +
+    opts.map(function(o){return '<option value="'+o.v+'"'+(value===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select></div>';
+}
+function gv(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaAttivita() {
+  var titolo=gv('fTitolo').trim();
+  if(!titolo){alert('Inserisci il titolo dell\'intervento.');return;}
+  var id=editingId||'a'+(++actCount);
+  var obj={
+    id:id, categoria:gv('fCategoria'), titolo:titolo,
+    frequenza:gv('fFrequenza'), freqMesi:parseInt(gv('fFreqMesi'))||1,
+    dataInizio:gv('fDataInizio'), ultimaEsecuzione:gv('fUltimaEsec'),
+    fornitore:gv('fFornitore'), odl:gv('fOdl'),
+    costoPrev:parseFloat(gv('fCostoPrev'))||0,
+    condominio:gv('fCondominio'),
+    obbligatoria:gv('fObbligatoria')==='1',
+    note:gv('fNote'),
+  };
+  if(editingId){var idx=attivita.findIndex(function(x){return x.id===editingId;});if(idx>=0)attivita[idx]=obj;}
+  else attivita.push(obj);
+  editingId=null;
+  switchTo('piano');
+}
+
+function azzeraNuova(){editingId=null;drawNuova();}
+
+// ══ TAB 3 — SCADENZARIO ══
+function drawScadenzario() {
+  var el = document.getElementById('c-scadenzario');
+  var oggi = new Date();
+
+  var conScad = attivita.map(function(a){
+    return {a:a, scad:prossimaScadenza(a), stato:statoScadenza(a), diff:diffGiorni(a)};
+  }).filter(function(x){return x.scad!==null;})
+    .sort(function(x,y){return x.scad-y.scad;});
+
+  el.innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa scadenzario</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>' +
+    '</div>' +
+
+    (!conScad.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessuna attività con scadenza calcolabile. Aggiungi le attività con data di prima scadenza o ultima esecuzione.</p></div>' :
+
+    '<div class="sl">Prossimi 90 giorni</div>' +
+    renderScadGroup(conScad.filter(function(x){return x.diff!==null&&x.diff>=0&&x.diff<=90;})) +
+    '<div class="sl" style="margin-top:1.5rem">Scadute</div>' +
+    renderScadGroup(conScad.filter(function(x){return x.diff!==null&&x.diff<0;})) +
+    '<div class="sl" style="margin-top:1.5rem">Oltre 90 giorni</div>' +
+    renderScadGroup(conScad.filter(function(x){return x.diff===null||x.diff>90;})));
+}
+
+function renderScadGroup(items) {
+  if (!items.length) return '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;font-size:0.82rem">Nessuna attività.</div>';
+  return items.map(function(x){
+    var a=x.a; var stato=x.stato; var diff=x.diff;
+    var scadFmt=x.scad?x.scad.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+    var diffTxt=diff===null?'—':diff<0?'🚨 Scaduta '+Math.abs(diff)+' gg fa':diff===0?'🚨 Scade oggi!':diff<=30?'⚠️ Tra '+diff+' giorni':'📅 Tra '+diff+' giorni';
+    return '<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:white;border:1px solid var(--border);border-left:4px solid var(--'+(stato==='scaduta'?'accent':stato==='imminente'?'gold':'success')+');border-radius:4px;margin-bottom:0.5rem;flex-wrap:wrap">' +
+      '<div style="min-width:90px;font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">'+scadFmt+'</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-weight:500">'+esc(a.titolo)+'</div>' +
+        '<div style="font-size:0.75rem;color:var(--muted)">'+esc(CATEGORIE_MAN[a.categoria]||a.categoria)+(a.fornitore?' · '+esc(a.fornitore):'')+'</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-size:0.82rem;font-weight:600;color:var(--'+(stato==='scaduta'?'accent':stato==='imminente'?'warning':'success')+')">'+diffTxt+'</div>' +
+        (a.costoPrev?'<div style="font-family:\'DM Mono\',monospace;font-size:0.72rem;color:var(--muted)">€ '+fmt(a.costoPrev)+'</div>':'') +
+      '</div>' +
+      '<button class="btn btn-ok btn-sm" onclick="eseguiIntervento(\''+a.id+'\');drawScadenzario()">✅ Eseguito</button>' +
+    '</div>';
+  }).join('');
+}
+
+// ══ TAB 4 — CALENDARIO ══
+function drawCalendario() {
+  var el    = document.getElementById('c-calendario');
+  var annoEl= document.getElementById('calAnno');
+  var anno  = annoEl ? parseInt(annoEl.value) : new Date().getFullYear();
+
+  // Calcola eventi per ogni mese dell'anno
+  var eventiPerMese = {};
+  for (var m=0;m<12;m++) eventiPerMese[m]=[];
+
+  attivita.forEach(function(a){
+    // Genera tutte le occorrenze nell'anno
+    var mesi = a.frequenza==='personalizzata' ? (parseInt(a.freqMesi)||12) : (FREQUENZE[a.frequenza]||{mesi:12}).mesi;
+    var base  = a.ultimaEsecuzione || a.dataInizio;
+    if (!base) return;
+    var d = new Date(base);
+    // Avanza fino all'anno corrente o successivo
+    var maxIter=50;
+    while (d.getFullYear()<anno && maxIter-->0) d.setMonth(d.getMonth()+mesi);
+    // Raccoglie tutte le occorrenze nell'anno
+    while (d.getFullYear()===anno && maxIter-->0) {
+      var stato=statoScadenza(a);
+      var dNow=new Date();
+      var cls=d<dNow?'passata':stato==='scaduta'?'scaduta':Math.ceil((d-dNow)/86400000)<=30?'imminente':'ok';
+      eventiPerMese[d.getMonth()].push({titolo:a.titolo.substring(0,20),cls:cls,giorno:d.getDate()});
+      d=new Date(d); d.setMonth(d.getMonth()+mesi);
+    }
+  });
+
+  el.innerHTML =
+    '<div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">' +
+      '<div class="fg" style="margin:0"><label>Anno</label>' +
+        '<select id="calAnno" onchange="drawCalendario()">' +
+          [anno-1,anno,anno+1].map(function(a){return '<option value="'+a+'"'+(a===anno?' selected':'')+'>'+a+'</option>';}).join('') +
+        '</select></div>' +
+      '<button class="btn btn-s btn-sm" style="align-self:flex-end" onclick="window.print()">🖨️ Stampa calendario</button>' +
+      '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;align-self:flex-end">' +
+        '<span class="badge" style="background:var(--accent-light);color:var(--accent)">Scaduta</span>' +
+        '<span class="badge" style="background:var(--gold-light);color:var(--warning)">In scadenza</span>' +
+        '<span class="badge b-ok">Futura</span>' +
+        '<span class="badge b-neu">Eseguita</span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="cal-grid">' +
+    MESI.map(function(m,i){
+      var ev=eventiPerMese[i]||[];
+      return '<div class="cal-mese">' +
+        '<div class="cal-mese-header">'+m+'</div>' +
+        (ev.length ? ev.map(function(e){
+          return '<div class="cal-evento '+e.cls+'" title="'+esc(e.titolo)+'">'+e.giorno+' '+esc(e.titolo)+'</div>';
+        }).join('') : '<div style="font-size:0.65rem;color:var(--border);text-align:center;margin-top:0.5rem">—</div>') +
+      '</div>';
+    }).join('') +
+    '</div>';
+}
+
+// ══ TAB 5 — STORICO ══
+function drawStorico() {
+  var el    = document.getElementById('c-storico');
+  var totCosto = storico.reduce(function(s,x){return s+(x.costo||0);},0);
+
+  el.innerHTML =
+    '<div class="sgrid">' +
+    '<div class="sc k"><div class="cl">Interventi eseguiti</div><div class="cv">'+storico.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Costo totale</div><div class="cv" style="font-size:1.1rem">€ '+fmt(totCosto)+'</div></div>' +
+    '</div>' +
+
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Export Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraStorico()">↺ Azzera storico</button>' +
+    '</div>' +
+
+    (!storico.length ?
+    '<div class="card" style="text-align:center;padding:2.5rem"><p style="color:var(--muted)">Nessun intervento registrato. Segna gli interventi come "Eseguiti" dalla Tab 1.</p></div>' :
+    storico.slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'');}).map(function(x){
+      var dFmt=x.data?new Date(x.data).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
+      return '<div class="stor-item">' +
+        '<div class="stor-data">'+dFmt+'</div>' +
+        '<div class="stor-body">' +
+          '<div class="stor-titolo">'+esc(x.titolo)+'</div>' +
+          '<div class="stor-meta">'+esc(CATEGORIE_MAN[x.categoria]||x.categoria||'—')+(x.fornitore?' · '+esc(x.fornitore):'')+(x.costo?' · € '+fmt(x.costo):'')+'</div>' +
+          (x.note?'<div style="font-size:0.78rem;color:var(--muted);margin-top:0.2rem;font-style:italic">'+esc(x.note)+'</div>':'') +
+        '</div>' +
+        '<button style="background:none;border:none;cursor:pointer;color:var(--border);font-size:0.9rem;padding:0.2rem 0.4rem" onclick="eliminaStorico(\''+x.id+'\')">✕</button>' +
+      '</div>';
+    }).join(''));
+}
+
+function eliminaStorico(id) {
+  if(!confirm('Eliminare questo intervento dallo storico?')) return;
+  storico=storico.filter(function(x){return x.id!==id;});
+  drawStorico();
+}
+
+function azzeraStorico() {
+  if(!confirm('Cancellare tutto lo storico interventi?')) return;
+  storico=[]; storCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='storico'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='storico'?' on':'');
+  });
+  drawStorico();
+}
+
+// ══ TAB 6 — REPORT ══
+function drawReport() {
+  var el   = document.getElementById('c-report');
+  var oggi = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  var anno = new Date().getFullYear();
+
+  var storAnno = storico.filter(function(x){return x.data&&x.data.startsWith(anno.toString());});
+  var costoAnno= storAnno.reduce(function(s,x){return s+(x.costo||0);},0);
+  var costoPrev= attivita.reduce(function(s,a){return s+(a.costoPrev||0);},0);
+
+  var nScad = attivita.filter(function(a){return statoScadenza(a)==='scaduta';}).length;
+  var nImm  = attivita.filter(function(a){return statoScadenza(a)==='imminente';}).length;
+
+  el.innerHTML =
+    '<div class="brow" style="margin-bottom:1.5rem">' +
+      '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>' +
+      '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>' +
+      '<button class="btn btn-g btn-sm" onclick="azzeraReport()">↺ Azzera tutto</button>' +
+    '</div>' +
+
+    '<div style="background:white;border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 20px var(--shadow);overflow:hidden">' +
+    '<div style="background:var(--ink);color:var(--paper);padding:1.2rem 2rem;display:flex;justify-content:space-between">' +
+      '<span style="font-family:\'DM Serif Display\',serif;font-size:1.1rem">Report Manutenzioni Programmate '+anno+'</span>' +
+      '<span style="font-family:\'DM Mono\',monospace;font-size:0.7rem;background:rgba(255,255,255,0.12);padding:0.3rem 0.7rem;border-radius:2px">'+oggi+'</span>' +
+    '</div>' +
+    '<div style="padding:2rem">' +
+
+    '<div class="sgrid" style="margin-bottom:1.5rem">' +
+    '<div class="sc k"><div class="cl">Attività nel piano</div><div class="cv">'+attivita.length+'</div></div>' +
+    '<div class="sc r"><div class="cl">Scadute</div><div class="cv a">'+nScad+'</div></div>' +
+    '<div class="sc g"><div class="cl">In scadenza</div><div class="cv go">'+nImm+'</div></div>' +
+    '<div class="sc gn"><div class="cl">Eseguite '+anno+'</div><div class="cv gn">'+storAnno.length+'</div></div>' +
+    '<div class="sc k"><div class="cl">Costo eseguite '+anno+'</div><div class="cv" style="font-size:1.1rem">€ '+fmt(costoAnno)+'</div></div>' +
+    '<div class="sc g"><div class="cl">Budget annuo previsto</div><div class="cv go" style="font-size:1.1rem">€ '+fmt(costoPrev)+'</div></div>' +
+    '</div>' +
+
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Piano di manutenzione</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1.5rem">' +
+    '<thead><tr style="background:var(--cream)">' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Categoria</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Intervento</th>' +
+      '<th style="padding:0.6rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Frequenza</th>' +
+      '<th style="padding:0.6rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Costo prev.</th>' +
+      '<th style="padding:0.6rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Pross. scad.</th>' +
+      '<th style="padding:0.6rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Stato</th>' +
+    '</tr></thead><tbody>' +
+    attivita.map(function(a){
+      var stato=statoScadenza(a);
+      var scad=prossimaScadenza(a);
+      var scadFmt=scad?scad.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      var freqLabel=a.frequenza==='personalizzata'?'ogni '+a.freqMesi+' mesi':(FREQUENZE[a.frequenza]||{label:'—'}).label;
+      var badgeCls=stato==='scaduta'?'b-danger':stato==='imminente'?'b-warn':'b-ok';
+      var badgeTxt=stato==='scaduta'?'🚨 Scaduta':stato==='imminente'?'⚠️ In scadenza':'✅ Nei tempi';
+      return '<tr style="border-bottom:1px solid var(--cream);'+(stato==='scaduta'?'background:#fff8f8':stato==='imminente'?'background:#fffdf0':'')+'">' +
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem">'+esc(CATEGORIE_MAN[a.categoria]||a.categoria)+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-weight:500">'+esc(a.titolo)+(a.obbligatoria?'<span class="badge b-danger" style="margin-left:0.4rem">Obbl.</span>':'')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem;color:var(--muted)">'+freqLabel+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-size:0.78rem;color:var(--muted)">'+esc(a.fornitore||'—')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;text-align:right">'+(a.costoPrev?'€ '+fmt(a.costoPrev):'—')+'</td>' +
+        '<td style="padding:0.55rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+scadFmt+'</td>' +
+        '<td style="padding:0.55rem 1rem"><span class="badge '+badgeCls+'">'+badgeTxt+'</span></td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>' +
+
+    (storAnno.length ?
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Interventi eseguiti '+anno+'</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem">' +
+    '<thead><tr style="background:var(--cream)">' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Data</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Intervento</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:left;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Fornitore</th>' +
+      '<th style="padding:0.6rem 1rem;text-align:right;font-family:\'DM Mono\',monospace;font-size:0.6rem;text-transform:uppercase">Costo</th>' +
+    '</tr></thead><tbody>' +
+    storAnno.map(function(x){
+      var dFmt=x.data?new Date(x.data).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      return '<tr style="border-bottom:1px solid var(--cream)">' +
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;font-size:0.75rem">'+dFmt+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-weight:500">'+esc(x.titolo)+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-size:0.82rem;color:var(--muted)">'+esc(x.fornitore||'—')+'</td>' +
+        '<td style="padding:0.5rem 1rem;font-family:\'DM Mono\',monospace;text-align:right">'+(x.costo?'€ '+fmt(x.costo):'—')+'</td>' +
+        '</tr>';
+    }).join('') +
+    '<tr style="background:var(--ink);color:var(--paper);font-family:\'DM Mono\',monospace;font-weight:600">' +
+      '<td colspan="3" style="padding:0.6rem 1rem">TOTALE COSTI '+anno+'</td>' +
+      '<td style="padding:0.6rem 1rem;text-align:right">€ '+fmt(costoAnno)+'</td>' +
+    '</tr></tbody></table>' : '') +
+
+    '<div style="padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);text-align:right">Generato il '+oggi+' — CondoKit</div>' +
+    '</div></div>';
+}
+
+function azzeraReport(){
+  if(!confirm('Azzera tutto: piano, storico e impostazioni?')) return;
+  attivita=[]; actCount=0; storico=[]; storCount=0;
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='piano'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='piano'?' on':'');
+  });
+  drawPiano();
+}
+
+// ══ ESEMPI ══
+function caricaEsempi(){
+  attivita=[]; actCount=0;
+  var oggi=new Date();
+  var fa3=new Date(oggi); fa3.setMonth(fa3.getMonth()-3);
+  var fa1=new Date(oggi); fa1.setMonth(fa1.getMonth()-1);
+  var tra2=new Date(oggi); tra2.setMonth(tra2.getMonth()+2);
+  var tra6=new Date(oggi); tra6.setMonth(tra6.getMonth()+6);
+  function ds(d){return d.toISOString().split('T')[0];}
+  var def=[
+    {categoria:'ascensore',   titolo:'Revisione periodica ascensore',         frequenza:'semestrale',  freqMesi:6,  dataInizio:ds(fa3), ultimaEsecuzione:ds(fa3), fornitore:'ElevaTech Srl',    costoPrev:320,  obbligatoria:true,  note:'Richiedere verbale di revisione firmato dal tecnico abilitato.'},
+    {categoria:'caldaia',     titolo:'Manutenzione caldaia centralizzata',     frequenza:'annuale',     freqMesi:12, dataInizio:ds(fa3), ultimaEsecuzione:ds(fa3), fornitore:'Termoidraulica Bianchi', costoPrev:450, obbligatoria:true, note:'Prima della stagione invernale. Controllare efficienza bruciatori.'},
+    {categoria:'antincendio', titolo:'Controllo estintori e idranti',          frequenza:'semestrale',  freqMesi:6,  dataInizio:ds(fa1), ultimaEsecuzione:ds(fa1), fornitore:'SafeFire Srl',      costoPrev:180,  obbligatoria:true,  note:''},
+    {categoria:'pulizie',     titolo:'Pulizie scale e parti comuni',           frequenza:'mensile',     freqMesi:1,  dataInizio:ds(fa1), ultimaEsecuzione:ds(fa1), fornitore:'Pulizie Verdi Sas', costoPrev:280,  obbligatoria:false, note:''},
+    {categoria:'verde',       titolo:'Potatura alberi e siepi',                frequenza:'semestrale',  freqMesi:6,  dataInizio:ds(tra2),ultimaEsecuzione:'',       fornitore:'Giardinaggio Rossi',costoPrev:350,  obbligatoria:false, note:'Concordare con Comune per potatura piante di pregio.'},
+    {categoria:'cancelli',    titolo:'Manutenzione cancello automatico',       frequenza:'annuale',     freqMesi:12, dataInizio:ds(fa3), ultimaEsecuzione:ds(fa3), fornitore:'Cancelli & Portoni', costoPrev:220, obbligatoria:false, note:''},
+    {categoria:'elettrico',   titolo:'Verifica impianto messa a terra',        frequenza:'biennale',    freqMesi:24, dataInizio:ds(tra6),ultimaEsecuzione:'',       fornitore:'Elettro Neri',     costoPrev:400,  obbligatoria:true,  note:'Obbligo DPR 462/2001. Richiedere verbale INAIL.'},
+    {categoria:'tetto',       titolo:'Ispezione tetto e copertura',            frequenza:'annuale',     freqMesi:12, dataInizio:ds(tra2),ultimaEsecuzione:'',       fornitore:'Impresa Rossi',    costoPrev:300,  obbligatoria:false, note:'Particolare attenzione ai canali di gronda e pluviali.'},
+  ];
+  def.forEach(function(d){actCount++;attivita.push(Object.assign({id:'a'+actCount},d));});
+  PANELS.forEach(function(n){
+    document.getElementById('p-'+n).style.display=n==='piano'?'block':'none';
+    document.getElementById('tb-'+n).className='tab-btn'+(n==='piano'?' on':'');
+  });
+  drawPiano();
+}
+
+// ══ EXPORT EXCEL ══
+function expExcel(){
+  if(!attivita.length){alert('Nessuna attività da esportare.');return;}
+  var wb=XLSX.utils.book_new();
+  // Foglio piano
+  var ws1=XLSX.utils.aoa_to_sheet(
+    [['PIANO DI MANUTENZIONE'],[],
+     ['Categoria','Intervento','Frequenza','Fornitore','Costo prev. €','Prima scadenza','Ultima esec.','Pross. scadenza','Stato','Obbligatoria','Note']].concat(
+    attivita.map(function(a){
+      var scad=prossimaScadenza(a);
+      var scadStr=scad?scad.toLocaleDateString('it-IT'):'—';
+      var freqLabel=a.frequenza==='personalizzata'?'ogni '+a.freqMesi+' mesi':(FREQUENZE[a.frequenza]||{label:'—'}).label;
+      var stato=statoScadenza(a);
+      return [CATEGORIE_MAN[a.categoria]||a.categoria,a.titolo,freqLabel,a.fornitore,a.costoPrev,
+              a.dataInizio,a.ultimaEsecuzione,scadStr,
+              stato==='scaduta'?'SCADUTA':stato==='imminente'?'IN SCADENZA':'NEI TEMPI',
+              a.obbligatoria?'Sì':'No',a.note];
+    }))
+  );
+  ws1['!cols']=[18,28,14,22,12,12,12,12,12,10,30].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb,ws1,'Piano Manutenzione');
+  // Foglio storico
+  if(storico.length){
+    var ws2=XLSX.utils.aoa_to_sheet(
+      [['STORICO INTERVENTI'],[],['Data','Intervento','Categoria','Fornitore','Costo €','Note']].concat(
+      storico.map(function(x){return [x.data,x.titolo,CATEGORIE_MAN[x.categoria]||x.categoria,x.fornitore,x.costo,x.note];})));
+    ws2['!cols']=[10,28,18,22,10,30].map(function(w){return {wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws2,'Storico');
+  }
+  XLSX.writeFile(wb,'CondoKit_Manutenzioni_'+new Date().getFullYear()+'.xlsx');
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
