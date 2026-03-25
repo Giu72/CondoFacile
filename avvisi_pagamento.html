@@ -186,6 +186,57 @@
     .doc-wrapper { box-shadow: none; border: none; }
     body { background: white; }
   }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .layout { padding: 1.2rem 1rem 3rem; gap: 1.2rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
+
+    .tipo-grid { grid-template-columns: 1fr 1fr; }
+
+    .row-2 { grid-template-columns: 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr; }
+
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; justify-content: center; }
+
+    .preview-panel { position: static; }
+    .preview-actions { flex-wrap: wrap; gap: 0.4rem; }
+    .preview-actions .btn { font-size: 0.75rem; padding: 0.5rem 0.9rem; }
+
+    .doc-body { padding: 1.2rem 1rem; }
+    .doc-header-strip { padding: 0.8rem 1rem; }
+    .doc-meta { flex-direction: column; gap: 1rem; }
+    .doc-destinatario { text-align: left; }
+
+    .add-condo-row { flex-wrap: wrap; }
+    .add-condo-row input { flex: 1 1 45%; }
+
+    .backup-row { flex-direction: column; }
+    .backup-row .btn, .backup-row label { width: 100%; justify-content: center; text-align: center; }
+  }
+  /* Correzione per la riga di aggiunta condomino */
+.add-condo-row {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.add-condo-row input,
+.add-condo-row button {
+  flex: 1 1 auto;
+  min-width: 100px;
+}
+@media (max-width: 768px) {
+  .add-condo-row {
+    flex-direction: column;
+  }
+  .add-condo-row input,
+  .add-condo-row button {
+    width: 100%;
+    margin: 0;
+  }
+
 </style>
 </head>
 <body>
@@ -361,7 +412,19 @@
 
     <div class="btn-row">
       <button class="btn btn-primary" onclick="generaAvvisi()">📄 Genera Avvisi</button>
+      <button class="btn btn-secondary" onclick="stampaPDF()">🖨️ Stampa / PDF</button>
       <button class="btn btn-ghost" onclick="resetForm()">↺ Azzera</button>
+    </div>
+
+    <!-- BACKUP -->
+    <div style="margin-top: 1rem; padding: 1rem 1.5rem; background: var(--gold-light); border: 1px dashed var(--gold); border-radius: 4px;">
+      <p style="margin-bottom: 0.75rem; font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--warning);">💾 Sicurezza dati — Backup</p>
+      <div class="backup-row" style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="esportaBackup()">💾 Salva su PC</button>
+        <label class="btn btn-ghost" style="cursor:pointer;">
+          📂 Carica da PC <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none">
+        </label>
+      </div>
     </div>
 
   </div>
@@ -439,14 +502,67 @@ let condoCorrente = 0;
 let avvisiGenerati = [];
 
 // ══════════════════════════════════════════════════════════════
-// INIT
+// INIT — collegamento al motore CondoKit (come in spese.html)
 // ══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  const oggi = new Date().toISOString().split('T')[0];
-  document.getElementById('scadenza').value = oggi;
+document.addEventListener('condokit:ready', async () => {
+  console.log("🚀 Motore CondoKit Pronto! Caricamento dati Avvisi...");
+  await caricaDatiDalDB();
   renderCondoList();
   aggiorna();
 });
+
+// Fallback se il motore non è presente (sviluppo locale)
+document.addEventListener('DOMContentLoaded', () => {
+  // Se condokit:ready non scatta entro 500ms, avviamo comunque la pagina
+  setTimeout(() => {
+    if (!document.getElementById('scadenza').value) {
+      document.getElementById('scadenza').value = new Date().toISOString().split('T')[0];
+      renderCondoList();
+      aggiorna();
+    }
+  }, 500);
+});
+
+// ══════════════════════════════════════════════════════════════
+// CARICAMENTO DAL DB (ponte con condokit-data-layer.js)
+// ══════════════════════════════════════════════════════════════
+async function caricaDatiDalDB() {
+  try {
+    // Campi studio
+    const campiStudio = ['studioNome','studioIndirizzo','studioTel','studioEmail','condoNome','condoCF','condoIBAN'];
+    campiStudio.forEach(id => {
+      const val = CondoKitSettings.get('avvisi_' + id);
+      if (val) document.getElementById(id).value = val;
+    });
+
+    // Data scadenza default
+    if (!document.getElementById('scadenza').value)
+      document.getElementById('scadenza').value = new Date().toISOString().split('T')[0];
+
+    // Condomini da DB (se presenti, sovrascrive la lista demo)
+    const condominiDB = await CondoKitDB.getAll('condomini');
+    if (condominiDB.length > 0) {
+      condominiList = condominiDB.map(c => ({
+        nome: c.nome || '',
+        interno: c.interno || '',
+        importo: parseFloat(c.mill) || 0,
+        email: c.email || ''
+      }));
+    }
+  } catch(e) {
+    console.warn("CondoKit data-layer non disponibile, uso dati di default.", e);
+    document.getElementById('scadenza').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+// Salvataggio automatico dei campi studio nel data-layer
+function salvaSettingsCampi() {
+  try {
+    ['studioNome','studioIndirizzo','studioTel','studioEmail','condoNome','condoCF','condoIBAN'].forEach(id => {
+      CondoKitSettings.set('avvisi_' + id, document.getElementById(id).value);
+    });
+  } catch(e) { /* data-layer non disponibile */ }
+}
 
 // ══════════════════════════════════════════════════════════════
 // LISTA CONDOMINI
@@ -671,6 +787,7 @@ function generaEmailHTML(d, destinatario) {
 // AGGIORNA ANTEPRIMA IN TEMPO REALE
 // ══════════════════════════════════════════════════════════════
 function aggiorna() {
+  salvaSettingsCampi(); // ← salva i campi studio nel data-layer ad ogni modifica
   const d = getDati();
   const sel = getSelezionati();
   const dest = sel.length > 0 ? sel[condoCorrente >= sel.length ? 0 : condoCorrente] : null;
@@ -743,7 +860,15 @@ function switchPreview(tipo) {
 // ══════════════════════════════════════════════════════════════
 // AZIONI
 // ══════════════════════════════════════════════════════════════
-function stampaPDF() { window.print(); }
+function stampaPDF() {
+  const d = getDati();
+  const sel = getSelezionati();
+  if (sel.length === 0) { alert('Genera prima gli avvisi selezionando almeno un condomino.'); return; }
+  const vecchioTitolo = document.title;
+  document.title = `Avviso_${d.condo || 'Condominio'}_${sel[condoCorrente]?.nome || ''}`;
+  window.print();
+  document.title = vecchioTitolo;
+}
 
 function copiaEmail() {
   const d    = getDati();
@@ -764,7 +889,70 @@ function resetForm() {
   });
   document.getElementById('t1').checked = true;
   document.getElementById('scadenza').value = new Date().toISOString().split('T')[0];
+  salvaSettingsCampi();
   aggiorna();
+}
+
+// ══════════════════════════════════════════════════════════════
+// BACKUP — Salva su PC e Carica da PC (come in spese.html)
+// ══════════════════════════════════════════════════════════════
+function esportaBackup() {
+  const d = getDati();
+  const backup = {
+    modulo: 'avvisi',
+    data: new Date().toISOString(),
+    datiStudio: {
+      studioNome: d.studio, studioIndirizzo: d.studioInd,
+      studioTel: d.studioTel, studioEmail: d.studioEmail,
+      condoNome: d.condo, condoCF: d.condoCF, condoIBAN: d.iban,
+    },
+    condomini: condominiList,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `CondoKit_Avvisi_Backup_${d.condo || 'Condominio'}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importaBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.modulo !== 'avvisi') { alert('❌ Questo backup non appartiene al modulo Avvisi.'); return; }
+      if (!confirm('Attenzione: caricando il backup sovrascriverai i dati attuali. Confermi?')) return;
+
+      // Ripristina campi studio
+      const ds = data.datiStudio || {};
+      if (ds.studioNome)       document.getElementById('studioNome').value      = ds.studioNome;
+      if (ds.studioIndirizzo)  document.getElementById('studioIndirizzo').value = ds.studioIndirizzo;
+      if (ds.studioTel)        document.getElementById('studioTel').value        = ds.studioTel;
+      if (ds.studioEmail)      document.getElementById('studioEmail').value      = ds.studioEmail;
+      if (ds.condoNome)        document.getElementById('condoNome').value        = ds.condoNome;
+      if (ds.condoCF)          document.getElementById('condoCF').value          = ds.condoCF;
+      if (ds.condoIBAN)        document.getElementById('condoIBAN').value        = ds.condoIBAN;
+
+      // Ripristina condomini
+      if (Array.isArray(data.condomini) && data.condomini.length > 0) {
+        condominiList = data.condomini;
+      }
+
+      salvaSettingsCampi();
+      renderCondoList();
+      aggiorna();
+      alert('✅ Backup ripristinato con successo!');
+    } catch(err) {
+      alert('❌ Errore: il file selezionato non è un backup valido.');
+    }
+  };
+  reader.readAsText(file);
+  // Reset input per permettere di ricaricare lo stesso file
+  event.target.value = '';
 }
 
 // ══════════════════════════════════════════════════════════════
