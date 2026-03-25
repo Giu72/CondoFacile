@@ -3,7 +3,7 @@
 <head>
   <script src="condokit-data-layer.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Calcolatore More Condominiali</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -478,6 +478,83 @@
     .navbar { padding: 0 1rem; }
     .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
   }
+
+  /* MOBILE — Schemi a scheda per smartphone */
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+
+    table, thead, tbody, th, td, tr { display: block; }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    td {
+      border: none !important;
+      position: relative;
+      padding-left: 45% !important;
+      text-align: left;
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+    }
+
+    td::before {
+      position: absolute;
+      left: 10px;
+      width: 40%;
+      font-weight: bold;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    /* Etichette colonne tabella INPUT */
+    #inputBody td:nth-of-type(1)::before { content: "Condomino:"; }
+    #inputBody td:nth-of-type(2)::before { content: "Condominio:"; }
+    #inputBody td:nth-of-type(3)::before { content: "Importo (€):"; }
+    #inputBody td:nth-of-type(4)::before { content: "Scadenza:"; }
+    #inputBody td:nth-of-type(5)::before { content: "Pagamento:"; }
+    #inputBody td:nth-of-type(6)::before { content: "Tributo (€):"; }
+    #inputBody td:nth-of-type(7)::before { content: ""; }
+
+    /* Etichette colonne tabella RISULTATI */
+    #resultsBody td:nth-of-type(1)::before { content: "Condomino:"; }
+    #resultsBody td:nth-of-type(2)::before { content: "Condominio:"; }
+    #resultsBody td:nth-of-type(3)::before { content: "Importo:"; }
+    #resultsBody td:nth-of-type(4)::before { content: "Giorni:"; }
+    #resultsBody td:nth-of-type(5)::before { content: "Tasso:"; }
+    #resultsBody td:nth-of-type(6)::before { content: "Mora:"; }
+    #resultsBody td:nth-of-type(7)::before { content: "Tributo:"; }
+    #resultsBody td:nth-of-type(8)::before { content: "Totale:"; }
+    #resultsBody td:nth-of-type(9)::before { content: "Stato:"; }
+
+    .input-cell {
+      width: 100% !important;
+      font-size: 16px !important;
+      padding: 8px !important;
+    }
+
+    .actions-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn { width: 100%; justify-content: center; }
+
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -518,6 +595,7 @@
     <div class="field-group">
       <label>Anno di riferimento</label>
       <select id="annoRif" onchange="aggiornaTassoInfo()">
+        <option value="2025">2026</option>
         <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
@@ -527,7 +605,7 @@
       </select>
     </div>
 
-    <div class="tasso-info" id="tassoInfo">Tasso legale 2025: 2,00%</div>
+    <div class="tasso-info" id="tassoInfo">Tasso legale 2026: 2,00%</div>
   </div>
 
   <!-- TABELLA INPUT -->
@@ -555,6 +633,17 @@
     <button class="btn btn-ghost" onclick="addRow()">＋ Aggiungi condomino</button>
     <button class="btn btn-primary" onclick="calcola()">⚡ Calcola more</button>
     <button class="btn btn-ghost" onclick="resetAll()">↺ Azzera tutto</button>
+  </div>
+
+  <!-- BACKUP -->
+  <div style="margin-top: 0; margin-bottom: 2rem; padding: 15px; background: #ede8dc; border: 1px dashed #c8bfaa; border-radius: 8px;">
+    <p style="margin-bottom: 10px; font-weight: bold; font-family: 'DM Sans', sans-serif;">Sicurezza Dati (Backup):</p>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="btn btn-ghost" onclick="esportaBackup()">💾 Salva su PC</button>
+      <label class="btn btn-ghost" style="cursor:pointer">
+        📂 Carica da PC <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none">
+      </label>
+    </div>
   </div>
 
   <!-- RISULTATI -->
@@ -633,8 +722,101 @@ let righeCount = 0;
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  addRow(); addRow(); addRow(); // 3 righe di default
+  caricaDatiDalStorage();
 });
+
+// ══════════════════════════════════════════════════════════════
+// SALVATAGGIO E CARICAMENTO (LocalStorage tramite condokit-data-layer.js)
+// ══════════════════════════════════════════════════════════════
+
+function raccogliRighe() {
+  const righe = [];
+  document.querySelectorAll('#inputBody tr').forEach(tr => {
+    const id = tr.id.replace('row-', '');
+    righe.push({
+      id,
+      nome:  document.getElementById(`nome-${id}`)?.value ?? '',
+      cond:  document.getElementById(`cond-${id}`)?.value ?? '',
+      imp:   document.getElementById(`imp-${id}`)?.value ?? '',
+      scad:  document.getElementById(`scad-${id}`)?.value ?? '',
+      pag:   document.getElementById(`pag-${id}`)?.value ?? '',
+      trib:  document.getElementById(`trib-${id}`)?.value ?? ''
+    });
+  });
+  return righe;
+}
+
+function salvaDatiNelStorage() {
+  const righe = raccogliRighe();
+  const settings = {
+    tipoMora: document.getElementById('tipoMora').value,
+    annoRif: document.getElementById('annoRif').value,
+    tassoContrattuale: document.getElementById('tassoContrattuale').value
+  };
+  // Usa il motore CondoKit se disponibile, altrimenti localStorage nativo
+  if (typeof CondoKitSettings !== 'undefined') {
+    CondoKitSettings.set('calcolatore_righe', JSON.stringify(righe));
+    CondoKitSettings.set('calcolatore_settings', JSON.stringify(settings));
+  } else {
+    localStorage.setItem('condokit_calcolatore_righe', JSON.stringify(righe));
+    localStorage.setItem('condokit_calcolatore_settings', JSON.stringify(settings));
+  }
+}
+
+function caricaDatiDalStorage() {
+  let righeJson, settingsJson;
+  if (typeof CondoKitSettings !== 'undefined') {
+    righeJson    = CondoKitSettings.get('calcolatore_righe');
+    settingsJson = CondoKitSettings.get('calcolatore_settings');
+  } else {
+    righeJson    = localStorage.getItem('condokit_calcolatore_righe');
+    settingsJson = localStorage.getItem('condokit_calcolatore_settings');
+  }
+
+  // Ripristina impostazioni
+  if (settingsJson) {
+    try {
+      const s = JSON.parse(settingsJson);
+      if (s.tipoMora)         document.getElementById('tipoMora').value = s.tipoMora;
+      if (s.annoRif)          document.getElementById('annoRif').value  = s.annoRif;
+      if (s.tassoContrattuale) document.getElementById('tassoContrattuale').value = s.tassoContrattuale;
+      toggleMoraContrattuale();
+      aggiornaTassoInfo();
+    } catch(e) {}
+  }
+
+  // Ripristina righe
+  if (righeJson) {
+    try {
+      const righe = JSON.parse(righeJson);
+      if (righe.length > 0) {
+        righe.forEach(r => {
+          righeCount++;
+          const id = r.id || righeCount;
+          const tr = document.createElement('tr');
+          tr.id = `row-${id}`;
+          tr.innerHTML = buildRowHTML(id, r);
+          document.getElementById('inputBody').appendChild(tr);
+        });
+        return; // non aggiungere le 3 righe default
+      }
+    } catch(e) {}
+  }
+  // default: 3 righe vuote
+  addRow(); addRow(); addRow();
+}
+
+function buildRowHTML(id, r) {
+  return `
+    <td><input class="input-cell" type="text"   placeholder="Es. Mario Rossi"      id="nome-${id}" value="${esc(r.nome||'')}" oninput="salvaDatiNelStorage()"></td>
+    <td><input class="input-cell" type="text"   placeholder="Es. Via Roma 10 Sc.A" id="cond-${id}" value="${esc(r.cond||'')}" oninput="salvaDatiNelStorage()"></td>
+    <td><input class="input-cell" type="number" placeholder="150.00" step="0.01" min="0" id="imp-${id}"  value="${r.imp||''}"  oninput="salvaDatiNelStorage()"></td>
+    <td><input class="input-cell" type="date"   id="scad-${id}" value="${r.scad||''}" onchange="salvaDatiNelStorage()"></td>
+    <td><input class="input-cell" type="date"   id="pag-${id}"  value="${r.pag||''}"  onchange="salvaDatiNelStorage()" title="Lascia vuoto se non ancora pagato"></td>
+    <td><input class="input-cell" type="number" placeholder="0.00" step="0.01" min="0" id="trib-${id}" value="${r.trib||''}" oninput="salvaDatiNelStorage()"></td>
+    <td><button class="btn-remove" onclick="removeRow(${id})" title="Rimuovi riga">✕</button></td>
+  `;
+}
 
 // ── UI HELPERS ────────────────────────────────────────────────────────────────
 function toggleMoraContrattuale() {
@@ -648,6 +830,7 @@ function toggleMoraContrattuale() {
     box.classList.remove('visible');
     info.style.display = '';
   }
+  salvaDatiNelStorage();
 }
 
 function aggiornaTassoInfo() {
@@ -655,6 +838,7 @@ function aggiornaTassoInfo() {
   const tasso = tassiLegali[anno] ?? '?';
   document.getElementById('tassoInfo').textContent =
     `Tasso legale ${anno}: ${tasso.toLocaleString('it-IT', {minimumFractionDigits:2})}%`;
+  salvaDatiNelStorage();
 }
 
 // ── AGGIUNGI RIGA ─────────────────────────────────────────────────────────────
@@ -663,21 +847,15 @@ function addRow() {
   const id = righeCount;
   const tr = document.createElement('tr');
   tr.id = `row-${id}`;
-  tr.innerHTML = `
-    <td><input class="input-cell" type="text"   placeholder="Es. Mario Rossi"     id="nome-${id}"></td>
-    <td><input class="input-cell" type="text"   placeholder="Es. Via Roma 10 Sc.A" id="cond-${id}"></td>
-    <td><input class="input-cell" type="number" placeholder="150.00" step="0.01" min="0" id="imp-${id}"></td>
-    <td><input class="input-cell" type="date"   id="scad-${id}"></td>
-    <td><input class="input-cell" type="date"   id="pag-${id}" title="Lascia vuoto se non ancora pagato"></td>
-    <td><input class="input-cell" type="number" placeholder="0.00" step="0.01" min="0" id="trib-${id}"></td>
-    <td><button class="btn-remove" onclick="removeRow(${id})" title="Rimuovi riga">✕</button></td>
-  `;
+  tr.innerHTML = buildRowHTML(id, {});
   document.getElementById('inputBody').appendChild(tr);
+  salvaDatiNelStorage();
 }
 
 function removeRow(id) {
   const row = document.getElementById(`row-${id}`);
   if (row) row.remove();
+  salvaDatiNelStorage();
 }
 
 // ── CALCOLA ───────────────────────────────────────────────────────────────────
@@ -705,7 +883,7 @@ function calcola() {
     const pag  = document.getElementById(`pag-${id}`)?.value;
     const trib = parseFloat(document.getElementById(`trib-${id}`)?.value) || 0;
 
-    if (!nome || !imp || !scad) return; // salta righe vuote
+    if (!nome || !imp || !scad) return;
 
     righe.push({ nome, cond, imp, scad, pag, trib, id });
   });
@@ -797,8 +975,79 @@ function resetAll() {
   document.getElementById('resultsSection').classList.remove('visible');
   righeCount = 0;
   addRow(); addRow(); addRow();
+  salvaDatiNelStorage();
 }
-function stampaPagina() { window.print(); }
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+function stampaPagina() {
+  const vecchioTitolo = document.title;
+  document.title = 'CondoKit_More_Condominiali';
+  window.print();
+  document.title = vecchioTitolo;
+}
+
+// ── BACKUP EXPORT ─────────────────────────────────────────────────────────────
+function esportaBackup() {
+  const righe   = raccogliRighe();
+  const settings = {
+    tipoMora: document.getElementById('tipoMora').value,
+    annoRif:  document.getElementById('annoRif').value,
+    tassoContrattuale: document.getElementById('tassoContrattuale').value
+  };
+  const backup = {
+    modulo: 'calcolatore-more',
+    data:   new Date().toISOString(),
+    settings,
+    righe
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `CondoKit_Backup_More_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+}
+
+// ── BACKUP IMPORT ─────────────────────────────────────────────────────────────
+function importaBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.righe) { alert('❌ File non valido: non è un backup del Calcolatore More.'); return; }
+
+      if (confirm('Attenzione: caricando il backup, i dati attuali verranno sostituiti. Confermi?')) {
+        // Ripristina settings
+        if (data.settings) {
+          if (data.settings.tipoMora) document.getElementById('tipoMora').value = data.settings.tipoMora;
+          if (data.settings.annoRif)  document.getElementById('annoRif').value  = data.settings.annoRif;
+          if (data.settings.tassoContrattuale) document.getElementById('tassoContrattuale').value = data.settings.tassoContrattuale;
+          toggleMoraContrattuale();
+          aggiornaTassoInfo();
+        }
+        // Ripristina righe
+        document.getElementById('inputBody').innerHTML = '';
+        righeCount = 0;
+        data.righe.forEach(r => {
+          righeCount++;
+          const id = righeCount;
+          const tr = document.createElement('tr');
+          tr.id = `row-${id}`;
+          tr.innerHTML = buildRowHTML(id, r);
+          document.getElementById('inputBody').appendChild(tr);
+        });
+        salvaDatiNelStorage();
+        alert('✅ Dati ripristinati con successo!');
+      }
+    } catch(err) {
+      alert('❌ Errore: il file selezionato non è un backup valido.');
+    }
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
