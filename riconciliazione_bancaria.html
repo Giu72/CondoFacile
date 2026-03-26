@@ -3,7 +3,7 @@
 <head>
 <script src="condokit-data-layer.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CondoKit — Riconciliazione Bancaria</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -161,6 +161,106 @@
   .condo-selector { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 2rem; background: var(--cream); border: 1px solid var(--border); border-radius: 4px; padding: 1.2rem 1.5rem; }
 
   .page-footer { text-align: center; padding: 2rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); margin-top: 2rem; }
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
+    .row-2, .row-3, .row-4 { grid-template-columns: 1fr; }
+    .condo-selector { flex-direction: column; }
+    .recon-layout { grid-template-columns: 1fr; }
+  }
+
+  /* REGOLE PER SMARTPHONE (Schermi sotto i 768px) */
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tab {
+      flex: 1 1 45%;
+      padding: 10px 5px;
+      font-size: 11px;
+    }
+
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    td {
+      border: none !important;
+      position: relative;
+      padding-left: 45% !important;
+      text-align: left;
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+    }
+
+    td::before {
+      position: absolute;
+      left: 10px;
+      width: 40%;
+      font-weight: bold;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    /* Etichette colonne per estratto conto */
+    #ecBody td:nth-of-type(1)::before { content: "Data:"; }
+    #ecBody td:nth-of-type(2)::before { content: "Descrizione:"; }
+    #ecBody td:nth-of-type(3)::before { content: "Tipo:"; }
+    #ecBody td:nth-of-type(4)::before { content: "Importo (€):"; }
+    #ecBody td:nth-of-type(5)::before { content: "Rif. banca:"; }
+    #ecBody td:nth-of-type(6)::before { content: "Azioni:"; }
+
+    /* Etichette colonne per spese registrate */
+    #speseBody td:nth-of-type(1)::before { content: "Data:"; }
+    #speseBody td:nth-of-type(2)::before { content: "Descrizione:"; }
+    #speseBody td:nth-of-type(3)::before { content: "Categoria:"; }
+    #speseBody td:nth-of-type(4)::before { content: "Tipo:"; }
+    #speseBody td:nth-of-type(5)::before { content: "Importo (€):"; }
+    #speseBody td:nth-of-type(6)::before { content: "N° Doc.:"; }
+    #speseBody td:nth-of-type(7)::before { content: "Azioni:"; }
+
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; text-align: center; justify-content: center; }
+
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+
+    .saldo-box { flex-direction: column; align-items: flex-start; }
+    .saldo-separator { display: none; }
+
+    .field-group input,
+    .field-group select {
+      font-size: 16px !important; /* Evita lo zoom automatico su iPhone */
+    }
+
+    .ic { font-size: 16px !important; }
+
+    .backup-box { flex-direction: column; }
+    .backup-box .btn { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -251,6 +351,16 @@
       <button class="btn btn-ghost" onclick="addMovimento()">＋ Aggiungi movimento</button>
       <button class="btn btn-primary" onclick="switchTab('spese')">→ Vai alle Spese</button>
       <button class="btn btn-ghost" onclick="resetEC()">↺ Azzera</button>
+      <button class="btn btn-secondary" onclick="stampaPDF()">🖨️ Stampa / PDF</button>
+    </div>
+
+    <!-- BACKUP BAR -->
+    <div class="backup-box" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem;padding:1rem 1.2rem;background:var(--cream);border:1px dashed var(--border);border-radius:4px;align-items:center">
+      <span style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Sicurezza Dati (Backup):</span>
+      <button class="btn btn-ghost btn-sm" onclick="esportaBackup()">💾 Salva su PC</button>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+        📂 Carica da PC <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none">
+      </label>
     </div>
 
     <!-- Totali estratto -->
@@ -354,18 +464,125 @@ let ecCount = 0, speseCount = 0;
 const CATEGORIE_SPESA = ['Manutenzione ordinaria','Manutenzione straordinaria','Utenze','Compensi professionisti','Quote condomini','Altro'];
 
 // ══════════════════════════════════════════════════════════════
-// INIT
+// INIT — collega il motore CondoKitDB (come spese.html)
 // ══════════════════════════════════════════════════════════════
+document.addEventListener('condokit:ready', async () => {
+  console.log("🚀 CondoKit pronto! Carico dati riconciliazione...");
+  await caricaDatiDalDB();
+});
+
+// Fallback se condokit-data-layer.js non è presente
 document.addEventListener('DOMContentLoaded', () => {
   const oggi = new Date();
   const primoMese = new Date(oggi.getFullYear(), oggi.getMonth(), 1).toISOString().split('T')[0];
   const ultimoMese = new Date(oggi.getFullYear(), oggi.getMonth()+1, 0).toISOString().split('T')[0];
   document.getElementById('periodoDA').value = primoMese;
   document.getElementById('periodoA').value  = ultimoMese;
-  // Righe default
-  addMovimento(); addMovimento(); addMovimento();
-  addSpesa();     addSpesa();     addSpesa();
+  // Righe default solo se il DB non ha già caricato dati
+  setTimeout(() => {
+    if (!document.querySelector('#ecBody tr'))    { addMovimento(); addMovimento(); addMovimento(); }
+    if (!document.querySelector('#speseBody tr')) { addSpesa();     addSpesa();     addSpesa(); }
+  }, 300);
 });
+
+async function caricaDatiDalDB() {
+  try {
+    const oggi = new Date();
+    const primoMese = new Date(oggi.getFullYear(), oggi.getMonth(), 1).toISOString().split('T')[0];
+    const ultimoMese = new Date(oggi.getFullYear(), oggi.getMonth()+1, 0).toISOString().split('T')[0];
+    document.getElementById('periodoDA').value = primoMese;
+    document.getElementById('periodoA').value  = ultimoMese;
+
+    // Carica impostazioni condominio
+    const nomeSalvato = CondoKitSettings.get('nomeCondominio');
+    if (nomeSalvato) document.getElementById('condoNome').value = nomeSalvato;
+    const ibanSalvato = CondoKitSettings.get('condoIBAN');
+    if (ibanSalvato) document.getElementById('condoIBAN').value = ibanSalvato;
+    const saldoSalvato = CondoKitSettings.get('saldoIniziale');
+    if (saldoSalvato) document.getElementById('saldoIniziale').value = saldoSalvato;
+
+    // Carica movimenti EC
+    const ecSalvati = await CondoKitDB.getAll('riconciliazione_ec');
+    if (ecSalvati && ecSalvati.length > 0) {
+      ecSalvati.forEach(m => { ecCount++; _appendRigaEC(ecCount, m); });
+      aggiornaSaldi();
+    } else {
+      addMovimento(); addMovimento(); addMovimento();
+    }
+
+    // Carica spese contabili
+    const speseSalvate = await CondoKitDB.getAll('riconciliazione_spese');
+    if (speseSalvate && speseSalvate.length > 0) {
+      speseSalvate.forEach(s => { speseCount++; _appendRigaSpesa(speseCount, s); });
+    } else {
+      addSpesa(); addSpesa(); addSpesa();
+    }
+  } catch(e) {
+    console.warn('CondoKitDB non disponibile, lavoro in memoria.', e);
+    addMovimento(); addMovimento(); addMovimento();
+    addSpesa(); addSpesa(); addSpesa();
+  }
+}
+
+async function salvaDatiNelDB() {
+  try {
+    // Salva impostazioni
+    CondoKitSettings.set('nomeCondominio', document.getElementById('condoNome').value);
+    CondoKitSettings.set('condoIBAN', document.getElementById('condoIBAN').value);
+    CondoKitSettings.set('saldoIniziale', document.getElementById('saldoIniziale').value);
+
+    // Salva movimenti EC
+    const ec = leggiEC();
+    await CondoKitDB.clear('riconciliazione_ec');
+    for (let m of ec) await CondoKitDB.save('riconciliazione_ec', m);
+
+    // Salva spese
+    const spese = leggiSpese();
+    await CondoKitDB.clear('riconciliazione_spese');
+    for (let s of spese) await CondoKitDB.save('riconciliazione_spese', s);
+  } catch(e) {
+    console.warn('Salvataggio DB non riuscito:', e);
+  }
+}
+
+// Helpers interni per ricostruire righe dal DB
+function _appendRigaEC(id, m) {
+  const tr = document.createElement('tr');
+  tr.id = `ec-${id}`;
+  tr.innerHTML = `
+    <td><input class="ic" type="date" id="ecData-${id}" value="${m.data||''}" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+    <td><input class="ic" type="text" id="ecDesc-${id}" value="${esc(m.desc||'')}" placeholder="Es. Bonifico Studio Bianchi" style="${stileInput('flex:1')}"></td>
+    <td>
+      <select class="ic" id="ecTipo-${id}" style="${stileInput()}" oninput="aggiornaSaldi()">
+        <option value="uscita" ${(m.tipo||'uscita')==='uscita'?'selected':''}>⬇️ Uscita</option>
+        <option value="entrata" ${(m.tipo||'')==='entrata'?'selected':''}>⬆️ Entrata</option>
+      </select>
+    </td>
+    <td><input class="ic" type="number" id="ecImp-${id}" value="${m.imp||''}" placeholder="0.00" step="0.01" min="0" style="${stileInput()}" oninput="aggiornaSaldi()"></td>
+    <td><input class="ic" type="text" id="ecRif-${id}" value="${esc(m.rif||'')}" placeholder="Es. RIF-2025-001" style="${stileInput()}"></td>
+    <td><button onclick="removeEC(${id})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem;border-radius:3px;transition:all 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--border)'">✕</button></td>
+  `;
+  document.getElementById('ecBody').appendChild(tr);
+}
+
+function _appendRigaSpesa(id, s) {
+  const catOpts = CATEGORIE_SPESA.map(c=>`<option ${s.cat===c?'selected':''}>${c}</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.id = `sp-${id}`;
+  tr.innerHTML = `
+    <td><input class="ic" type="date" id="spData-${id}" value="${s.data||''}" style="${stileInput()}"></td>
+    <td><input class="ic" type="text" id="spDesc-${id}" value="${esc(s.desc||'')}" placeholder="Es. Fattura pulizie scala A" style="${stileInput()}"></td>
+    <td><select class="ic" id="spCat-${id}" style="${stileInput()}">${catOpts}</select></td>
+    <td><select class="ic" id="spTipo-${id}" style="${stileInput()}">
+      <option value="uscita" ${(s.tipo||'uscita')==='uscita'?'selected':''}>⬇️ Uscita</option>
+      <option value="entrata" ${(s.tipo||'')==='entrata'?'selected':''}>⬆️ Entrata</option>
+    </select></td>
+    <td><input class="ic" type="number" id="spImp-${id}" value="${s.imp||''}" placeholder="0.00" step="0.01" min="0" style="${stileInput()}"></td>
+    <td><input class="ic" type="text" id="spDoc-${id}" value="${esc(s.doc||'')}" placeholder="Es. FT/2025/001" style="${stileInput()}"></td>
+    <td><button onclick="removeSp(${id})" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem;border-radius:3px;transition:all 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--border)'">✕</button></td>
+  `;
+  document.getElementById('speseBody').appendChild(tr);
+}
 
 // ══════════════════════════════════════════════════════════════
 // TABS
@@ -585,6 +802,7 @@ function eseguiRiconciliazione() {
   });
 
   risultatoRic = { ec: ecCopy, spese: speseCopy };
+  salvaDatiNelDB();
   renderRiconciliazione(ecCopy, speseCopy);
 }
 
@@ -808,6 +1026,82 @@ function esportaReportExcel() {
 function stileInput(extra='') { return `background:transparent;border:1px solid transparent;border-radius:3px;padding:0.4rem 0.6rem;font-family:inherit;font-size:0.82rem;color:var(--ink);width:100%;transition:all 0.15s;${extra}`; }
 function fmt(n)  { return '€\u00a0' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ══════════════════════════════════════════════════════════════
+// STAMPA / PDF
+// ══════════════════════════════════════════════════════════════
+function stampaPDF() {
+  const condo = document.getElementById('condoNome').value || 'Riconciliazione';
+  const vecchioTitolo = document.title;
+  document.title = `CondoKit_Riconciliazione_${condo.replace(/\s/g,'_')}`;
+  window.print();
+  document.title = vecchioTitolo;
+}
+
+// ══════════════════════════════════════════════════════════════
+// BACKUP — SALVA SU PC
+// ══════════════════════════════════════════════════════════════
+function esportaBackup() {
+  const ec    = leggiEC();
+  const spese = leggiSpese();
+  if (!ec.length && !spese.length) { alert('Nessun dato da salvare nel backup.'); return; }
+  const backup = {
+    app: 'CondoKit-Riconciliazione',
+    data: new Date().toISOString(),
+    condominio: document.getElementById('condoNome').value || '',
+    iban: document.getElementById('condoIBAN').value || '',
+    saldoIniziale: document.getElementById('saldoIniziale').value || '',
+    ecCount, speseCount,
+    movimentiEC: ec,
+    vociContabili: spese
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `CondoKit_Riconciliazione_Backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  console.log('✅ Backup riconciliazione scaricato');
+}
+
+// ══════════════════════════════════════════════════════════════
+// BACKUP — CARICA DA PC
+// ══════════════════════════════════════════════════════════════
+function importaBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.movimentiEC || !data.vociContabili) throw new Error('Formato non valido');
+      if (confirm('Attenzione: caricando il backup cancellerai i dati attuali. Confermi?')) {
+        // Ripristina header
+        if (data.condominio)  document.getElementById('condoNome').value    = data.condominio;
+        if (data.iban)        document.getElementById('condoIBAN').value     = data.iban;
+        if (data.saldoIniziale) document.getElementById('saldoIniziale').value = data.saldoIniziale;
+
+        // Ripristina movimenti EC
+        document.getElementById('ecBody').innerHTML = '';
+        ecCount = 0;
+        data.movimentiEC.forEach(m => { ecCount++; _appendRigaEC(ecCount, m); });
+        aggiornaSaldi();
+
+        // Ripristina spese
+        document.getElementById('speseBody').innerHTML = '';
+        speseCount = 0;
+        data.vociContabili.forEach(s => { speseCount++; _appendRigaSpesa(speseCount, s); });
+
+        await salvaDatiNelDB();
+        alert('✅ Backup ripristinato con successo!');
+      }
+    } catch(err) {
+      alert('❌ Errore: il file selezionato non è un backup CondoKit valido.');
+    }
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
