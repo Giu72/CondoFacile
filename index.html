@@ -3,7 +3,7 @@
 <head>
   <script src="condokit-data-layer.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CondoKit — Gestione Condominiale</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -107,18 +107,131 @@
   .coming-item-cat { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--border); margin-top: 0.25rem; }
 
   .page-footer { text-align: center; padding: 1.5rem; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; border-top: 1px solid var(--border); }
+
+  /* ═══ HAMBURGER BUTTON (solo mobile) ═══ */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .hamburger span {
+    display: block;
+    height: 2px;
+    background: var(--paper);
+    border-radius: 2px;
+    transition: all 0.25s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* OVERLAY scuro dietro la sidebar su mobile */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 150;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* ═══ MEDIA QUERY MOBILE ═══ */
+  @media (max-width: 768px) {
+
+    /* Topbar: mostra hamburger, compatta logo */
+    .hamburger { display: flex; }
+    .topbar { padding: 0 1rem; gap: 0.75rem; }
+    .topbar-logo { font-size: 1.1rem; }
+    .topbar-beta { font-size: 0.55rem; padding: 0.2rem 0.45rem; letter-spacing: 0.12em; }
+    .topbar-user { display: none; }
+
+    /* Layout: toglie il flex orizzontale, sidebar diventa overlay */
+    .app-body { display: block; height: auto; overflow: visible; }
+
+    .sidebar {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      bottom: 0;
+      width: min(var(--sidebar-w), 85vw);
+      z-index: 160;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    /* Main content a piena larghezza */
+    .main-content {
+      width: 100%;
+      overflow-y: visible;
+    }
+
+    /* Hero più compatto */
+    .hero { padding: 1.5rem 1.2rem 1.2rem; }
+    .hero h1 { font-size: 1.5rem; }
+    .hero-sub { font-size: 0.8rem; }
+
+    /* Stats bar in griglia 2×2 */
+    .stats-bar {
+      padding: 0.75rem 1rem;
+      gap: 0.75rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .stat-value { font-size: 1.2rem; }
+    .stat-label { font-size: 0.55rem; }
+
+    /* Content area più stretta */
+    .content-area { padding: 1.2rem 1rem 2rem; }
+
+    /* Card griglia: 1 colonna su schermi piccoli */
+    .available-grid { grid-template-columns: 1fr; gap: 0.6rem; }
+    .coming-grid    { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+    /* Card testo più compatto */
+    .avail-card { padding: 0.9rem 1rem; }
+    .avail-card-name { font-size: 0.82rem; }
+    .avail-card-desc { font-size: 0.72rem; }
+
+    .coming-item { padding: 0.6rem 0.75rem; }
+    .coming-item-name { font-size: 0.72rem; }
+
+    /* Ricerca nella sidebar: input più grande per evitare zoom iPhone */
+    .sidebar-search input { font-size: 16px !important; }
+  }
+
+  @media (max-width: 400px) {
+    .coming-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
 <!-- TOPBAR -->
 <div class="topbar">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
   <a class="topbar-logo" href="index.html">Condo<em>Kit</em></a>
   <div class="topbar-right">
     <span class="topbar-beta">🧪 Beta Gratuita</span>
     <span class="topbar-user">Amministratore</span>
   </div>
 </div>
+
+<!-- OVERLAY per chiudere la sidebar su mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <div class="app-body">
 
@@ -373,6 +486,45 @@
 </div>
 
 <script>
+// ═══ HAMBURGER MENU (mobile) ═══
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const hamburger = document.getElementById('hamburger');
+  const isOpen   = sidebar.classList.contains('open');
+  if (isOpen) {
+    closeSidebar();
+  } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    hamburger.classList.add('open');
+    document.body.style.overflow = 'hidden'; // blocca scroll body
+  }
+}
+
+function closeSidebar() {
+  const sidebar   = document.querySelector('.sidebar');
+  const overlay   = document.getElementById('sidebarOverlay');
+  const hamburger = document.getElementById('hamburger');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  hamburger.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Chiude la sidebar se si clicca un link su mobile
+document.querySelectorAll('.act-item').forEach(function(link) {
+  link.addEventListener('click', function() {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+});
+
+// Chiude la sidebar se si ridimensiona a desktop
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 768) closeSidebar();
+});
+
+// ═══ TOGGLE CATEGORIE ═══
 function toggleCat(header) {
   const items = header.nextElementSibling;
   const isOpen = header.classList.contains('open');
