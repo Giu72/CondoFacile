@@ -3,7 +3,7 @@
 <head>
   <script src="condokit-data-layer.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CondoKit — Fatture Elettroniche</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -172,7 +172,93 @@
   @media (max-width: 700px) {
     .header { padding: 1.5rem 1.2rem; }
     .main { padding: 1.5rem 1rem 3rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
     .row-2, .row-3, .row-4 { grid-template-columns: 1fr; }
+  }
+  /* REGOLE PER SMARTPHONE (Schermi sotto i 768px) */
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tab {
+      flex: 1 1 45%;
+      padding: 10px 5px;
+      font-size: 11px;
+    }
+
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    td {
+      border: none !important;
+      position: relative;
+      padding-left: 45% !important;
+      text-align: left;
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+    }
+
+    td::before {
+      position: absolute;
+      left: 10px;
+      width: 40%;
+      font-weight: bold;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    #archivioBody td:nth-of-type(1)::before  { content: "N° Fattura:"; }
+    #archivioBody td:nth-of-type(2)::before  { content: "Data:"; }
+    #archivioBody td:nth-of-type(3)::before  { content: "Fornitore:"; }
+    #archivioBody td:nth-of-type(4)::before  { content: "Condominio:"; }
+    #archivioBody td:nth-of-type(5)::before  { content: "Tipo:"; }
+    #archivioBody td:nth-of-type(6)::before  { content: "Imponibile:"; }
+    #archivioBody td:nth-of-type(7)::before  { content: "IVA:"; }
+    #archivioBody td:nth-of-type(8)::before  { content: "Ritenuta:"; }
+    #archivioBody td:nth-of-type(9)::before  { content: "Netto:"; }
+    #archivioBody td:nth-of-type(10)::before { content: "Scadenza:"; }
+    #archivioBody td:nth-of-type(11)::before { content: "Stato:"; }
+    #archivioBody td:nth-of-type(12)::before { content: "Azioni:"; }
+
+    .filtri-bar { flex-direction: column; }
+    .filtri-bar .field-group { min-width: unset; width: 100%; }
+
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; text-align: center; justify-content: center; }
+
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      font-size: 16px !important; /* Evita lo zoom automatico su iPhone */
+    }
+
+    .backup-box { flex-direction: column; }
+    .backup-box .btn { width: 100%; justify-content: center; }
   }
 </style>
 </head>
@@ -426,6 +512,16 @@
         <input type="text" id="filtroFornitore" placeholder="Nome fornitore..." oninput="renderArchivio()">
       </div>
       <button class="btn btn-success btn-sm" onclick="esportaExcel()" style="align-self:flex-end">📊 Esporta Excel</button>
+      <button class="btn btn-secondary btn-sm" onclick="stampaPDF()" style="align-self:flex-end">🖨️ Stampa / PDF</button>
+    </div>
+
+    <!-- BACKUP BAR -->
+    <div class="backup-box" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;padding:1rem 1.2rem;background:var(--cream);border:1px dashed var(--border);border-radius:4px;align-items:center">
+      <span style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Sicurezza Dati (Backup):</span>
+      <button class="btn btn-ghost btn-sm" onclick="esportaBackup()">💾 Salva su PC</button>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+        📂 Carica da PC <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none">
+      </label>
     </div>
 
     <div class="table-wrapper">
@@ -497,15 +593,47 @@ const RITENUTE_CONFIG = {
 };
 
 // ══════════════════════════════════════════════════════════════
-// INIT
+// INIT — collega il motore CondoKitDB (come spese.html)
 // ══════════════════════════════════════════════════════════════
+document.addEventListener('condokit:ready', async () => {
+  console.log("🚀 CondoKit pronto! Carico fatture...");
+  await caricaDatiDalDB();
+  const oggi = new Date().toISOString().split('T')[0];
+  if (document.getElementById('mData').value === '') document.getElementById('mData').value = oggi;
+  const scad = new Date(); scad.setDate(scad.getDate() + 30);
+  if (document.getElementById('mScadenza').value === '') document.getElementById('mScadenza').value = scad.toISOString().split('T')[0];
+});
+
+// Fallback se condokit-data-layer.js non è presente
 document.addEventListener('DOMContentLoaded', () => {
   const oggi = new Date().toISOString().split('T')[0];
   document.getElementById('mData').value = oggi;
-  // Aggiungi 30 giorni come scadenza default
   const scad = new Date(); scad.setDate(scad.getDate() + 30);
   document.getElementById('mScadenza').value = scad.toISOString().split('T')[0];
 });
+
+async function caricaDatiDalDB() {
+  try {
+    const salvate = await CondoKitDB.getAll('fatture');
+    if (salvate && salvate.length > 0) {
+      fatture = salvate;
+      fattureCount = Math.max(...fatture.map(f => f.id || 0), 0);
+      renderArchivio();
+      renderRitenute();
+    }
+  } catch(e) {
+    console.warn('CondoKitDB non disponibile, lavoro in memoria.', e);
+  }
+}
+
+async function salvaFattureNelDB() {
+  try {
+    await CondoKitDB.clear('fatture');
+    for (let f of fatture) await CondoKitDB.save('fatture', f);
+  } catch(e) {
+    console.warn('Salvataggio DB non riuscito:', e);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════
 // TABS
@@ -690,6 +818,7 @@ function registraFattura() {
   };
 
   fatture.push(fattura);
+  salvaFattureNelDB();
   alert(`✅ Fattura ${fattura.numero} registrata correttamente!\n${ritenuta > 0 ? `Ritenuta calcolata: ${fmt(ritenuta)} (cod. ${cfg.codice})` : 'Nessuna ritenuta applicata.'}`);
   resetManuale();
   switchTab('archivio');
@@ -774,12 +903,14 @@ function toggleStato(id) {
   const stati = ['attesa','pagata','scaduta'];
   const idx = stati.indexOf(f.stato);
   f.stato = stati[(idx+1) % stati.length];
+  salvaFattureNelDB();
   renderArchivio();
 }
 
 function eliminaFattura(id) {
   if (!confirm('Eliminare questa fattura dall\'archivio?')) return;
   fatture = fatture.filter(f=>f.id!==id);
+  salvaFattureNelDB();
   renderArchivio();
 }
 
@@ -894,6 +1025,63 @@ function esportaExcel() {
 function fmt(n) { return '€\u00a0' + Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function aggiornaRitenuta() { calcolaManuale(); }
+
+// ══════════════════════════════════════════════════════════════
+// STAMPA / PDF
+// ══════════════════════════════════════════════════════════════
+function stampaPDF() {
+  const vecchioTitolo = document.title;
+  document.title = `CondoKit_Fatture_${new Date().getFullYear()}`;
+  window.print();
+  document.title = vecchioTitolo;
+}
+
+// ══════════════════════════════════════════════════════════════
+// BACKUP — SALVA SU PC
+// ══════════════════════════════════════════════════════════════
+function esportaBackup() {
+  if (!fatture.length) { alert('Nessuna fattura da salvare nel backup.'); return; }
+  const backup = {
+    app: 'CondoKit-Fatture',
+    data: new Date().toISOString(),
+    fattureCount,
+    fatture
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `CondoKit_Fatture_Backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  console.log('✅ Backup fatture scaricato correttamente');
+}
+
+// ══════════════════════════════════════════════════════════════
+// BACKUP — CARICA DA PC
+// ══════════════════════════════════════════════════════════════
+function importaBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.fatture || !Array.isArray(data.fatture)) throw new Error('Formato non valido');
+      if (confirm('Attenzione: caricando il backup cancellerai le fatture attuali. Confermi?')) {
+        fatture      = data.fatture;
+        fattureCount = data.fattureCount || Math.max(...fatture.map(f => f.id || 0), 0);
+        await salvaFattureNelDB();
+        renderArchivio();
+        renderRitenute();
+        alert('✅ Backup ripristinato con successo!');
+      }
+    } catch(err) {
+      alert('❌ Errore: il file selezionato non è un backup CondoKit valido.');
+    }
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
