@@ -3,7 +3,7 @@
 <head>
   <script src="condokit-data-layer.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CondoKit — Bilancio Preventivo</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -141,6 +141,104 @@ tbody td:first-child{padding-left:1.5rem;}
   .doc,.lettera{box-shadow:none;border:none;}
 }
 .page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
+
+  @media (max-width: 700px) {
+    .header { padding: 1.5rem 1.2rem; }
+    .main { padding: 1.5rem 1rem 3rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
+    .r2, .r3, .r4 { grid-template-columns: 1fr; }
+    .doc-bd { padding: 1.2rem 1rem; }
+  }
+
+  /* REGOLE PER SMARTPHONE (Schermi sotto i 768px) */
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tab-btn {
+      flex: 1 1 45%;
+      padding: 10px 5px;
+      font-size: 11px;
+    }
+
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    td {
+      border: none !important;
+      position: relative;
+      padding-left: 45% !important;
+      text-align: left;
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+    }
+
+    td::before {
+      position: absolute;
+      left: 10px;
+      width: 40%;
+      font-weight: bold;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    /* Etichette colonne voci di spesa */
+    #vociBody td:nth-of-type(1)::before  { content: "Descrizione:"; }
+    #vociBody td:nth-of-type(2)::before  { content: "Categoria:"; }
+    #vociBody td:nth-of-type(3)::before  { content: "Ripartizione:"; }
+    #vociBody td:nth-of-type(4)::before  { content: "Importo (€):"; }
+    #vociBody td:nth-of-type(5)::before  { content: "Anno prec. (€):"; }
+    #vociBody td:nth-of-type(6)::before  { content: "Variazione:"; }
+    #vociBody td:nth-of-type(7)::before  { content: "Azioni:"; }
+
+    /* Etichette colonne condomini */
+    #condoBody td:nth-of-type(1)::before { content: "Nome:"; }
+    #condoBody td:nth-of-type(2)::before { content: "Interno:"; }
+    #condoBody td:nth-of-type(3)::before { content: "Millesimi:"; }
+    #condoBody td:nth-of-type(4)::before { content: "Email:"; }
+    #condoBody td:nth-of-type(5)::before { content: "Quota annuale:"; }
+    #condoBody td:nth-of-type(6)::before { content: "Rata:"; }
+    #condoBody td:nth-of-type(7)::before { content: "Azioni:"; }
+
+    .brow { flex-direction: column; }
+    .brow .btn { width: 100%; text-align: center; justify-content: center; }
+
+    .sgrid { grid-template-columns: 1fr 1fr; }
+
+    .fg input, .fg select, .fg textarea {
+      font-size: 16px !important; /* Evita lo zoom automatico su iPhone */
+    }
+    .ic { font-size: 16px !important; }
+
+    .backup-box { flex-direction: column; }
+    .backup-box .btn { width: 100%; justify-content: center; }
+
+    .lnav { flex-direction: column; }
+    .lnav .btn { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -229,6 +327,16 @@ tbody td:first-child{padding-left:1.5rem;}
       <button class="btn btn-g" onclick="loadDefault()">📋 Carica voci tipiche</button>
       <button class="btn btn-p" onclick="aggTotali(); go('condomini')">→ Vai ai Condomini</button>
       <button class="btn btn-g" onclick="document.getElementById('vociBody').innerHTML=''; vociCount=0; aggTotali()">↺ Azzera</button>
+      <button class="btn btn-s" onclick="stampaPDF()">🖨️ Stampa / PDF</button>
+    </div>
+
+    <!-- BACKUP BAR -->
+    <div class="backup-box" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem;padding:1rem 1.2rem;background:var(--cream);border:1px dashed var(--border);border-radius:4px;align-items:center">
+      <span style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Sicurezza Dati (Backup):</span>
+      <button class="btn btn-g btn-sm" onclick="esportaBackup()">💾 Salva su PC</button>
+      <label class="btn btn-g btn-sm" style="cursor:pointer">
+        📂 Carica da PC <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none">
+      </label>
     </div>
     <div class="nb"><strong>💡 Suggerimento</strong>Premi "Carica voci tipiche" per inserire in un clic 10 voci standard già compilate. Potrai modificarle liberamente.</div>
   </div>
@@ -320,20 +428,96 @@ var RIPS = [
 ];
 
 // ═══════════════════════════════════════
-// INIT
+// INIT — collega il motore CondoKitDB (come spese.html)
 // ═══════════════════════════════════════
+document.addEventListener('condokit:ready', async function() {
+  console.log('🚀 CondoKit pronto! Carico bilancio preventivo...');
+  await caricaDatiDalDB();
+});
+
+// Fallback se condokit-data-layer.js non è presente
 window.onload = function() {
-  // init pannelli
   PANELS.forEach(function(n, i) {
     document.getElementById('p-' + n).style.display = i === 0 ? 'block' : 'none';
   });
-  // data oggi
   var el = document.getElementById('dataAssemblea');
   if (el) el.value = new Date().toISOString().split('T')[0];
-  // righe default
-  addVoce(); addVoce(); addVoce();
-  addCondo(); addCondo(); addCondo();
+  // Righe default solo se il DB non ha già caricato dati
+  setTimeout(function() {
+    if (!document.querySelector('#vociBody tr'))  { addVoce();  addVoce();  addVoce(); }
+    if (!document.querySelector('#condoBody tr')) { addCondo(); addCondo(); addCondo(); }
+  }, 400);
 };
+
+async function caricaDatiDalDB() {
+  try {
+    // Init pannelli
+    PANELS.forEach(function(n, i) {
+      document.getElementById('p-' + n).style.display = i === 0 ? 'block' : 'none';
+    });
+
+    // Carica impostazioni generali
+    var campiSetup = ['condoNome','condoCF','annoEsercizio','annoPrecedente','dataAssemblea','studioNome','studioContatti','fondoRiserva','avanzoPrec','nRate','noteAssemblea'];
+    campiSetup.forEach(function(id) {
+      var val = CondoKitSettings.get('bilancio_' + id);
+      var el  = document.getElementById(id);
+      if (val && el) el.value = val;
+    });
+    if (!document.getElementById('dataAssemblea').value) {
+      document.getElementById('dataAssemblea').value = new Date().toISOString().split('T')[0];
+    }
+
+    // Carica voci di spesa
+    var vociSalvate = await CondoKitDB.getAll('bilancio_voci');
+    if (vociSalvate && vociSalvate.length > 0) {
+      vociSalvate.forEach(function(v) { addVoce(v); });
+    } else {
+      addVoce(); addVoce(); addVoce();
+    }
+
+    // Carica condomini
+    var condoSalvati = await CondoKitDB.getAll('bilancio_condo');
+    if (condoSalvati && condoSalvati.length > 0) {
+      condoSalvati.forEach(function(c) { addCondo(c); });
+    } else {
+      addCondo(); addCondo(); addCondo();
+    }
+
+    aggTotali();
+  } catch(e) {
+    console.warn('CondoKitDB non disponibile, lavoro in memoria.', e);
+    PANELS.forEach(function(n, i) {
+      document.getElementById('p-' + n).style.display = i === 0 ? 'block' : 'none';
+    });
+    var el = document.getElementById('dataAssemblea');
+    if (el) el.value = new Date().toISOString().split('T')[0];
+    addVoce(); addVoce(); addVoce();
+    addCondo(); addCondo(); addCondo();
+  }
+}
+
+async function salvaDatiNelDB() {
+  try {
+    // Salva impostazioni generali
+    var campiSetup = ['condoNome','condoCF','annoEsercizio','annoPrecedente','dataAssemblea','studioNome','studioContatti','fondoRiserva','avanzoPrec','nRate','noteAssemblea'];
+    campiSetup.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) CondoKitSettings.set('bilancio_' + id, el.value);
+    });
+
+    // Salva voci di spesa
+    var voci = leggiVoci();
+    await CondoKitDB.clear('bilancio_voci');
+    for (var i = 0; i < voci.length; i++) await CondoKitDB.save('bilancio_voci', voci[i]);
+
+    // Salva condomini
+    var cond = leggiCondo();
+    await CondoKitDB.clear('bilancio_condo');
+    for (var j = 0; j < cond.length; j++) await CondoKitDB.save('bilancio_condo', cond[j]);
+  } catch(e) {
+    console.warn('Salvataggio DB non riuscito:', e);
+  }
+}
 
 // ═══════════════════════════════════════
 // VOCI
@@ -474,7 +658,7 @@ function calcQuote(silent) {
     if (re) re.textContent = fmt(c.rata);
   });
   quoteCondo = cond;
-  if (!silent) alert('✅ Quote calcolate per '+cond.length+' condomini.');
+  if (!silent) { salvaDatiNelDB(); alert('✅ Quote calcolate per '+cond.length+' condomini.'); }
 }
 
 // ═══════════════════════════════════════
@@ -663,6 +847,95 @@ function expExcel() {
 // ═══════════════════════════════════════
 function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════════════════════════════
+// STAMPA / PDF
+// ═══════════════════════════════════════
+function stampaPDF() {
+  var condo = (document.getElementById('condoNome')||{}).value || 'Bilancio';
+  var anno  = (document.getElementById('annoEsercizio')||{}).value || '';
+  var vecchioTitolo = document.title;
+  document.title = 'CondoKit_Preventivo_' + condo.replace(/\s/g,'_') + (anno ? '_' + anno : '');
+  window.print();
+  document.title = vecchioTitolo;
+}
+
+// ═══════════════════════════════════════
+// BACKUP — SALVA SU PC
+// ═══════════════════════════════════════
+function esportaBackup() {
+  var voci = leggiVoci();
+  var cond = leggiCondo();
+  if (!voci.length && !cond.length) { alert('Nessun dato da salvare nel backup.'); return; }
+
+  var campiSetup = ['condoNome','condoCF','annoEsercizio','annoPrecedente','dataAssemblea','studioNome','studioContatti','fondoRiserva','avanzoPrec','nRate','noteAssemblea'];
+  var setup = {};
+  campiSetup.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) setup[id] = el.value;
+  });
+
+  var backup = {
+    app: 'CondoKit-BilancioPreventivo',
+    data: new Date().toISOString(),
+    setup: setup,
+    vociCount: vociCount,
+    condoCount: condoCount,
+    voci: voci,
+    condomini: cond
+  };
+
+  var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'CondoKit_Preventivo_Backup_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  console.log('✅ Backup bilancio preventivo scaricato');
+}
+
+// ═══════════════════════════════════════
+// BACKUP — CARICA DA PC
+// ═══════════════════════════════════════
+function importaBackup(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.voci || !data.condomini) throw new Error('Formato non valido');
+      if (confirm('Attenzione: caricando il backup cancellerai i dati attuali. Confermi?')) {
+
+        // Ripristina impostazioni
+        if (data.setup) {
+          Object.keys(data.setup).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = data.setup[id];
+          });
+        }
+
+        // Ripristina voci
+        document.getElementById('vociBody').innerHTML = '';
+        vociCount = 0;
+        data.voci.forEach(function(v) { addVoce(v); });
+
+        // Ripristina condomini
+        document.getElementById('condoBody').innerHTML = '';
+        condoCount = 0;
+        data.condomini.forEach(function(c) { addCondo(c); });
+
+        aggTotali();
+        await salvaDatiNelDB();
+        alert('✅ Backup ripristinato con successo!');
+      }
+    } catch(err) {
+      alert('❌ Errore: il file selezionato non è un backup CondoKit valido.');
+    }
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
