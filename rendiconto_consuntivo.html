@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<script src="condokit-data-layer.js"></script>
+
 <meta charset="UTF-8">
+  <script src="condokit-data-layer.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CondoKit — Rendiconto Consuntivo</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
@@ -152,6 +153,88 @@ tbody td:first-child{padding-left:1.5rem;}
 .nb{background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:1rem 1.4rem;font-size:0.82rem;line-height:1.6;margin-top:1.5rem;}
 .nb strong{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--warning);display:block;margin-bottom:0.4rem;}
 
+/* REGOLE PER SMARTPHONE (Schermi sotto i 768px) */
+@media (max-width: 768px) {
+    .main { padding: 1.5rem 1rem 3rem; }
+    .navbar { padding: 0 1rem; }
+    .nav-link { padding: 0.4rem 0.5rem; font-size: 0.6rem; }
+    
+    /* TABS in colonna */
+    .tab-bar { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 5px; 
+    }
+    .tab-btn { 
+        flex: 1 1 45%;
+        padding: 10px 5px;
+        font-size: 11px;
+        text-align: center;
+    }
+    
+    /* Trasformazione tabelle in schede */
+    .tw table, .tw thead, .tw tbody, .tw th, .tw td, .tw tr { 
+        display: block; 
+    }
+    .tw thead tr { 
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    .tw tr { 
+        border: 1px solid var(--border); 
+        margin-bottom: 15px; 
+        background: white; 
+        padding: 10px; 
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .tw td { 
+        border: none !important;
+        position: relative;
+        padding-left: 45% !important; 
+        text-align: left;
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+    }
+    .tw td::before { 
+        position: absolute;
+        left: 10px;
+        width: 40%; 
+        font-weight: bold;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+    /* Etichette per tabella spese */
+    #speseBody td:nth-of-type(1)::before { content: "Descrizione:"; }
+    #speseBody td:nth-of-type(2)::before { content: "Categoria:"; }
+    #speseBody td:nth-of-type(3)::before { content: "Data:"; }
+    #speseBody td:nth-of-type(4)::before { content: "N° Doc.:"; }
+    #speseBody td:nth-of-type(5)::before { content: "Importo eff.:"; }
+    #speseBody td:nth-of-type(6)::before { content: "Preventivato:"; }
+    #speseBody td:nth-of-type(7)::before { content: "Δ Scost.:"; }
+    
+    /* Etichette per tabella condomini */
+    #condoBody td:nth-of-type(1)::before { content: "Nome:"; }
+    #condoBody td:nth-of-type(2)::before { content: "Interno:"; }
+    #condoBody td:nth-of-type(3)::before { content: "Millesimi:"; }
+    #condoBody td:nth-of-type(4)::before { content: "Quota dovuta:"; }
+    #condoBody td:nth-of-type(5)::before { content: "Versato:"; }
+    #condoBody td:nth-of-type(6)::before { content: "Saldo:"; }
+    #condoBody td:nth-of-type(7)::before { content: "Stato:"; }
+    #condoBody td:nth-of-type(8)::before { content: "Email:"; }
+    
+    /* Bottoni full width */
+    .brow { flex-direction: column; }
+    .btn { width: 100%; text-align: center; justify-content: center; }
+    .r2, .r3, .r4 { grid-template-columns: 1fr; gap: 0.8rem; }
+    .saldo-box { flex-direction: column; align-items: stretch; text-align: center; }
+    .sep { width: auto; height: 1px; margin: 0.5rem 0; background: rgba(255,255,255,0.15); }
+    .sgrid { grid-template-columns: 1fr 1fr; }
+}
+
 @media print{.navbar,.tab-bar,.brow,.lnav,.page-footer{display:none!important;}.main{padding:0;}body{background:white;}.doc,.lettera{box-shadow:none;border:none;}}
 .page-footer{text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;border-top:1px solid var(--border);margin-top:2rem;}
 </style>
@@ -160,7 +243,11 @@ tbody td:first-child{padding-left:1.5rem;}
 
 <nav class="navbar">
   <a class="navbar-logo" href="index.html">Condo<em>Kit</em></a>
-  <div><a class="nav-link" href="index.html">🏠 Home</a></div>
+  <div class="navbar-links">
+  <a class="nav-link" href="index.html">🏠 Home</a>
+  <button class="nav-link" onclick="esportaBackup()" style="background:none;border:none;cursor:pointer">💾 Backup</button>
+  <label class="nav-link" style="cursor:pointer">📂 Ripristina <input type="file" accept=".json" onchange="importaBackup(event)" style="display:none"></label>
+</div>
 </nav>
 
 <div class="header">
@@ -317,6 +404,10 @@ tbody td:first-child{padding-left:1.5rem;}
 <div class="page-footer">CondoKit · Rendiconto Consuntivo · Beta · Solo uso indicativo</div>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+// 1. INIZIALIZZAZIONE E CARICAMENTO (Il "Ponte" come in Spese)
+// ══════════════════════════════════════════════════════════════
+
 var PANELS = ['setup','spese','condomini','cassa','documento','lettere'];
 var speseCount = 0, condoCount = 0;
 var condoData = [];
@@ -341,15 +432,80 @@ function go(name) {
   if (name==='lettere')   renderLettere();
 }
 
-window.onload = function() {
-  PANELS.forEach(function(n,i) {
-    document.getElementById('p-'+n).style.display = i===0 ? 'block' : 'none';
-  });
-  var el = document.getElementById('dataAssemblea');
-  if (el) el.value = new Date().toISOString().split('T')[0];
-  addSpesa(); addSpesa(); addSpesa();
-  addCondo(); addCondo(); addCondo();
-};
+// Aspettiamo che il motore CondoKit sia pronto
+document.addEventListener('condokit:ready', async () => {
+    console.log("🚀 Motore CondoKit Pronto! Caricamento dati...");
+    await caricaTuttiIDati();
+});
+
+async function caricaTuttiIDati() {
+    // Carica impostazioni generali
+    const nomeSalvato = CondoKitSettings.get('condoNome');
+    if (nomeSalvato) document.getElementById('condoNome').value = nomeSalvato;
+    
+    const cfSalvato = CondoKitSettings.get('condoCF');
+    if (cfSalvato) document.getElementById('condoCF').value = cfSalvato;
+    
+    const annoSalvato = CondoKitSettings.get('annoEsercizio');
+    if (annoSalvato) document.getElementById('annoEsercizio').value = annoSalvato;
+    
+    const dataAssSalvata = CondoKitSettings.get('dataAssemblea');
+    if (dataAssSalvata) document.getElementById('dataAssemblea').value = dataAssSalvata;
+    
+    const nRateSalvato = CondoKitSettings.get('nRate');
+    if (nRateSalvato) document.getElementById('nRate').value = nRateSalvato;
+    
+    const studioNomeSalvato = CondoKitSettings.get('studioNome');
+    if (studioNomeSalvato) document.getElementById('studioNome').value = studioNomeSalvato;
+    
+    const studioContattiSalvato = CondoKitSettings.get('studioContatti');
+    if (studioContattiSalvato) document.getElementById('studioContatti').value = studioContattiSalvato;
+    
+    const saldoInizioSalvato = CondoKitSettings.get('saldoInizio');
+    if (saldoInizioSalvato) document.getElementById('saldoInizio').value = saldoInizioSalvato;
+    
+    const fondoInizioSalvato = CondoKitSettings.get('fondoInizio');
+    if (fondoInizioSalvato) document.getElementById('fondoInizio').value = fondoInizioSalvato;
+    
+    const avanzoPrecSalvato = CondoKitSettings.get('avanzoPrec');
+    if (avanzoPrecSalvato) document.getElementById('avanzoPrec').value = avanzoPrecSalvato;
+    
+    const noteAssSalvata = CondoKitSettings.get('noteAssemblea');
+    if (noteAssSalvata) document.getElementById('noteAssemblea').value = noteAssSalvata;
+    
+    // Carica le Spese dal Database
+    const speseSalvate = await CondoKitDB.getAll('spese_consuntivo');
+    if (speseSalvate.length > 0) {
+        document.getElementById('speseBody').innerHTML = '';
+        speseCount = 0;
+        speseSalvate.forEach(s => {
+            speseCount++;
+            const id = speseCount;
+            s.id_db = s.id;
+            aggiungiRigaSpesaDaDati(s, id);
+        });
+        aggTotali();
+    }
+    
+    // Carica i Condomini
+    const condominiSalvati = await CondoKitDB.getAll('condomini_consuntivo');
+    if (condominiSalvati.length > 0) {
+        document.getElementById('condoBody').innerHTML = '';
+        condoCount = 0;
+        condominiSalvati.forEach(c => {
+            condoCount++;
+            const id = condoCount;
+            c.id_db = c.id;
+            aggiungiRigaCondominoDaDati(c, id);
+        });
+        aggCondo();
+    }
+}
+
+// Salva impostazione generica
+async function salvaImpostazione(key, value) {
+    CondoKitSettings.set(key, value);
+}
 
 // ══ SPESE ══
 function addSpesa(d) {
@@ -361,22 +517,81 @@ function addSpesa(d) {
   var tr = document.createElement('tr');
   tr.id = 'sp-'+id;
   tr.innerHTML =
-    '<td><input class="ic" type="text" id="spd-'+id+'" placeholder="Es. Pulizia scale" value="'+(d.desc||'')+'" oninput="aggTotali()"></td>'+
+    '<td><input class="ic" type="text" id="spd-'+id+'" placeholder="Es. Pulizia scale" value="'+(d.desc||'')+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
     '<td><select class="ic" id="spc-'+id+'">'+co+'</select></td>'+
-    '<td><input class="ic" type="date" id="spdt-'+id+'" value="'+(d.data||oggi)+'"></td>'+
-    '<td><input class="ic" type="text" id="spn-'+id+'" placeholder="Es. FT/001" value="'+(d.ndoc||'')+'"></td>'+
-    '<td><input class="ic" type="number" id="spe-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.eff||'')+'" oninput="aggTotali()"></td>'+
-    '<td><input class="ic" type="number" id="spp-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.prev||'')+'" oninput="aggTotali()"></td>'+
+    '<td><input class="ic" type="date" id="spdt-'+id+'" value="'+(d.data||oggi)+'" onchange="salvaSpesa('+id+')"></td>'+
+    '<td><input class="ic" type="text" id="spn-'+id+'" placeholder="Es. FT/001" value="'+(d.ndoc||'')+'" onchange="salvaSpesa('+id+')"></td>'+
+    '<td><input class="ic" type="number" id="spe-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.eff||'')+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
+    '<td><input class="ic" type="number" id="spp-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.prev||'')+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
     '<td class="amt" id="spd2-'+id+'">—</td>'+
     '<td><button onclick="rmSp('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
   document.getElementById('speseBody').appendChild(tr);
+  if (d.id_db) {
+      // Se ha un id_db, lo salviamo subito
+      salvaSpesa(id);
+  }
   aggTotali();
 }
 
-function rmSp(id){ var el=document.getElementById('sp-'+id); if(el)el.remove(); aggTotali(); }
+function aggiungiRigaSpesaDaDati(d, id) {
+    var co = CATS.map(function(c){ return '<option value="'+c.id+'"'+(d.cat===c.id?' selected':'')+'>'+c.n+'</option>'; }).join('');
+    var tr = document.createElement('tr');
+    tr.id = 'sp-'+id;
+    tr.innerHTML =
+      '<td><input class="ic" type="text" id="spd-'+id+'" placeholder="Es. Pulizia scale" value="'+(d.desc||'')+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
+      '<td><select class="ic" id="spc-'+id+'">'+co+'</select></td>'+
+      '<td><input class="ic" type="date" id="spdt-'+id+'" value="'+(d.data||'')+'" onchange="salvaSpesa('+id+')"></td>'+
+      '<td><input class="ic" type="text" id="spn-'+id+'" placeholder="Es. FT/001" value="'+(d.ndoc||'')+'" onchange="salvaSpesa('+id+')"></td>'+
+      '<td><input class="ic" type="number" id="spe-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.eff||0)+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
+      '<td><input class="ic" type="number" id="spp-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.prev||0)+'" oninput="aggTotali(); salvaSpesa('+id+')"></td>'+
+      '<td class="amt" id="spd2-'+id+'">—</td>'+
+      '<td><button onclick="rmSp('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+    document.getElementById('speseBody').appendChild(tr);
+}
+
+async function salvaSpesa(id) {
+    const desc = document.getElementById('spd-'+id)?.value || '';
+    const cat = document.getElementById('spc-'+id)?.value || '';
+    const data = document.getElementById('spdt-'+id)?.value || '';
+    const ndoc = document.getElementById('spn-'+id)?.value || '';
+    const eff = parseFloat(document.getElementById('spe-'+id)?.value) || 0;
+    const prev = parseFloat(document.getElementById('spp-'+id)?.value) || 0;
+    
+    const spesa = {
+        id: `spesa_${id}_${Date.now()}`,
+        desc: desc,
+        cat: cat,
+        data: data,
+        ndoc: ndoc,
+        eff: eff,
+        prev: prev,
+        rowId: id
+    };
+    await CondoKitDB.save('spese_consuntivo', spesa);
+}
+
+function rmSp(id){ 
+    var el=document.getElementById('sp-'+id); 
+    if(el) {
+        // Cancella dal database
+        (async () => {
+            const tutte = await CondoKitDB.getAll('spese_consuntivo');
+            for (let s of tutte) {
+                if (s.rowId == id) {
+                    await CondoKitDB.delete('spese_consuntivo', s.id);
+                    break;
+                }
+            }
+        })();
+        el.remove(); 
+    }
+    aggTotali(); 
+}
 
 function loadDefaultSpese() {
   document.getElementById('speseBody').innerHTML=''; speseCount=0;
+  // Pulisci DB spese
+  (async () => { await CondoKitDB.clear('spese_consuntivo'); })();
   var def=[
     {desc:'Pulizia scale e parti comuni',     cat:'ordinaria',    eff:3820, prev:3600},
     {desc:'Manutenzione ascensore',           cat:'ordinaria',    eff:2250, prev:2400},
@@ -437,20 +652,75 @@ function addCondo(d) {
   var tr=document.createElement('tr');
   tr.id='co-'+id;
   tr.innerHTML=
-    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Mario Rossi" value="'+(d.nome||'')+'" oninput="aggCondo()"></td>'+
-    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1 Sc.A"      value="'+(d.interno||'')+'"></td>'+
-    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'"></td>'+
-    '<td><input class="ic" type="number" id="cq-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.dovuta||'')+'" oninput="aggCondo()"></td>'+
-    '<td><input class="ic" type="number" id="cv-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.versato||'')+'" oninput="aggCondo()"></td>'+
+    '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Mario Rossi" value="'+(d.nome||'')+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
+    '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1 Sc.A"      value="'+(d.interno||'')+'" onchange="salvaCondomino('+id+')"></td>'+
+    '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||'')+'" onchange="salvaCondomino('+id+')"></td>'+
+    '<td><input class="ic" type="number" id="cq-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.dovuta||'')+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
+    '<td><input class="ic" type="number" id="cv-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.versato||'')+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
     '<td class="amt" id="cs-'+id+'" style="font-weight:600">—</td>'+
     '<td id="cst-'+id+'">—</td>'+
-    '<td><input class="ic" type="email" id="ce-'+id+'" placeholder="mario@email.it" value="'+(d.email||'')+'"></td>'+
+    '<td><input class="ic" type="email" id="ce-'+id+'" placeholder="mario@email.it" value="'+(d.email||'')+'" onchange="salvaCondomino('+id+')"></td>'+
     '<td><button onclick="rmCo('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
   document.getElementById('condoBody').appendChild(tr);
+  if (d.id_db) {
+      salvaCondomino(id);
+  }
   aggCondo();
 }
 
-function rmCo(id){ var el=document.getElementById('co-'+id); if(el)el.remove(); aggCondo(); }
+function aggiungiRigaCondominoDaDati(d, id) {
+    var tr=document.createElement('tr');
+    tr.id='co-'+id;
+    tr.innerHTML=
+      '<td><input class="ic" type="text"   id="cn-'+id+'" placeholder="Es. Mario Rossi" value="'+(d.nome||'')+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
+      '<td><input class="ic" type="text"   id="ci-'+id+'" placeholder="Int.1 Sc.A"      value="'+(d.interno||'')+'" onchange="salvaCondomino('+id+')"></td>'+
+      '<td><input class="ic" type="number" id="cm-'+id+'" placeholder="85" step="0.01" min="0" value="'+(d.mill||0)+'" onchange="salvaCondomino('+id+')"></td>'+
+      '<td><input class="ic" type="number" id="cq-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.dovuta||0)+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
+      '<td><input class="ic" type="number" id="cv-'+id+'" placeholder="0.00" step="0.01" min="0" value="'+(d.versato||0)+'" oninput="aggCondo(); salvaCondomino('+id+')"></td>'+
+      '<td class="amt" id="cs-'+id+'" style="font-weight:600">—</td>'+
+      '<td id="cst-'+id+'">—</td>'+
+      '<td><input class="ic" type="email" id="ce-'+id+'" placeholder="mario@email.it" value="'+(d.email||'')+'" onchange="salvaCondomino('+id+')"></td>'+
+      '<td><button onclick="rmCo('+id+')" style="background:none;border:none;cursor:pointer;color:var(--border);font-size:1rem;padding:0.2rem 0.4rem">✕</button></td>';
+    document.getElementById('condoBody').appendChild(tr);
+}
+
+async function salvaCondomino(id) {
+    const nome = document.getElementById('cn-'+id)?.value || '';
+    const interno = document.getElementById('ci-'+id)?.value || '';
+    const mill = parseFloat(document.getElementById('cm-'+id)?.value) || 0;
+    const dovuta = parseFloat(document.getElementById('cq-'+id)?.value) || 0;
+    const versato = parseFloat(document.getElementById('cv-'+id)?.value) || 0;
+    const email = document.getElementById('ce-'+id)?.value || '';
+    
+    const condomino = {
+        id: `condo_${id}_${Date.now()}`,
+        nome: nome,
+        interno: interno,
+        mill: mill,
+        dovuta: dovuta,
+        versato: versato,
+        email: email,
+        rowId: id
+    };
+    await CondoKitDB.save('condomini_consuntivo', condomino);
+}
+
+function rmCo(id){ 
+    var el=document.getElementById('co-'+id); 
+    if(el) {
+        (async () => {
+            const tutti = await CondoKitDB.getAll('condomini_consuntivo');
+            for (let c of tutti) {
+                if (c.rowId == id) {
+                    await CondoKitDB.delete('condomini_consuntivo', c.id);
+                    break;
+                }
+            }
+        })();
+        el.remove(); 
+    }
+    aggCondo(); 
+}
 
 function leggiCondo() {
   var r=[];
@@ -502,7 +772,7 @@ function renderCassa() {
   var totSpese  = sp.reduce(function(s,v){return s+v.eff;},0);
   var totEntr   = cond.reduce(function(s,c){return s+c.versato;},0);
   var saldoFin  = saldoIniz + totEntr - totSpese;
-  var fondoFin  = fondoIniz; // rimane uguale salvo rettifiche manuali
+  var fondoFin  = fondoIniz;
   var avanzoFin = saldoFin >= 0 ? saldoFin : 0;
   var disav     = saldoFin < 0  ? Math.abs(saldoFin) : 0;
 
@@ -629,7 +899,7 @@ function renderDoc() {
 
   document.getElementById('docContent').innerHTML =
     '<div class="brow" style="margin-bottom:1.5rem">'+
-    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa / PDF</button>'+
+    '<button class="btn btn-s btn-sm" onclick="stampaPagina()">🖨️ Stampa / PDF</button>'+
     '<button class="btn btn-ok btn-sm" onclick="expExcel()">📊 Excel</button>'+
     '</div>'+
     '<div class="doc">'+
@@ -664,7 +934,7 @@ function renderLettere() {
     cond.map(function(c,i){
       return '<button class="btn btn-g btn-sm" id="lb-'+i+'" onclick="showLettera('+i+')">'+c.nome.split(' ')[0]+'</button>';
     }).join('')+
-    '<button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Stampa</button>'+
+    '<button class="btn btn-s btn-sm" onclick="stampaPagina()">🖨️ Stampa</button>'+
     '</div><div id="letteraEl"></div>';
   document.getElementById('lettereContent').innerHTML=html;
   showLettera(0);
@@ -727,7 +997,7 @@ function showLettera(idx) {
     '</div>';
 }
 
-// ══ EXPORT EXCEL ══
+// ══ ESPORTA EXCEL ══
 function expExcel() {
   var sp   = leggiSpese();
   var cond = leggiCondo();
@@ -757,6 +1027,132 @@ function expExcel() {
 
   XLSX.writeFile(wb,'CondoKit_Rendiconto_'+nome.replace(/\s/g,'_')+'_'+anno+'.xlsx');
 }
+
+// ══ FUNZIONI DI BACKUP E STAMPA (come in Spese) ══
+function stampaPagina() {
+    const nomeCondo = document.getElementById('condoNome')?.value || 'Condominio';
+    const vecchioTitolo = document.title;
+    document.title = `Rendiconto_${nomeCondo}`;
+    window.print();
+    document.title = vecchioTitolo;
+}
+
+async function esportaBackup() {
+    const spese = await CondoKitDB.getAll('spese_consuntivo');
+    const condomini = await CondoKitDB.getAll('condomini_consuntivo');
+    
+    // Raccolta impostazioni
+    const impostazioni = {
+        condominio: document.getElementById('condoNome')?.value || '',
+        condoCF: document.getElementById('condoCF')?.value || '',
+        annoEsercizio: document.getElementById('annoEsercizio')?.value || '2025',
+        dataAssemblea: document.getElementById('dataAssemblea')?.value || '',
+        nRate: document.getElementById('nRate')?.value || '',
+        studioNome: document.getElementById('studioNome')?.value || '',
+        studioContatti: document.getElementById('studioContatti')?.value || '',
+        saldoInizio: document.getElementById('saldoInizio')?.value || '0',
+        fondoInizio: document.getElementById('fondoInizio')?.value || '0',
+        avanzoPrec: document.getElementById('avanzoPrec')?.value || '0',
+        noteAssemblea: document.getElementById('noteAssemblea')?.value || ''
+    };
+    
+    const backup = {
+        nome: impostazioni.condominio,
+        data: new Date().toISOString(),
+        impostazioni: impostazioni,
+        spese: spese,
+        condomini: condomini
+    };
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CondoKit_Rendiconto_Backup_${impostazioni.condominio || 'default'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importaBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (confirm("Attenzione: caricando il backup cancellerai i dati attuali. Confermi?")) {
+                // Pulisce i database
+                await CondoKitDB.clear('spese_consuntivo');
+                await CondoKitDB.clear('condomini_consuntivo');
+                
+                // Ripristina impostazioni
+                if (data.impostazioni) {
+                    for (const [key, value] of Object.entries(data.impostazioni)) {
+                        CondoKitSettings.set(key, value);
+                        const el = document.getElementById(key);
+                        if (el) el.value = value;
+                    }
+                } else {
+                    // Compatibilità con backup vecchio stile
+                    if (data.condominio) CondoKitSettings.set('condoNome', data.condominio);
+                    if (data.anno) CondoKitSettings.set('annoEsercizio', data.anno);
+                }
+                
+                // Ripristina spese
+                if (data.spese && data.spese.length) {
+                    for (let s of data.spese) {
+                        await CondoKitDB.save('spese_consuntivo', s);
+                    }
+                }
+                
+                // Ripristina condomini
+                if (data.condomini && data.condomini.length) {
+                    for (let c of data.condomini) {
+                        await CondoKitDB.save('condomini_consuntivo', c);
+                    }
+                }
+                
+                alert("Dati importati con successo! La pagina verrà ricaricata.");
+                location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Errore nel caricamento del file: formato non valido.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Salvataggio impostazioni quando cambiano
+document.addEventListener('DOMContentLoaded', function() {
+    // Ascoltatori per salvare impostazioni al cambio
+    const inputsDaSalvare = ['condoNome', 'condoCF', 'annoEsercizio', 'dataAssemblea', 'nRate', 
+                             'studioNome', 'studioContatti', 'saldoInizio', 'fondoInizio', 'avanzoPrec', 'noteAssemblea'];
+    inputsDaSalvare.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function() {
+                CondoKitSettings.set(id, this.value);
+            });
+            el.addEventListener('input', function() {
+                CondoKitSettings.set(id, this.value);
+            });
+        }
+    });
+    
+    // Inizializza la UI con dati di default
+    var el = document.getElementById('dataAssemblea');
+    if (el && !el.value) el.value = new Date().toISOString().split('T')[0];
+    
+    // Se non ci sono spese, aggiungi righe vuote
+    if (document.getElementById('speseBody').children.length === 0) {
+        addSpesa(); addSpesa(); addSpesa();
+    }
+    if (document.getElementById('condoBody').children.length === 0) {
+        addCondo(); addCondo(); addCondo();
+    }
+});
 
 function fmt(n){return '€\u00a0'+Number(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
